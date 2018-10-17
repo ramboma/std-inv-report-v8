@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 'app.py'
 
-__author__ = 'Gary.Z'
+__author__ = 'kuoren'
 
-import click
-import utils
+import read_excel_util as excelUtil
+import answer_util as answerUtil
 
-@click.command()
-@click.argument('FILE', nargs=1)
-# @click.option('--count', default=1, help='Number of greetings.')
-# @click.option('--name', prompt='Your name', help='The person to greet.')
 def main(file):
-    """This script cleansing raw data into cleaned data."""
-    print('reading')
-    df = utils.load_xlsx_file(file)
-    print(df.head())
+    data = excelUtil.read_excel(file)
+    #a2_count=answerUtil.answer_count(data,"A2")
+    #a2_dic=answerUtil.answer_val_count(data,"A2")
+    #answerUtil.answer_grp_count(data,['_10','A2'],['_10'],'A2')
+    #answerUtil.answer_grp_count(data,['_10','_14','A2'],['_10','_14'],'A2')
+    answerUtil.answer_of_subject_count(data,"A3","无法评价")
 
 if __name__=='__main__':
-        main()
+        main("../test-data/san-ming/cleaned/answer20181017_test.xlsx")
