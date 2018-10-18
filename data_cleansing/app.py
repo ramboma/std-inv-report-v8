@@ -6,7 +6,8 @@
 __author__ = 'Gary.Z'
 
 import click
-import utils
+import my_utils as u
+
 
 @click.command()
 @click.argument('FILE', nargs=1)
@@ -15,8 +16,8 @@ import utils
 def main(file):
     """This script cleansing raw data into cleaned data."""
     print('reading')
-    df = utils.load_xlsx_file(file)
-    print(df.head())
+    df = u.load_xlsx_file(file)
+
 
 if __name__=='__main__':
         main()
