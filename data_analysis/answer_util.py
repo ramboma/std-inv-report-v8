@@ -53,3 +53,30 @@ def answer_of_subject_count(data,subject,answer):
     answer_count=subj[subj==answer].count()
     print("{}回答{}的人数：{}".format(subject,answer,answer_count))
     return  answer_count
+
+def answer_grp_sum(data,arry_columns,array_groupby):
+    '''
+    根据分组条件，统计其他列之和
+    :param data: 数据源
+    :param arry_columns: 相关列
+    :param array_groupby: 分组列
+    :return:
+    '''
+    grp=pd.DataFrame(data)[arry_columns].groupby(array_groupby).sum()
+    print(grp)
+    return  grp
+
+def answer_grp_period(data,arry_columns,array_groupby,array_periods):
+    '''
+    根据分组条件，统计其他列之和
+    :param data: 数据源
+    :param arry_columns: 相关列
+    :param array_groupby: 分组列
+    :return:
+    '''
+    grp=pd.DataFrame(data,columns=arry_columns)
+    peroids=pd.cut(grp,array_periods)
+    print(peroids)
+    return  peroids
+
+
