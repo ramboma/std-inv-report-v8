@@ -1,7 +1,7 @@
 Project init on 10/16
 
 DIR
-1. data-cleansing - cleasing package, which accept a v8 investigation raw data file, output a cleaned data file for later use, against v8 investigation data cleasing rules
+1. data-cleansing - cleansing package, which accept a v8 investigation raw data file, output a cleaned data file for later use, against v8 investigation data cleansing rules
 2. data-analysis - analysis package, which accept a cleaned data file, output a result data file, against v8 investigation report stat. rules
 3. test-data - for program output verifications
 
