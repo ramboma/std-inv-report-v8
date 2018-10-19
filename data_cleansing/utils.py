@@ -9,7 +9,6 @@ __author__ = 'Gary.Z'
 # import xlwt
 import openpyxl as xl
 import numpy as np
-
 import pandas as pd
 
 INDEX_BASE = 1
@@ -25,13 +24,51 @@ A1_COLUMN_INDEX = 23 + INDEX_BASE
 # A1_COLUMN_EXCEL_INDEX = chr(ord('A') + A1_COLUMN_INDEX - INDEX_BASE)
 # A2_COLUMN_EXCEL_INDEX = chr(ord('A') + A2_COLUMN_INDEX - INDEX_BASE)
 # G1_COLUMN_EXCEL_INDEX = chr(ord('A') + G1_COLUMN_INDEX - INDEX_BASE)
+
+QUESTION_COLUMN_EXCEL_INDEX_MAPPING = {
+    'A1': ['X', 'Y'],
+    'A2': ['Z'],
+    'B1': ['AB'],
+    'B2': ['AC'],
+    'B3': ['AD', 'AE', 'AF'],
+    'B4': ['AG', 'AH', 'AI'],
+    'B5': ['AJ', 'AK', 'AI'],
+    'B6': ['AL'],
+    'B7-1': ['AM'],
+    'B7-2': ['AN'],
+    'B7-3': ['AO'],
+    'B7-4': ['AP'],
+    'B8': ['AQ'],
+    'B9-1': ['AR'],
+    'B9-2': ['AS'],
+    'B10-1': ['AT'],
+    'B10-2': ['AU'],
+    'C1': ['AV'],
+    'C2': ['AW'],
+    'D1': ['AX'],
+    'D2': ['AY'],
+    'E1': ['AZ'],
+    'E2': ['BA'],
+    'E3': ['BB'],
+    'E4': ['BC'],
+    'F1': ['BD'],
+    'F2': ['BE'],
+    'F3': ['BF'],
+    'F4': ['BG'],
+    'G1': ['BH', 'BI'],
+    'G2': ['BJ'],
+    'G3': ['BK', 'BL', 'BM', 'BN', 'BO', 'BP', 'BQ'],
+    'G4': ['BR', 'BS', 'BT', 'BU', 'BV', 'BW'],
+    'G5': ['BX', 'BY', 'BZ', 'CA', 'CB', 'CC', 'CD', 'CE'],
+}
+
 MAJOR_COLUMN_EXCEL_INDEX = 'N'
 SUBMIT_TIME_COLUMN_EXCEL_INDEX = 'V'
-A1_COLUMN_EXCEL_INDEX = 'X'
-A2_COLUMN_EXCEL_INDEX = 'Z'
-B6_COLUMN_EXCEL_INDEX = 'AL'
-G1_COLUMN_EXCEL_INDEX_A = 'BH'
-G1_COLUMN_EXCEL_INDEX_B = 'BI'
+# A1_COLUMN_EXCEL_INDEX = 'X'
+# A2_COLUMN_EXCEL_INDEX = 'Z'
+# B6_COLUMN_EXCEL_INDEX = 'AL'
+# G1_COLUMN_EXCEL_INDEX_A = 'BH'
+# G1_COLUMN_EXCEL_INDEX_B = 'BI'
 H5_COLUMN_EXCEL_INDEX_NC = 'DV'
 H6_COLUMN_EXCEL_INDEX_NC = 'ED'
 
@@ -59,7 +96,7 @@ def batch_reset_column_names(st):
     """rule 0: set first 23 column name set with _1~_23, rest set follow predefined rules, e.g. A1-A"""
     print('rule 0: batch reset column names with standard codes')
     BOUNDARY_0 = 0 + INDEX_BASE
-    BOUNDARY_1 = 23 + INDEX_BASE
+    BOUNDARY_1 = A1_COLUMN_INDEX
     BOUNDARY_2 = (st.max_column - 1) + INDEX_BASE
 
     # Set base info column headers
@@ -134,7 +171,8 @@ def remove_unsubmitted_records(st):
     """rule 2, 3: remove un-submitted row, e.g. no submit-time exist"""
     print('rule 2, 3: removing rows which have no submit time')
     # find them
-    remove_list = query_row_indexes_by_column_filter(st, SUBMIT_TIME_COLUMN_EXCEL_INDEX, lambda val: (val is None or val == ''))
+    remove_list = query_row_indexes_by_column_filter(st, SUBMIT_TIME_COLUMN_EXCEL_INDEX,
+                                                     lambda val: (val is None or val == ''))
     # remove them
     remove_rows_by_index_list(st, remove_list)
 
@@ -143,24 +181,120 @@ def remove_unqualified_records(st):
     """rule 2, 3: remove un-qualified row, e.g. no answer for question A2"""
     print('rule 2, 3: removing rows which have no A2 answers')
     # find them
-    remove_list = query_row_indexes_by_column_filter(st, A2_COLUMN_EXCEL_INDEX, lambda val: (val is None or val == ''))
+    remove_list = query_row_indexes_by_column_filter(st, QUESTION_COLUMN_EXCEL_INDEX_MAPPING['A2'][0], lambda val: (val is None or val == ''))
     # remove them
     remove_rows_by_index_list(st, remove_list)
 
 
-def rinse_nonrelevance_answers(df):
+def rinse_irrelevant_answers(st):
     """rule 4: replace non-relevance answers(cell) with NaN against question-relevance rules"""
-    # IF A2 not in (在国内工作, 自由职业) then rinse B1, B2, B3, B4, B5, B6, B7, B8, B9-1, B9-2, B10-1, B10-2, D1, D2
-    # IF A2 = 自由职业 then rinse B1,B2,B3,B4, B10-1
-    # IF B9-1 not in (比较不相关, 很不相关) then rinse B9-2
-    # IF B10-1 = 0次 then rinse B10-2
-    # IF A2 != 未就业 then rinse C1, C2
-    # IF A2 != 在国内升学 then rinse E1,E2,E3,E4
-    # IF E3 not in (比较不相关, 很不相关) then rinse E4
-    # IF A4 != 出国/出境 then rinse F1, F2, F3, F4
-    # IF F1 != 求学 then rinse F2, F3
-    # IF F3 not in (比较不相关, 很不相关) then rinse F4
-    # IF A4 != 自主创业 then rinse G1, G2, G3, G4, G5
+    KEY_QUESTION = 'question_id'
+    KEY_ANSWER = 'answer'
+    KEY_OPERATOR = 'operator'
+    KEY_ACTION = 'tobe_rinsed_id'
+    OPERATOR_IN = 'IN'
+    OPERATOR_NOTIN = 'NOT_IN'
+    IRRELEVANT_QUESTION_RINSE_RULES = [
+        # IF A2 not in (在国内工作, 自由职业) then rinse
+        #   B1, B2, B3, B4, B5, B6, B7-1, B7-2, B7-3, B7-4, B8, B9-1, B9-2, B10-1, B10-2, D1, D2
+        {KEY_QUESTION: 'A2',
+         KEY_ANSWER: ('在国内工作', '自由职业'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8',
+                      'B9-1', 'B9-2', 'B10-1', 'B10-2', 'D1', 'D2']},
+        # IF A2 = 自由职业 then rinse B1,B2,B3,B4, B10-1
+        {KEY_QUESTION: 'A2',
+         KEY_ANSWER: ('自由职业'),
+         KEY_OPERATOR: OPERATOR_IN,
+         KEY_ACTION: ['B1', 'B2', 'B3', 'B4', 'B10-1']},
+        # IF B9-1 not in (比较不相关, 很不相关) then rinse B9-2
+        {KEY_QUESTION: 'B9-1',
+         KEY_ANSWER: ('比较不相关', '很不相关'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['B9-2']},
+        # IF B10-1 = 0次 then rinse B10-2
+        {KEY_QUESTION: 'B10-1',
+         KEY_ANSWER: ('0次'),
+         KEY_OPERATOR: 'IN',
+         KEY_ACTION: ['B10-2']},
+        # IF A2 != 未就业 then rinse C1, C2
+        {KEY_QUESTION: 'A2',
+         KEY_ANSWER: ('未就业'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['C1', 'C2']},
+        # IF A2 != 在国内升学 then rinse E1,E2,E3,E4
+        {KEY_QUESTION: 'A2',
+         KEY_ANSWER: ('在国内升学'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['E1', 'E2', 'E3', 'E4']},
+        # IF E3 not in (比较不相关, 很不相关) then rinse E4
+        {KEY_QUESTION: 'E3',
+         KEY_ANSWER: ('比较不相关', '很不相关'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['E4']},
+        # IF A2 != 出国/出境 then rinse F1, F2, F3, F4
+        {KEY_QUESTION: 'A2',
+         KEY_ANSWER: ('出国/出境'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['F1', 'F2', 'F3', 'F4']},
+        # IF F1 != 求学 then rinse F2, F3
+        {KEY_QUESTION: 'F1',
+         KEY_ANSWER: ('求学'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['F2', 'F3']},
+        # IF F3 not in (比较不相关, 很不相关) then rinse F4
+        {KEY_QUESTION: 'F3',
+         KEY_ANSWER: ('比较不相关', '很不相关'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['F4']},
+        # IF A2 != 自主创业 then rinse G1, G2, G3, G4, G5
+        {KEY_QUESTION: 'A2',
+         KEY_ANSWER: ('自主创业'),
+         KEY_OPERATOR: OPERATOR_NOTIN,
+         KEY_ACTION: ['G1', 'G2', 'G3', 'G4', 'G5']},
+    ]
+    print('rule 4: replace non-relevance answers(cell) with NaN against question-relevance rules')
+    for rule in IRRELEVANT_QUESTION_RINSE_RULES:
+        print('apply rule: {}'.format(rule))
+        question_index = QUESTION_COLUMN_EXCEL_INDEX_MAPPING[rule[KEY_QUESTION]][0]
+        j = 0
+        for q_cell in st[question_index]:
+            if q_cell.row <= HEADER_ROW_INDEX:
+                continue
+
+            answer = q_cell.value
+            if answer is None:
+                answer = '';
+
+            flag = False
+            if rule[KEY_OPERATOR] == OPERATOR_IN:
+                flag = answer in rule[KEY_ANSWER]
+            elif rule[KEY_OPERATOR] == OPERATOR_NOTIN:
+                flag = answer not in rule[KEY_ANSWER]
+            else:
+                # print(">> no applicable operator: {}".format(rule[KEY_OPERATOR]))
+                pass
+
+            if flag:
+                # print('>> condition meet: {} answer({}) {} {}, rinsing following question/answers: {}'.format(
+                #       rule[KEY_QUESTION], answer, rule[KEY_OPERATOR], rule[KEY_ANSWER], rule[KEY_ACTION]))
+                i = 0
+                for question_id in rule[KEY_ACTION]:
+                    for col_index in QUESTION_COLUMN_EXCEL_INDEX_MAPPING[question_id]:
+                        coordinate = '{}{}'.format(col_index, q_cell.row)
+                        if st[coordinate].value is not None:
+                            # print('>> rinsing {}({}) as NaN'.format(coordinate, st[coordinate].value))
+                            st[coordinate].value = None
+                            i += 1
+                        # break
+                j += i
+                # print('{} cells rinsed'.format(i))
+            else:
+                # print('>> condition not meet: {} answer({}) {} {}'.format(
+                #     rule[KEY_QUESTION], q_cell.value, rule[KEY_OPERATOR], rule[KEY_ANSWER]))
+                pass
+            # break
+        print('>> {} cells rinsed'.format(j))
 
 
 def rinse_nc_option_values(st):
@@ -193,22 +327,23 @@ def rinse_invalid_answers(st):
     """rule 6: replace invalid answers(cell) with NaN"""
     print('rule 6: rinse G1 answers which in {}'.format(G1_OPTION_FILTER_LIST))
     # find them
-    rinse_list = query_row_indexes_by_column_filter(st, G1_COLUMN_EXCEL_INDEX_A,
+    rinse_list = query_row_indexes_by_column_filter(st, QUESTION_COLUMN_EXCEL_INDEX_MAPPING['G1'][0],
                                                     lambda val: val in G1_OPTION_FILTER_LIST)
     # remove them
-    rinse_values_by_column_rowindex(st, G1_COLUMN_EXCEL_INDEX_A, rinse_list)
-    rinse_values_by_column_rowindex(st, G1_COLUMN_EXCEL_INDEX_B, rinse_list)
+    rinse_values_by_column_rowindex(st, QUESTION_COLUMN_EXCEL_INDEX_MAPPING['G1'][0], rinse_list)
+    rinse_values_by_column_rowindex(st, QUESTION_COLUMN_EXCEL_INDEX_MAPPING['G1'][1], rinse_list)
 
 
 def rinse_unusual_salary_values(st):
     """rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV """
     print('rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV ')
     print('>> rinsing salary < 1000')
-    rinse_list = query_row_indexes_by_column_filter(st, B6_COLUMN_EXCEL_INDEX, filter_low_salary)
-    rinse_values_by_column_rowindex(st, B6_COLUMN_EXCEL_INDEX, rinse_list)
+    rinse_list = query_row_indexes_by_column_filter(st, QUESTION_COLUMN_EXCEL_INDEX_MAPPING['B6'][0], filter_low_salary)
+    rinse_values_by_column_rowindex(st, QUESTION_COLUMN_EXCEL_INDEX_MAPPING['B6'][0], rinse_list)
 
     print('>> rinsing top N salary')
-    sort_range = '{}{}:{}{}'.format(B6_COLUMN_EXCEL_INDEX, 2, B6_COLUMN_EXCEL_INDEX, st.max_row);
+    sort_range = '{}{}:{}{}'.format(QUESTION_COLUMN_EXCEL_INDEX_MAPPING['B6'][0], 2,
+                                    QUESTION_COLUMN_EXCEL_INDEX_MAPPING['B6'][0], st.max_row);
     # st.auto_filter.add_sort_condition(sort_range)
     salary_list = {}
     for row in st[sort_range]:
@@ -262,24 +397,32 @@ def filter_low_salary(val):
 
 
 def test():
-    wb = xl.load_workbook('../test-data/san-ming/raw/answer20181016_1740112347.xlsx')
-    st = wb.worksheets[0]
-    validate_data_dimensions(st)
-    batch_reset_column_names(st)
-    remove_unnecessary_headers(st)
-    # Rule 1
-    remove_fake_records(st)
-    # Rule 2, 3
-    remove_unsubmitted_records(st)
-    # Rule 2, 3
-    remove_unqualified_records(st)
-    # Rule 5
-    rinse_nc_option_values(st)
-    # Rule 6
-    rinse_invalid_answers(st)
-    # Rule 7
-    rinse_unusual_salary_values(st)
-    wb.save('../result/cleaned/answer20181016_1740112347_cleaned.xlsx')
+    src = '../test-data/san-ming/raw/answer20181016_1740112347.xlsx'
+    dst = '../result/cleaned/answer20181016_1740112347_cleaned.xlsx'
 
-if __name__=='__main__':
+    wb = xl.load_workbook(src)
+    st = wb.worksheets[0]
+
+    validate_data_dimensions(st)
+    remove_unnecessary_headers(st)
+    batch_reset_column_names(st)
+
+    # # Rule 1
+    remove_fake_records(st)
+    # # Rule 2, 3
+    remove_unsubmitted_records(st)
+    # # Rule 2, 3
+    remove_unqualified_records(st)
+    # Rule 4
+    rinse_irrelevant_answers(st)
+    # # Rule 5
+    rinse_nc_option_values(st)
+    # # Rule 6
+    rinse_invalid_answers(st)
+    # # Rule 7
+    rinse_unusual_salary_values(st)
+    wb.save(dst)
+
+
+if __name__ == '__main__':
     test()
