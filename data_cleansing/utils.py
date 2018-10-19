@@ -423,9 +423,10 @@ def query_row_indexes_by_column_filter(st, xl_col, cb_filter):
 
 def remove_rows_by_index_list(st, index_list):
     for i in range(0, index_list.__len__())[::-1]:
+        print('remove row: {}'.format(st['A{}'.format(index_list[i])].value))
         st.delete_rows(index_list[i])
-        # print('remove row: {}'.format(index_list[i]))
     print('>> {} rows removed'.format(index_list.__len__()))
+    print('>> {}'.format(index_list))
 
 
 @clock
