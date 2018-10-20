@@ -5,8 +5,12 @@
 
 __author__ = 'Gary.Z'
 
+import os
 import click
+
+# from data_cleansing.config import *
 from data_cleansing.utils import *
+
 
 @clock
 def run_cleansing(st, keep_unsubmitted):
@@ -73,8 +77,6 @@ def main(input_file, output_file, keep_unsubmitted):
     print('input file: {}'.format(input_file))
     print('output file: {}'.format(output_file))
     print('keep unsubmitted records: {}'.format(keep_unsubmitted))
-
-    # exit(0)
 
     print('loading input file {}'.format(input_file))
     wb = xl.load_workbook(input_file)
