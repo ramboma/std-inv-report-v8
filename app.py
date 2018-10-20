@@ -14,6 +14,7 @@ def run_cleansing(st, keep_unsubmitted):
     remove_unnecessary_headers(st)
     batch_reset_column_names(st)
     reset_emplty_values_with_na(st)
+    # clear_all_cells_bgcolor(st)
 
     # # Rule 1
     remove_fake_records(st)
