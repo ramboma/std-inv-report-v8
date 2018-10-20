@@ -12,7 +12,7 @@ import openpyxl as xl
 import numpy as np
 import os
 import time, timeit
-
+import sys
 
 EXCEL_INDEX_BASE = 1
 HEADER_ROW_INDEX = 0 + EXCEL_INDEX_BASE
@@ -26,6 +26,7 @@ H6_COLUMN_EXCEL_INDEX_NC = 'ED'
 MAJOR_FILTER_LIST = ('测试专业')
 NC_OPTION_FILTER_LIST = ('无法评价', '以上均不需要改进')
 G1_OPTION_FILTER_LIST = ('国际组织', '军队')
+SALARY_FILTER_LOWER_LIMIT = 1000
 
 # definition of question code mapping to excel column index
 QUESTION_TO_EXCEL_COLUMN_MAP = {
@@ -85,26 +86,34 @@ QUESTION_TO_EXCEL_COLUMN_MAP = {
     'I2-1-T': ['FE'],
     'I2-1-U': ['FF'],
     'I2-1-V': ['FG'],
+
     'I2-1-1': ['FH'],
     'I2-1-2': ['FI'],
-    'I2-2-3': ['FJ'],
-    'I2-2-4': ['FK'],
-    'I2-3-5': ['FL'],
-    'I2-3-6': ['FM'],
+
+    'I2-3-5': ['FJ'],
+    'I2-3-6': ['FK'],
+
     'I2-4-7': ['FL'],
-    'I2-4-8': ['FN'],
-    'I2-5-9': ['FO'],
-    'I2-5-10': ['FP'],
-    'I2-5-11': ['FQ'],
-    'I2-5-12': ['FR'],
-    'I2-5-13': ['FS'],
-    'I2-6-14': ['FT'],
-    'I2-6-15': ['FU'],
-    'I2-6-16': ['FV'],
-    'I2-6-17': ['FW'],
-    'I2-6-18': ['FX'],
-    'I2-7-19': ['FY'],
-    'I2-7-20': ['FZ'],
+    'I2-4-8': ['FM'],
+
+    'I2-6-14': ['FN'],
+    'I2-6-15': ['FO'],
+    'I2-6-16': ['FP'],
+    'I2-6-17': ['FQ'],
+    'I2-6-18': ['FR'],
+
+    'I2-2-3': ['FS'],
+    'I2-2-4': ['FT'],
+
+    'I2-5-9': ['FU'],
+    'I2-5-10': ['FV'],
+    'I2-5-11': ['FW'],
+    'I2-5-12': ['FX'],
+    'I2-5-13': ['FY'],
+
+    'I2-7-19': ['FZ'],
+    'I2-7-20': ['GA'],
+
     'I2-8-21': ['GB'],
     'I2-8-22': ['GC'],
     'I2-9-23': ['GD'],
@@ -158,7 +167,7 @@ QUESTION_TO_EXCEL_COLUMN_MAP = {
 RINSE_RULE_KEY_QUESTION = 'question_id'
 RINSE_RULE_KEY_ANSWER = 'answer'
 RINSE_RULE_KEY_OPERATOR = 'operator'
-RINSE_RULE_KEY_ACTION = 'tobe_rinsed_id'
+RINSE_RULE_KEY_ACTION = 'rinse_ids'
 RINSE_RULE_OPERATOR_IN = 'IN'
 RINSE_RULE_OPERATOR_NOTIN = 'NOT_IN'
 # definition of irrelevant question rinse rule
@@ -395,18 +404,21 @@ def reset_emplty_values_with_na(st):
     """rule 0: replace empty values with NaN """
     print('rule 0: replace empty values with NaN ')
     i = 0
-    # for row in range(HEADER_ROW_INDEX + 1, st.max_row + 1):
-    #     for col in range(A1_COLUMN_INDEX, st.max_column + 1):
-    #         if st.cell(row, col).value == '':
-    #             cell = st.cell(row, col, None)
-    #             # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
-    #             i += 1
     for row in st['{}:{}'.format(QUESTION_TO_EXCEL_COLUMN_MAP['A1'][0], QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0])]:
         for cell in row:
             if cell.value == '':
                 cell.value = None
                 i += 1
     print('>> {} cells replaced'.format(i))
+
+
+@clock
+def clear_all_cells_bgcolor(st):
+    """rule 0: clear all cells' BG color """
+    print('rule 0: clear all cells\' BG color ')
+    for row in st['{}:{}'.format('A', QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0])]:
+        for cell in row:
+            cell.fill = xl.styles.PatternFill(None)
 
 
 def query_row_indexes_by_column_filter(st, xl_col, cb_filter):
@@ -461,6 +473,21 @@ def remove_unqualified_records(st):
     remove_rows_by_index_list(st, remove_list)
 
 
+def add_tracing_comment(cell, rule, func):
+    cell.comment = xl.comments.Comment('rule {}\norigin val: {}\nfunc: {}'.format(rule, cell.value, func), None)
+
+
+def rinse_values_by_column_rowindex(st, col, index_list, rule, func):
+    for i in index_list:
+        coordinate = '{}{}'.format(col, i)
+        if st[coordinate] is not None:
+            # print('rinse cell: {} - {}'.format(coordinate, st[coordinate].value))
+            add_tracing_comment(st[coordinate], rule, func)
+            st[coordinate] = None
+            i += 1
+    print('>> {} cells rinsed'.format(index_list.__len__()))
+
+
 @clock
 def rinse_irrelevant_answers(st):
     """rule 4: replace non-relevance answers(cell) with NaN against question-relevance rules"""
@@ -496,6 +523,7 @@ def rinse_irrelevant_answers(st):
                         coordinate = '{}{}'.format(col_index, q_cell.row)
                         if st[coordinate].value is not None:
                             # print('>> rinsing {}({}) as NaN'.format(coordinate, st[coordinate].value))
+                            add_tracing_comment(st[coordinate], '4', sys._getframe().f_code.co_name)
                             st[coordinate].value = None
                             i += 1
                         # break
@@ -524,22 +552,13 @@ def rinse_nc_option_values(st):
         for cell in row:
             if cell.value in NC_OPTION_FILTER_LIST:
                 # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
+                add_tracing_comment(cell, '5', sys._getframe().f_code.co_name)
                 cell.value = None
                 i += 1
     print('>> {} cells rinsed'.format(i))
 
-    rinse_values_by_column_rowindex(st, H5_COLUMN_EXCEL_INDEX_NC, range(HEADER_ROW_INDEX + 1, st.max_row + 1))
-    rinse_values_by_column_rowindex(st, H6_COLUMN_EXCEL_INDEX_NC, range(HEADER_ROW_INDEX + 1, st.max_row + 1))
-
-
-def rinse_values_by_column_rowindex(st, col, index_list):
-    for i in index_list:
-        coordinate = '{}{}'.format(col, i)
-        if st[coordinate] is not None:
-            # print('rinse cell: {} - {}'.format(coordinate, st[coordinate].value))
-            st[coordinate] = None
-            i += 1
-    print('>> {} cells rinsed'.format(index_list.__len__()))
+    rinse_values_by_column_rowindex(st, H5_COLUMN_EXCEL_INDEX_NC, range(HEADER_ROW_INDEX + 1, st.max_row + 1), '5', sys._getframe().f_code.co_name)
+    rinse_values_by_column_rowindex(st, H6_COLUMN_EXCEL_INDEX_NC, range(HEADER_ROW_INDEX + 1, st.max_row + 1), '5', sys._getframe().f_code.co_name)
 
 
 @clock
@@ -550,19 +569,33 @@ def rinse_invalid_answers(st):
     rinse_list = query_row_indexes_by_column_filter(st, QUESTION_TO_EXCEL_COLUMN_MAP['G1'][0],
                                                     lambda val: val in G1_OPTION_FILTER_LIST)
     # remove them
-    rinse_values_by_column_rowindex(st, QUESTION_TO_EXCEL_COLUMN_MAP['G1'][0], rinse_list)
-    rinse_values_by_column_rowindex(st, QUESTION_TO_EXCEL_COLUMN_MAP['G1'][1], rinse_list)
+    rinse_values_by_column_rowindex(st, QUESTION_TO_EXCEL_COLUMN_MAP['G1'][0], rinse_list, '6', sys._getframe().f_code.co_name)
+    rinse_values_by_column_rowindex(st, QUESTION_TO_EXCEL_COLUMN_MAP['G1'][1], rinse_list, '6', sys._getframe().f_code.co_name)
+
+
+def filter_low_salary(val):
+    if val is None or val == '':
+        return False
+    result = False;
+    try:
+        s = int(val)
+        result = s < SALARY_FILTER_LOWER_LIMIT
+    except ValueError as e:
+        print('>> failed to process {} - {}'.format(val, e))
+    finally:
+        pass
+    return result
 
 
 @clock
 def rinse_unusual_salary_values(st):
     """rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV """
     print('rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV ')
-    print('>> rinsing salary < 1000')
+    print('>> 7.1 rinsing salary < 1000')
     rinse_list = query_row_indexes_by_column_filter(st, QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], filter_low_salary)
-    rinse_values_by_column_rowindex(st, QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], rinse_list)
+    rinse_values_by_column_rowindex(st, QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], rinse_list, '7.1', sys._getframe().f_code.co_name)
 
-    print('>> rinsing top N salary')
+    print('>> 7.2 rinsing top N salary')
     sort_range = '{}{}:{}{}'.format(QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], 2,
                                     QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], st.max_row);
     # st.auto_filter.add_sort_condition(sort_range)
@@ -577,6 +610,7 @@ def rinse_unusual_salary_values(st):
     for item in sorted_salary_list:
         coordinate = item[0]
         # print('rinse cell: {} - {}'.format(coordinate, st[coordinate].value))
+        add_tracing_comment(st[coordinate], '7.2', sys._getframe().f_code.co_name)
         st[coordinate] = None
         salary_list.pop(coordinate)
         i += 1
@@ -584,7 +618,7 @@ def rinse_unusual_salary_values(st):
             break
     print('>> {} cells rinsed from {}'.format(top_n, sorted_salary_list.__len__()))
 
-    print('>> rinsing ABS(salary - MEAN) > 4 * STDEV')
+    print('>> 7.3 rinsing ABS(salary - MEAN) > 4 * STDEV')
     np_salary_list = np.array(list(salary_list.values()), dtype=int)
     print('>> {} values in total'.format(np_salary_list.size))
     salary_mean = np_salary_list.mean()
@@ -598,51 +632,39 @@ def rinse_unusual_salary_values(st):
         salary = int(st[coordinate].value)
         if abs(salary - salary_mean) > salary_stdev_4:
             # print('rinse cell: {} - {}'.format(coordinate, st[coordinate].value))
+            add_tracing_comment(st[coordinate], '7.3', sys._getframe().f_code.co_name)
             st[coordinate] = None
             i += 1
     print('>> {} cells rinsed'.format(i))
 
 
-def filter_low_salary(val):
-    if val is None or val == '':
-        return False
-    result = False;
-    try:
-        s = int(val)
-        result = s < 1000
-    except ValueError as e:
-        print('>> failed to process {} - {}'.format(val, e))
-    finally:
-        pass
-    return result
-
-
 def test():
-    src = '../test-data/san-ming/raw/answer20181016_1740112347.xlsx'
-    dst = '../result/cleaned/answer20181016_1740112347_cleaned.xlsx'
+    src = '../test-data/test-20181019-raw.xlsx'
+    dst = '../result/test-20181019-raw_cleaned.xlsx'
 
     wb = xl.load_workbook(src)
     st = wb.worksheets[0]
 
     validate_data_dimensions(st)
-    # remove_unnecessary_headers(st)
-    # batch_reset_column_names(st)
-    # reset_emplty_values_with_na
+    remove_unnecessary_headers(st)
+    batch_reset_column_names(st)
+    # clear_all_cells_bgcolor(st)
+    reset_emplty_values_with_na
 
-    # # Rule 1
-    # remove_fake_records(st)
-    # # Rule 2, 3
-    # remove_unsubmitted_records(st)
-    # # Rule 2, 3
-    # remove_unqualified_records(st)
+    # Rule 1
+    remove_fake_records(st)
+    # Rule 2, 3
+    remove_unsubmitted_records(st)
+    # Rule 2, 3
+    remove_unqualified_records(st)
     # Rule 4
-    rinse_irrelevant_answers(st)
+    # rinse_irrelevant_answers(st)
     # Rule 5
     rinse_nc_option_values(st)
-    # Rule 6
-    rinse_invalid_answers(st)
-    # Rule 7
-    rinse_unusual_salary_values(st)
+    # # Rule 6
+    # rinse_invalid_answers(st)
+    # # Rule 7
+    # rinse_unusual_salary_values(st)
     wb.save(dst)
 
 
