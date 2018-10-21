@@ -12,7 +12,7 @@ import click
 from data_cleansing.utils import *
 
 
-@clock
+@clocking
 def run_cleansing(st, keep_unsubmitted):
     validate_data_dimensions(st)
     remove_unnecessary_headers(st)
