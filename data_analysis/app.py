@@ -24,7 +24,8 @@ def main(file):
 
     #period = list(range(2000, 4000, 500))
     #print(period)
-    report.employability_college(data)
+    #report.employability_college(data)
+    report.employability_major(data)
     # answerUtil.answer_grp_period(data, ['B6'], ['B6'], period)
 
 
