@@ -35,7 +35,7 @@ def answer_grp_count(data,arry_columns,array_groupby,subject):
     :return:
     '''
     grp=pd.DataFrame(data,columns=arry_columns)
-    grp_count=grp.groupby(array_groupby)[subject].count()
+    grp_count=grp.groupby(array_groupby, as_index=False).count()
     return  grp_count
 
 def answer_of_subject_count_grp(data,arry_columns,array_groupby,subject,answer):
@@ -48,7 +48,7 @@ def answer_of_subject_count_grp(data,arry_columns,array_groupby,subject,answer):
     '''
     subj=pd.DataFrame(data,columns=arry_columns)
     pd_answer=subj[subj[subject]==answer]
-    grp_answer_count=pd_answer.groupby(array_groupby)[subject].count()
+    grp_answer_count=pd_answer.groupby(array_groupby, as_index=False).count()
     return  grp_answer_count
 
 def answer_of_subject_count(data,subject,answer):
@@ -71,7 +71,7 @@ def answer_grp_sum(data,arry_columns,array_groupby):
     :param array_groupby: 分组列
     :return:
     '''
-    grp=pd.DataFrame(data)[arry_columns].groupby(array_groupby).sum()
+    grp=pd.DataFrame(data)[arry_columns].groupby(array_groupby, as_index=False).sum()
     print(grp)
     return  grp
 
@@ -90,11 +90,23 @@ def answer_grp_period(data,arry_columns,array_groupby,array_periods):
 
 def test():
     df = pd.DataFrame({'A': [0, 1, 2, 3, 4],
-                       'B': [5, 6, 7, 8, 9],
-                       'C': ['a', 'b', 'c', 'd', 'e']})
+                       'B': [5, 6, 5, 8, 9],
+                       'C': ['a', 'b', 'c', 'a', 'b']})
     df['new']=df.index
 
     df.replace({'new':{0:100,4:400}},inplace=True)
     print(df)
+    pd_s=pd.DataFrame(df,columns=['C','B'])
+    grouped=df.groupby(['C','B'], as_index=False).count()
+    print(grouped)
+
+
+
+
+
+
+
+
+
 
 
