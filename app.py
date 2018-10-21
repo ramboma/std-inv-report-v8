@@ -13,37 +13,41 @@ from data_cleansing.utils import *
 
 
 @clocking
-def run_cleansing(st, keep_unsubmitted):
-    validate_data_dimensions(st)
-    remove_unnecessary_headers(st)
-    batch_reset_column_names(st)
-    reset_emplty_values_with_na(st)
-    # clear_all_cells_bgcolor(st)
+def run_cleansing(st, keep_unsubmitted, trace_mode):
+
+    cleaner = DataCleanser(st)
+    cleaner.set_trace_mode(trace_mode)
+
+    cleaner.validate_data_dimensions()
+    cleaner.remove_unnecessary_headers()
+    cleaner.batch_reset_column_names()
+    cleaner.reset_emplty_values_with_na()
+    # clear_all_cells_bgcolor()
 
     # # Rule 1
-    remove_fake_records(st)
+    cleaner.remove_fake_records()
     # # Rule 2, 3
     if keep_unsubmitted:
-        remove_unqualified_records(st)
+        cleaner.remove_unqualified_records()
     else:
-        remove_unsubmitted_records(st)
+        cleaner.remove_unsubmitted_records()
     # Rule 4
-    rinse_irrelevant_answers(st)
+    cleaner.rinse_irrelevant_answers()
     # # Rule 5
-    rinse_nc_option_values(st)
+    cleaner.rinse_nc_option_values()
     # # Rule 6
-    rinse_invalid_answers(st)
+    cleaner.rinse_invalid_answers()
     # # Rule 7
-    rinse_unusual_salary_values(st)
-
+    cleaner.rinse_unusual_salary_values()
+    return st
 
 @click.command()
 # @click.argument('file', nargs=1)
 @click.option('--input-file', '-i', required=True, help='Input raw data file path')
 @click.option('--output-file', '-o', help='Output clean file path')
 @click.option('--keep-unsubmitted', '-k', is_flag=True, type=bool, help='Whether keep unsubmitted records')
-# @click.option('--test', '-t', type=bool, help='Only for test, DO NOT USE!!')
-def main(input_file, output_file, keep_unsubmitted):
+@click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
+def main(input_file, output_file, keep_unsubmitted, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_file):
@@ -74,6 +78,12 @@ def main(input_file, output_file, keep_unsubmitted):
     if keep_unsubmitted is None:
         keep_unsubmitted = False
 
+    if trace_mode is None:
+        trace_mode = False
+
+    if trace_mode:
+        print('** TRACING MODE ENABLED **')
+
     print('input file: {}'.format(input_file))
     print('output file: {}'.format(output_file))
     print('keep unsubmitted records: {}'.format(keep_unsubmitted))
@@ -82,11 +92,11 @@ def main(input_file, output_file, keep_unsubmitted):
     wb = xl.load_workbook(input_file)
     st = wb.worksheets[0]
 
-    run_cleansing(st, keep_unsubmitted)
+    st = run_cleansing(st, keep_unsubmitted, trace_mode)
 
     print('writing output file {}'.format(output_file))
     wb.save(output_file)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
         main()
