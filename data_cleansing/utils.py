@@ -39,7 +39,13 @@ class DataCleanser:
     def remove_unnecessary_headers(self):
         """rule 0: remove row 1~2: include question description and option description"""
         print('rule 0: removing unnecessary header rows start at {}, count 2'.format(HEADER_ROW_INDEX + 1))
+        # if self.__trace_mode:
+        #     for row in self.__work_sheet['A{}:{}{}'.format(HEADER_ROW_INDEX + 1, QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0], HEADER_ROW_INDEX + 1 + 1)]:
+        #         for cell in row:
+        #             self._add_tracing_comment(cell, '0', sys._getframe().f_code.co_name)
+        # else:
         self.__work_sheet.delete_rows(HEADER_ROW_INDEX + 1, 2)
+
 
     @clocking
     def batch_reset_column_names(self):
@@ -115,7 +121,7 @@ class DataCleanser:
         # find them
         remove_list = self._query_row_indexes_by_column_filter(MAJOR_COLUMN_EXCEL_INDEX, lambda val: val in MAJOR_FILTER_LIST)
         # remove them
-        self._remove_rows_by_index_list(remove_list)
+        self._remove_rows_by_index_list(remove_list, '1', sys._getframe().f_code.co_name)
 
     @clocking
     def remove_unsubmitted_records(self):
@@ -125,7 +131,7 @@ class DataCleanser:
         remove_list = self._query_row_indexes_by_column_filter(SUBMIT_TIME_COLUMN_EXCEL_INDEX,
                                                           lambda val: (val is None or val == ''))
         # remove them
-        self._remove_rows_by_index_list(remove_list)
+        self._remove_rows_by_index_list(remove_list, '2, 3', sys._getframe().f_code.co_name)
 
     @clocking
     def remove_unqualified_records(self):
@@ -135,7 +141,7 @@ class DataCleanser:
         remove_list = self._query_row_indexes_by_column_filter(QUESTION_TO_EXCEL_COLUMN_MAP['A2'][0],
                                                           lambda val: (val is None or val == ''))
         # remove them
-        self._remove_rows_by_index_list(remove_list)
+        self._remove_rows_by_index_list(remove_list, '2, 3', sys._getframe().f_code.co_name)
 
     @clocking
     def rinse_irrelevant_answers(self):
@@ -172,8 +178,10 @@ class DataCleanser:
                             coordinate = '{}{}'.format(col_index, q_cell.row)
                             if self.__work_sheet[coordinate].value is not None:
                                 # print('>> rinsing {}({}) as NaN'.format(coordinate[coordinate].value))
-                                self._add_tracing_comment(self.__work_sheet[coordinate], '4', sys._getframe().f_code.co_name, rule)
-                                self.__work_sheet[coordinate].value = None
+                                if self.__trace_mode:
+                                    self._add_tracing_comment(self.__work_sheet[coordinate], '4', sys._getframe().f_code.co_name, rule)
+                                else:
+                                    self.__work_sheet[coordinate].value = None
                                 i += 1
                             # break
                     j += i
@@ -201,8 +209,10 @@ class DataCleanser:
                 if cell.value in NC_OPTION_FILTER_LIST:
                     # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
                     if cell.value is not None:
-                        self._add_tracing_comment(cell, '5', sys._getframe().f_code.co_name)
-                        cell.value = None
+                        if self.__trace_mode:
+                            self._add_tracing_comment(cell, '5', sys._getframe().f_code.co_name)
+                        else:
+                            cell.value = None
                         i += 1
         print('>> {} cells rinsed'.format(i))
 
@@ -243,8 +253,10 @@ class DataCleanser:
         for item in sorted_salary_list:
             coordinate = item[0]
             # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
-            self._add_tracing_comment(self.__work_sheet[coordinate], '7.2', sys._getframe().f_code.co_name)
-            self.__work_sheet[coordinate] = None
+            if self.__trace_mode:
+                self._add_tracing_comment(self.__work_sheet[coordinate], '7.2', sys._getframe().f_code.co_name)
+            else:
+                self.__work_sheet[coordinate] = None
             salary_list.pop(coordinate)
             i += 1
             if i >= top_n:
@@ -265,8 +277,10 @@ class DataCleanser:
             salary = int(self.__work_sheet[coordinate].value)
             if abs(salary - salary_mean) > salary_stdev_4:
                 # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
-                self._add_tracing_comment(self.__work_sheet[coordinate], '7.3', sys._getframe().f_code.co_name)
-                self.__work_sheet[coordinate] = None
+                if self.__trace_mode:
+                    self._add_tracing_comment(self.__work_sheet[coordinate], '7.3', sys._getframe().f_code.co_name)
+                else:
+                    self.__work_sheet[coordinate] = None
                 i += 1
         print('>> {} cells rinsed'.format(i))
 
@@ -281,10 +295,14 @@ class DataCleanser:
         # print(idx_list)
         return idx_list
 
-    def _remove_rows_by_index_list(self, index_list):
+    def _remove_rows_by_index_list(self, index_list, rule, func):
         for i in range(0, index_list.__len__())[::-1]:
             print('remove row: {}'.format(self.__work_sheet['A{}'.format(index_list[i])].value))
-            self.__work_sheet.delete_rows(index_list[i])
+            if self.__trace_mode:
+                for cell in self.__work_sheet[index_list[i]]:
+                    self._add_tracing_comment(cell, rule, func)
+            else:
+                self.__work_sheet.delete_rows(index_list[i])
         print('>> {} rows removed'.format(index_list.__len__()))
         print('>> {}'.format(index_list))
 
@@ -293,20 +311,20 @@ class DataCleanser:
             coordinate = '{}{}'.format(col, i)
             if self.__work_sheet[coordinate] is not None:
                 # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
-                self._add_tracing_comment(self.__work_sheet[coordinate], rule, func)
-                self.__work_sheet[coordinate] = None
+                if self.__trace_mode:
+                    self._add_tracing_comment(self.__work_sheet[coordinate], rule, func)
+                else:
+                    self.__work_sheet[coordinate] = None
                 i += 1
         print('>> {} cells rinsed'.format(index_list.__len__()))
 
-    # @staticmethod
-    def _add_tracing_comment(self, cell, rule, func, addition=None):
+    @staticmethod
+    def _add_tracing_comment(cell, rule, func, addition=None):
         if addition is None:
             text = 'rule {}\norigin val: {}\nfunc: {}'.format(rule, cell.value, func)
         else:
             text = 'rule {}\norigin val: {}\nfunc: {}\n{}'.format(rule, cell.value, func, addition)
-
-        if self.__trace_mode:
-            cell.comment = xl.comments.Comment(text, None, 150, 300)
+        cell.comment = xl.comments.Comment(text, None, 150, 300)
 
     @staticmethod
     def _filter_low_salary(val):
@@ -342,9 +360,9 @@ def test():
     # Rule 1
     cleanser.remove_fake_records()
     # Rule 2, 3
-    cleanser.remove_unqualified_records()
-    # Rule 2, 3
     cleanser.remove_unsubmitted_records()
+    # Rule 2, 3
+    cleanser.remove_unqualified_records()
     # Rule 4
     cleanser.rinse_irrelevant_answers()
     # Rule 5
