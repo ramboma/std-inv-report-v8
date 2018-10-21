@@ -3,7 +3,7 @@ from itertools import product
 
 
 def create_excel_col(seed = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),iter_cnt =1):
-    col_lst = []
+    col_lst = ['0']
     for index in range(1, iter_cnt + 1):
         lst = list(product(seed, repeat=index)) #得到排列序元组序列
         lst = map(lambda elem: ''.join(elem), lst)  #将排列元组序列转成字符串序列
@@ -15,7 +15,10 @@ def create_excel_col(seed = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),iter_cnt =1):
 
 
 def test():
-    print(create_excel_col(iter_cnt=2))
+    cols = create_excel_col(iter_cnt=2)
+    print(cols)
+    print(cols[27])
+
     pass
 
 if __name__ == '__main__' :

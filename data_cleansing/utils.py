@@ -9,22 +9,38 @@ import openpyxl as xl
 import numpy as np
 import sys
 
+from itertools import product
 from data_cleansing.clock import *
-
 from data_cleansing.config import *
+
+
+def create_excel_col(seed=list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), iter_cnt=1):
+    col_lst = ['0']
+    for index in range(1, iter_cnt + 1):
+        lst = list(product(seed, repeat=index))  # 得到排列序元组序列
+        lst = map(lambda elem: ''.join(elem), lst)  # 将排列元组序列转成字符串序列
+        lst = list(set(lst))  # 消除重复元素
+        lst = sorted(lst)  # 按字母ASCII的顺序进行排列
+        col_lst += lst
+
+    return col_lst
 
 
 class DataCleanser:
     def __init__(self, work_sheet):
         self.__work_sheet = work_sheet
         self.__trace_mode = False
-        pass
+        self.__question_to_excel_column_map = {}
+        self.__excel_column_list = create_excel_col(iter_cnt=2)
 
     def get_trace_mode(self):
         return self.__trace_mode;
 
     def set_trace_mode(self, enabled=True):
         self.__trace_mode = enabled
+
+    def set_question_to_excel_column_map(self, map):
+        self.__question_to_excel_column_map = map
 
     @clocking
     def validate_data_dimensions(self):
@@ -40,15 +56,21 @@ class DataCleanser:
         """rule 0: remove row 1~2: include question description and option description"""
         print('rule 0: removing unnecessary header rows start at {}, count 2'.format(HEADER_ROW_INDEX + 1))
         # if self.__trace_mode:
-        #     for row in self.__work_sheet['A{}:{}{}'.format(HEADER_ROW_INDEX + 1, QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0], HEADER_ROW_INDEX + 1 + 1)]:
+        #     for row in self.__work_sheet['A{}:{}{}'.format(HEADER_ROW_INDEX + 1, self.__question_to_excel_column_map['I2-22-68'][0], HEADER_ROW_INDEX + 1 + 1)]:
         #         for cell in row:
         #             self._add_tracing_comment(cell, '0', sys._getframe().f_code.co_name)
         # else:
         self.__work_sheet.delete_rows(HEADER_ROW_INDEX + 1, 2)
 
+    def _register_question_column(self, question_id, excel_column):
+        if question_id not in self.__question_to_excel_column_map:
+            self.__question_to_excel_column_map[question_id] = []
+
+        # if excel_column not in self.__question_to_excel_column_map:
+        self.__question_to_excel_column_map[question_id].append(excel_column)
 
     @clocking
-    def batch_reset_column_names(self):
+    def scan_reset_column_names(self):
         """rule 0: set first 23 column name set with _1~_23, rest set follow predefined rules, e.g. A1-A"""
         print('rule 0: batch reset column names with standard codes')
         BOUNDARY_0 = 0 + EXCEL_INDEX_BASE
@@ -57,41 +79,53 @@ class DataCleanser:
 
         # Set base info column headers
         for i in range(BOUNDARY_0, BOUNDARY_1):
-            value = '_' + str(i)
-            self.__work_sheet.cell(HEADER_ROW_INDEX, i, value)
+            header_name = '_' + str(i)
+            self.__work_sheet.cell(HEADER_ROW_INDEX, i, header_name)
+            self._register_question_column(header_name, self.__excel_column_list[i])
             # print('write: "' + value + '"')
 
         # Set question-answers column headers
-        value = ''
-        next_value = ''
+        header_name = ''
+        next_header_name = ''
         flag1 = False
         flag2 = False
         for i in range(BOUNDARY_1, BOUNDARY_2):  # loop from index 23 to last - 1
-            value = self.__work_sheet.cell(HEADER_ROW_INDEX, i).value
-            next_value = self.__work_sheet.cell(HEADER_ROW_INDEX, i + 1).value
+            header_name = self.__work_sheet.cell(HEADER_ROW_INDEX, i).value
+            next_header_name = self.__work_sheet.cell(HEADER_ROW_INDEX, i + 1).value
 
-            if value is not None and next_value is None:
+            # if header_name is not None:
+            #     self._register_question_column(header_name, self.__excel_column_list[i])
+
+            if header_name is not None and next_header_name is None:
                 flag2 = True
-                prefix = value
-                option = 'A'
+                prefix = header_name
+                # option = 'A'
+                option = 1
 
-            if value is None and next_value is not None:
+            if header_name is None and next_header_name is not None:
                 flag1 = True
 
             if flag2:
-                value_to_write = prefix + '-' + option
-                option = chr(ord(option) + 1)
-                self.__work_sheet.cell(HEADER_ROW_INDEX, i, value_to_write)
+                # new_header_name = prefix + '-' + option
+                # option = chr(ord(option) + 1)
+                new_header_name = '{}-{}'.format(prefix, self.__excel_column_list[option])
+                option += 1
+                self.__work_sheet.cell(HEADER_ROW_INDEX, i, new_header_name)
+                self._register_question_column(prefix, self.__excel_column_list[i])
+                self._register_question_column(new_header_name, self.__excel_column_list[i])
                 # print('write: "' + value_to_write + '"')
-            # else:
-            #     value_to_write = value
+            else:
+                self._register_question_column(header_name, self.__excel_column_list[i])
+                pass
 
             if flag1:
                 flag1 = False
                 flag2 = False
                 prefix = ''
-                option = 'A'
+                # option = 'A'
+                option = 1
 
+        self._register_question_column(next_header_name, self.__excel_column_list[BOUNDARY_2])
         self.__work_sheet.title = "cleaned"
 
     @clocking
@@ -99,7 +133,7 @@ class DataCleanser:
         """rule 0: replace empty values with NaN """
         print('rule 0: replace empty values with NaN ')
         i = 0
-        for row in self.__work_sheet['{}:{}'.format(QUESTION_TO_EXCEL_COLUMN_MAP['A1'][0], QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0])]:
+        for row in self.__work_sheet['{}:{}'.format(self.__question_to_excel_column_map['A1'][0], self.__question_to_excel_column_map['I2-22-68'][0])]:
             for cell in row:
                 if cell.value == '':
                     cell.value = None
@@ -110,7 +144,7 @@ class DataCleanser:
     def clear_all_cells_bgcolor(self):
         """rule 0: clear all cells' BG color """
         print('rule 0: clear all cells\' BG color ')
-        for row in self.__work_sheet['{}:{}'.format('A', QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0])]:
+        for row in self.__work_sheet['{}:{}'.format('A', self.__question_to_excel_column_map['I2-22-68'][0])]:
             for cell in row:
                 cell.fill = xl.styles.PatternFill(None)
 
@@ -138,7 +172,7 @@ class DataCleanser:
         """rule 2, 3: remove un-qualified row, e.g. no answer for question A2"""
         print('rule 2, 3: removing rows which have no A2 answers')
         # find them
-        remove_list = self._query_row_indexes_by_column_filter(QUESTION_TO_EXCEL_COLUMN_MAP['A2'][0],
+        remove_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['A2'][0],
                                                           lambda val: (val is None or val == ''))
         # remove them
         self._remove_rows_by_index_list(remove_list, '2, 3', sys._getframe().f_code.co_name)
@@ -149,7 +183,7 @@ class DataCleanser:
         print('rule 4: replace non-relevance answers(cell) with NaN against question-relevance rules')
         for rule in RINSE_RULE_IRRELEVANT_QUESTIONS:
             print('apply rule: {}'.format(rule))
-            question_index = QUESTION_TO_EXCEL_COLUMN_MAP[rule[RINSE_RULE_KEY_QUESTION]][0]
+            question_index = self.__question_to_excel_column_map[rule[RINSE_RULE_KEY_QUESTION]][0]
             j = 0
             for q_cell in self.__work_sheet[question_index]:
                 if q_cell.row <= HEADER_ROW_INDEX:
@@ -174,7 +208,7 @@ class DataCleanser:
                     #       rule[KEY_QUESTION], answer, rule[KEY_OPERATOR], rule[KEY_ANSWER], rule[KEY_ACTION]))
                     i = 0
                     for question_id in rule[RINSE_RULE_KEY_ACTION]:
-                        for col_index in QUESTION_TO_EXCEL_COLUMN_MAP[question_id]:
+                        for col_index in self.__question_to_excel_column_map[question_id]:
                             coordinate = '{}{}'.format(col_index, q_cell.row)
                             if self.__work_sheet[coordinate].value is not None:
                                 # print('>> rinsing {}({}) as NaN'.format(coordinate[coordinate].value))
@@ -204,7 +238,7 @@ class DataCleanser:
         #             cell = self.st.cell(row, col, None)
         #             # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
         #             i += 1
-        for row in self.__work_sheet['{}:{}'.format(QUESTION_TO_EXCEL_COLUMN_MAP['A1'][0], QUESTION_TO_EXCEL_COLUMN_MAP['I2-22-68'][0])]:
+        for row in self.__work_sheet['{}:{}'.format(self.__question_to_excel_column_map['A1'][0], self.__question_to_excel_column_map['I2-22-68'][0])]:
             for cell in row:
                 if cell.value in NC_OPTION_FILTER_LIST:
                     # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
@@ -224,23 +258,23 @@ class DataCleanser:
         """rule 6: replace invalid answers(cell) with NaN"""
         print('rule 6: rinse G1 answers which in {}'.format(G1_OPTION_FILTER_LIST))
         # find them
-        rinse_list = self._query_row_indexes_by_column_filter(QUESTION_TO_EXCEL_COLUMN_MAP['G1'][0],
+        rinse_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['G1'][0],
                                                          lambda val: val in G1_OPTION_FILTER_LIST)
         # remove them
-        self._rinse_values_by_column_rowindex(QUESTION_TO_EXCEL_COLUMN_MAP['G1'][0], rinse_list, '6', sys._getframe().f_code.co_name)
-        self._rinse_values_by_column_rowindex(QUESTION_TO_EXCEL_COLUMN_MAP['G1'][1], rinse_list, '6', sys._getframe().f_code.co_name)
+        self._rinse_values_by_column_rowindex(self.__question_to_excel_column_map['G1'][0], rinse_list, '6', sys._getframe().f_code.co_name)
+        self._rinse_values_by_column_rowindex(self.__question_to_excel_column_map['G1'][1], rinse_list, '6', sys._getframe().f_code.co_name)
 
     @clocking
     def rinse_unusual_salary_values(self):
         """rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV """
         print('rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV ')
         print('>> 7.1 rinsing salary < 1000')
-        rinse_list = self._query_row_indexes_by_column_filter(QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], self._filter_low_salary)
-        self._rinse_values_by_column_rowindex(QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], rinse_list, '7.1', sys._getframe().f_code.co_name)
+        rinse_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['B6'][0], self._filter_low_salary)
+        self._rinse_values_by_column_rowindex(self.__question_to_excel_column_map['B6'][0], rinse_list, '7.1', sys._getframe().f_code.co_name)
 
         print('>> 7.2 rinsing top N salary')
-        sort_range = '{}{}:{}{}'.format(QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], 2,
-                                        QUESTION_TO_EXCEL_COLUMN_MAP['B6'][0], self.__work_sheet.max_row);
+        sort_range = '{}{}:{}{}'.format(self.__question_to_excel_column_map['B6'][0], 2,
+                                        self.__question_to_excel_column_map['B6'][0], self.__work_sheet.max_row);
         # self.st.auto_filter.add_sort_condition(sort_range)
         salary_list = {}
         for row in self.__work_sheet[sort_range]:
@@ -353,7 +387,7 @@ def test():
 
     cleanser.validate_data_dimensions()
     cleanser.remove_unnecessary_headers()
-    cleanser.batch_reset_column_names()
+    cleanser.scan_reset_column_names()
     # cleanser.clear_all_cells_bgcolor()
     cleanser.reset_emplty_values_with_na()
 

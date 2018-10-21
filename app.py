@@ -20,7 +20,7 @@ def run_cleansing(st, keep_unsubmitted, trace_mode):
 
     cleaner.validate_data_dimensions()
     cleaner.remove_unnecessary_headers()
-    cleaner.batch_reset_column_names()
+    cleaner.scan_reset_column_names()
     cleaner.reset_emplty_values_with_na()
     # clear_all_cells_bgcolor()
 
