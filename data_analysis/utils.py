@@ -72,7 +72,6 @@ def answer_grp_sum(data,arry_columns,array_groupby):
     :return:
     '''
     grp=pd.DataFrame(data)[arry_columns].groupby(array_groupby, as_index=False).sum()
-    print(grp)
     return  grp
 
 def answer_grp_period(data,arry_columns,array_groupby,array_periods):
