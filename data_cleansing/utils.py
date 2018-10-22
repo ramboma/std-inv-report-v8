@@ -281,21 +281,31 @@ class DataCleanser:
             if row[0].value is not None and row[0].value != '':
                 salary_list[row[0].coordinate] = int(row[0].value)
 
-        sorted_salary_list = sorted(salary_list.items(), key=lambda kv: kv[1], reverse=True)
-        top_n = round(sorted_salary_list.__len__() * 0.003)
-        i = 0
-        for item in sorted_salary_list:
-            coordinate = item[0]
-            # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
-            if self.__trace_mode:
-                self._add_tracing_comment(self.__work_sheet[coordinate], '7.2', sys._getframe().f_code.co_name)
-            else:
-                self.__work_sheet[coordinate] = None
-            salary_list.pop(coordinate)
-            i += 1
-            if i >= top_n:
-                break
-        print('>> {} cells rinsed from {}'.format(top_n, sorted_salary_list.__len__()))
+        top_n = round(salary_list.__len__() * 0.003)
+        if top_n >= 1:
+            top_n_list = []
+            sorted_salary_list = sorted(salary_list.items(), key=lambda kv: kv[1], reverse=True)
+            for n in range(0, top_n):
+                top_n_list.append(sorted_salary_list[n][1])
+
+            i = 0
+            for item in sorted_salary_list:
+                if item[1] < top_n_list[top_n_list.__len__() - 1]:
+                    break
+                if item[1] in top_n_list:
+                    coordinate = item[0]
+                    # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
+                    if self.__trace_mode:
+                        self._add_tracing_comment(self.__work_sheet[coordinate], '7.2', sys._getframe().f_code.co_name)
+                    else:
+                        self.__work_sheet[coordinate] = None
+                    salary_list.pop(coordinate)
+                    i += 1
+                # if i >= top_n:
+                #     break
+            print('>> {} cells rinsed from {}'.format(i, sorted_salary_list.__len__()))
+        else:
+            print('>> no cell need to be rinsed')
 
         print('>> 7.3 rinsing ABS(salary - MEAN) > 4 * STDEV')
         np_salary_list = np.array(list(salary_list.values()), dtype=int)
