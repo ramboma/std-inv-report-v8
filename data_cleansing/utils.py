@@ -178,10 +178,10 @@ class DataCleanser:
         self._remove_rows_by_index_list(remove_list, '2, 3', sys._getframe().f_code.co_name)
 
     @clocking
-    def rinse_irrelevant_answers(self):
-        """rule 4: replace non-relevance answers(cell) with NaN against question-relevance rules"""
-        print('rule 4: replace non-relevance answers(cell) with NaN against question-relevance rules')
-        for rule in RINSE_RULE_IRRELEVANT_QUESTIONS:
+    def rinse_irrelevant_answers(self, irrelevant_question_rules, rule_no):
+        """rule 4/8: replace non-relevance answers(cell) with NaN against question-relevance rules"""
+        print('rule {}: replace non-relevance answers(cell) with NaN against question-relevance rules'.format(rule_no))
+        for rule in irrelevant_question_rules:
             print('apply rule: {}'.format(rule))
             question_index = self.__question_to_excel_column_map[rule[RINSE_RULE_KEY_QUESTION]][0]
             j = 0
@@ -213,7 +213,7 @@ class DataCleanser:
                             if self.__work_sheet[coordinate].value is not None:
                                 # print('>> rinsing {}({}) as NaN'.format(coordinate[coordinate].value))
                                 if self.__trace_mode:
-                                    self._add_tracing_comment(self.__work_sheet[coordinate], '4', sys._getframe().f_code.co_name, rule)
+                                    self._add_tracing_comment(self.__work_sheet[coordinate], rule_no, sys._getframe().f_code.co_name, rule)
                                 else:
                                     self.__work_sheet[coordinate].value = None
                                 i += 1
@@ -363,11 +363,11 @@ class DataCleanser:
         print('>> {} cells rinsed'.format(index_list.__len__()))
 
     @staticmethod
-    def _add_tracing_comment(cell, rule, func, addition=None):
+    def _add_tracing_comment(cell, rule_no, func, addition=None):
         if addition is None:
-            text = 'rule {}\norigin val: {}\nfunc: {}'.format(rule, cell.value, func)
+            text = 'rule {}\norigin val: {}\nfunc: {}'.format(rule_no, cell.value, func)
         else:
-            text = 'rule {}\norigin val: {}\nfunc: {}\n{}'.format(rule, cell.value, func, addition)
+            text = 'rule {}\norigin val: {}\nfunc: {}\n{}'.format(rule_no, cell.value, func, addition)
         cell.comment = xl.comments.Comment(text, None, 150, 300)
 
     @staticmethod
@@ -408,7 +408,7 @@ def test():
     # Rule 2, 3
     cleanser.remove_unqualified_records()
     # Rule 4
-    cleanser.rinse_irrelevant_answers()
+    cleanser.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS)
     # Rule 5
     cleanser.rinse_nc_option_values()
     # Rule 6

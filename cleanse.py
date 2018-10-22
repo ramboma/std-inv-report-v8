@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""app.py"""
+"""cleanse.py"""
 
 __author__ = 'Gary.Z'
 
@@ -13,7 +13,7 @@ from data_cleansing.utils import *
 
 
 @clocking
-def run_cleansing(st, keep_unsubmitted, trace_mode):
+def run_cleansing(st, keep_unsubmitted, v6_compatible, trace_mode):
 
     cleaner = DataCleanser(st)
     cleaner.set_trace_mode(trace_mode)
@@ -32,22 +32,27 @@ def run_cleansing(st, keep_unsubmitted, trace_mode):
     else:
         cleaner.remove_unsubmitted_records()
     # Rule 4
-    cleaner.rinse_irrelevant_answers()
+    cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS, '4')
     # # Rule 5
     cleaner.rinse_nc_option_values()
     # # Rule 6
     cleaner.rinse_invalid_answers()
     # # Rule 7
     cleaner.rinse_unusual_salary_values()
+    # Rule 8
+    if v6_compatible:
+        cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE, '8')
     return st
+
 
 @click.command()
 # @click.argument('file', nargs=1)
 @click.option('--input-file', '-i', required=True, help='Input raw data file path')
 @click.option('--output-file', '-o', help='Output clean file path')
-@click.option('--keep-unsubmitted', '-k', is_flag=True, type=bool, help='Whether keep unsubmitted records')
+@click.option('--keep-unsubmitted', '-k', is_flag=True, type=bool, help='Keep unsubmitted records')
+@click.option('--v6-compatible', '-6', is_flag=True, type=bool, help='Rinse "自由职业" records to compatible with v6')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-def main(input_file, output_file, keep_unsubmitted, trace_mode):
+def main(input_file, output_file, keep_unsubmitted, v6_compatible, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_file):
@@ -92,7 +97,7 @@ def main(input_file, output_file, keep_unsubmitted, trace_mode):
     wb = xl.load_workbook(input_file)
     st = wb.worksheets[0]
 
-    st = run_cleansing(st, keep_unsubmitted, trace_mode)
+    st = run_cleansing(st, keep_unsubmitted, v6_compatible, trace_mode)
 
     print('writing output file {}'.format(output_file))
     wb.save(output_file)
