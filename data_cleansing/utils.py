@@ -281,7 +281,7 @@ class DataCleanser:
             if row[0].value is not None and row[0].value != '':
                 salary_list[row[0].coordinate] = int(row[0].value)
 
-        top_n = round(salary_list.__len__() * 0.003)
+        top_n = round(salary_list.__len__() * SALARY_FILTER_TOP_RATIO)
         if top_n >= 1:
             top_n_list = []
             sorted_salary_list = sorted(salary_list.items(), key=lambda kv: kv[1], reverse=True)
