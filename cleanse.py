@@ -13,7 +13,23 @@ from data_cleansing.utils import *
 
 
 @clocking
-def run_cleansing(st, keep_unsubmitted, v6_compatible, trace_mode):
+def run_cleansing(input_file, output_file, keep_unsubmitted, v6_compatible, trace_mode):
+
+    if keep_unsubmitted is None:
+        keep_unsubmitted = False
+
+    print('')
+    print('############################## Cleansing start ##################################')
+    print('input file: {}'.format(input_file))
+    print('output file: {}'.format(output_file))
+    print('keep un-submitted records: {}'.format(keep_unsubmitted))
+    print('enable v6 compatible : {}'.format(v6_compatible))
+    print('#################################################################################')
+    print('')
+
+    print('loading input file {}'.format(input_file))
+    wb = xl.load_workbook(input_file)
+    st = wb.worksheets[0]
 
     cleaner = DataCleanser(st)
     cleaner.set_trace_mode(trace_mode)
@@ -42,46 +58,53 @@ def run_cleansing(st, keep_unsubmitted, v6_compatible, trace_mode):
     # Rule 8
     if v6_compatible:
         cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE, '8')
-    return st
+
+    print('writing output file {}'.format(output_file))
+    wb.save(output_file)
+
+    print('')
+    print('############################## Cleansing end ##################################')
+    print('')
+
+    return
 
 
 @click.command()
 # @click.argument('file', nargs=1)
-@click.option('--input-file', '-i', required=True, help='Input raw data file path')
-@click.option('--output-file', '-o', help='Output clean file path')
+@click.option('--input-file', '-i', required=True, help='Input file path')
+@click.option('--output-folder', '-o', help='Output folder path')
 @click.option('--keep-unsubmitted', '-k', is_flag=True, type=bool, help='Keep unsubmitted records')
 @click.option('--v6-compatible', '-6', is_flag=True, type=bool, help='Rinse "自由职业" records to compatible with v6')
+@click.option('--all', '-a', is_flag=True, type=bool, help='To batch generate 3 cleaned data files, include for customer public/private & analysis public/private')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-def main(input_file, output_file, keep_unsubmitted, v6_compatible, trace_mode):
+def main(input_file, output_folder, keep_unsubmitted, v6_compatible, all, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_file):
         print('input file [{}] not exist, quit'.format(input_file))
         exit(0)
 
-    if output_file is None:
+    if output_folder is None:
         dirpath, filename = os.path.split(input_file)
         name, ext = os.path.splitext(filename)
-        output_file = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned', ext))
     else:
-        if os.path.isdir(output_file):
-            dirpath = output_file
-        else:
-            dirpath, filename = os.path.split(output_file)
-            name, ext = os.path.splitext(output_file)
-            if ext != '.xlsx':
-                print('output file extension must be .xlsx, quit')
-                exit(0)
-        if not os.path.exists(dirpath):
-            print('output dir [{}] not exist, quit'.format(dirpath))
+        if not os.path.exists(output_folder):
+            print('output path [{}] not exist, quit'.format(output_folder))
             exit(0)
-        if os.path.isdir(output_file):
-            filename = os.path.basename(input_file)
-            name, ext = os.path.splitext(filename)
-            output_file = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned', '.xlsx'))
+        if not os.path.isdir(output_folder):
+            print('output path [{}] is not dir, quit'.format(output_folder))
+            exit(0)
 
-    if keep_unsubmitted is None:
-        keep_unsubmitted = False
+        dirpath = output_folder
+        ext = '.xlsx'
+        filename = os.path.basename(input_file)
+        name, ext = os.path.splitext(filename)
+
+    output_file = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned', ext))
+    output_file_customer_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
+    output_file_customer_private = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_private', ext))
+    output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
+    output_file_analysis_private = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_private', ext))
 
     if trace_mode is None:
         trace_mode = False
@@ -89,19 +112,15 @@ def main(input_file, output_file, keep_unsubmitted, v6_compatible, trace_mode):
     if trace_mode:
         print('** TRACING MODE ENABLED **')
 
-    print('input file: {}'.format(input_file))
-    print('output file: {}'.format(output_file))
-    print('keep unsubmitted records: {}'.format(keep_unsubmitted))
-
-    print('loading input file {}'.format(input_file))
-    wb = xl.load_workbook(input_file)
-    st = wb.worksheets[0]
-
-    st = run_cleansing(st, keep_unsubmitted, v6_compatible, trace_mode)
-
-    print('writing output file {}'.format(output_file))
-    wb.save(output_file)
+    if not all:
+        run_cleansing(input_file, output_file, keep_unsubmitted, v6_compatible, trace_mode)
+    else:
+        run_cleansing(input_file, output_file_customer_public, keep_unsubmitted=True, v6_compatible=False,  trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_customer_private, keep_unsubmitted=False, v6_compatible=False, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_analysis_public, keep_unsubmitted=True, v6_compatible=True, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_analysis_private, keep_unsubmitted=False, v6_compatible=True, trace_mode=trace_mode)
 
 
 if __name__ == '__main__':
         main()
+

@@ -9,9 +9,9 @@ import timeit
 
 
 def clocking(func):
-    def clocked(*args):
+    def clocked(*args, **kw):
         t0 = timeit.default_timer()
-        result = func(*args)
+        result = func(*args, **kw)
         elapsed = timeit.default_timer() - t0
         name = func.__name__
         arg_str = ', '.join(repr(arg) for arg in args)
