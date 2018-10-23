@@ -50,6 +50,7 @@ def further_report(data, filePath):
 def work_stability_report(data, filePath):
     change_times = answer_value_rate(data, 'B10-1')
     no_changes = change_times[change_times[config.VALUE_RATE_COLUMN[0]].isin([config.B10_1_ANSWER[0]])][[config.VALUE_RATE_COLUMN[-1]]]
+    no_changes.fillna(0,inplace=True)
     change_times['离职率'] = 100-no_changes
     excelUtil.writeExcel(change_times, filePath, '总体离职情况分布')
 
@@ -77,22 +78,29 @@ def work_stability_report(data, filePath):
 
 def work_option_report(data, filePath):
     option = answer_value_rate(data, 'A3')
-    no_option = option[option[config.VALUE_RATE_COLUMN[0]].isin([config.EXCEPTED_ANSWER])][[config.VALUE_RATE_COLUMN[1]]]
+    no_option = option[option['答案'].isin([config.EXCEPTED_ANSWER])][[config.VALUE_RATE_COLUMN[1]]]
+    no_option.fillna(0, inplace=True)
     option['有效人数']=option[config.VALUE_RATE_COLUMN[2]]-no_option[config.VALUE_RATE_COLUMN[1]]
+
     option[config.VALUE_RATE_COLUMN[-1]]=(option[config.VALUE_RATE_COLUMN[1]]/option['有效人数']*100).round(decimals=2)
     excelUtil.writeExcel(option, filePath, '总体就业机会')
 
     college_changes=answer_college_value_rate(data,'A3')
     college_no_change=college_changes[college_changes['答案'].isin([config.EXCEPTED_ANSWER])][['学院',config.VALUE_RATE_COLUMN[1]]]
-    pd_left=pd.merge(college_changes,college_no_change,how='left',on='学院')
-    pd_left.fillna(0)
+
+    pd_left=pd.merge(college_changes,college_no_change,
+                     how='left',
+                     on='学院',
+                     )
+    pd_left.fillna(0,inplace=True)
+
     pd_left[config.VALUE_RATE_COLUMN[-1]]= (pd_left[config.VALUE_RATE_COLUMN[1]+'_x']/(pd_left[config.VALUE_RATE_COLUMN[2]]-pd_left[config.VALUE_RATE_COLUMN[1]+'_y'])*100).round(decimals=2)
     excelUtil.writeExcel(pd_left, filePath, '各学院就业机会')
 
     major_changes = answer_major_value_rate(data, 'A3')
     major_no_change = major_changes[major_changes['答案'].isin([config.EXCEPTED_ANSWER])][['学院','专业',config.VALUE_RATE_COLUMN[1]]]
     pd_left_major=pd.merge(major_changes,major_no_change,how='left',on=['学院','专业'])
-    pd_left_major.fillna(0)
+    pd_left_major.fillna(0,inplace=True)
     pd_left_major[config.VALUE_RATE_COLUMN[-1]]= (pd_left_major[config.VALUE_RATE_COLUMN[1]+'_x']/(pd_left_major[config.VALUE_RATE_COLUMN[2]]-pd_left_major[config.VALUE_RATE_COLUMN[1]+'_y'])*100).round(decimals=2)
 
     excelUtil.writeExcel(pd_left_major, filePath, '各专业就业机会')

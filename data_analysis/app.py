@@ -24,6 +24,8 @@ def main(file):
     #period = list(range(2000, 4000, 500))
     #print(period)
 
+    further.further_report(data, report.REPORT_FOLDER + '国内升学.xlsx')
+    further.study_abroad_report(data, report.REPORT_FOLDER + '出国境留学.xlsx')
     further.work_stability_report(data,report.REPORT_FOLDER + '工作稳定性.xlsx')
     further.work_option_report(data,report.REPORT_FOLDER + '就业机会.xlsx')
     # answerUtil.answer_grp_period(data, ['B6'], ['B6'], period)
