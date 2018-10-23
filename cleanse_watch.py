@@ -8,12 +8,11 @@ __author__ = 'Gary.Z'
 import os
 import click
 import time
-import sys
-import logging
+# import sys
+# import logging
+import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from watchdog.events import LoggingEventHandler
-from pathtools.patterns import match_any_paths
 
 from data_cleansing.utils import *
 
@@ -128,7 +127,7 @@ def batch_cleansing(input_file, output_folder, trace_mode):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
-    # output_file = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned', ext))
+    backup_file = os.path.join(output_folder, filename)
     output_file_customer_public = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
     output_file_customer_private = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_customer_private', ext))
     output_file_analysis_public = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
@@ -139,6 +138,8 @@ def batch_cleansing(input_file, output_folder, trace_mode):
     run_cleansing(input_file, output_file_analysis_public, keep_unsubmitted=True, v6_compatible=True, trace_mode=trace_mode)
     run_cleansing(input_file, output_file_analysis_private, keep_unsubmitted=False, v6_compatible=True, trace_mode=trace_mode)
 
+    shutil.move(input_file, backup_file)
+
 
 @click.command()
 # @click.argument('file', nargs=1)
@@ -148,9 +149,9 @@ def batch_cleansing(input_file, output_folder, trace_mode):
 def main(input_folder, output_folder, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    # logging.basicConfig(level=logging.INFO,
+    #                     format='%(asctime)s - %(message)s',
+    #                     datefmt='%Y-%m-%d %H:%M:%S')
 
     if not os.path.exists(input_folder):
         print('input path [{}] not exist, quit'.format(input_folder))
@@ -173,6 +174,7 @@ def main(input_folder, output_folder, trace_mode):
         print('output path [{}] is not folder, quit'.format(output_folder))
         exit(0)
 
+    print('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
     event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, trace_mode)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
@@ -181,6 +183,7 @@ def main(input_folder, output_folder, trace_mode):
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        print('program stopped')
         observer.stop()
     observer.join()
 
