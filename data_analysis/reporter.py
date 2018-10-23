@@ -101,7 +101,7 @@ def college_subject_report(data, subject, answerType, filePath):
     data_where = data_relative[data_relative['A2'] == A2_ANSWER[0]]
 
     # step1:各学院答题总人数
-    answer_count = answerUtil.answer_grp_count(data_where, [BASE_COLUMN[0], subject], BASE_COLUMN[0], subject)
+    answer_count = answerUtil.answer_grp_count(data_where, [BASE_COLUMN[0], subject], BASE_COLUMN[0])
     print("各学院{}回答总人数：\n".format(subject))
     print(answer_count)
 
@@ -162,7 +162,7 @@ def college_subject_report(data, subject, answerType, filePath):
                                       'count': pd_left['count']})
 
     answer_values_grp = answerUtil.answer_grp_count(data_where, [BASE_COLUMN[0], subject, 'A2'],
-                                                    [BASE_COLUMN[0], subject], subject)
+                                                    [BASE_COLUMN[0],subject])
     print("{}各答案分布：".format(subject))
     print(answer_values_grp)
 
@@ -239,7 +239,7 @@ def major_subject_report(data, subject, answerType, filePath):
     college_major_subject = list(BASE_COLUMN[0:2])
     college_major_subject.append(subject)
     # step1:分组统计答题总人数
-    answer_count = answerUtil.answer_grp_count(data_where, college_major_subject, list(BASE_COLUMN[0:2]), subject)
+    answer_count = answerUtil.answer_grp_count(data_where, college_major_subject, list(BASE_COLUMN[0:2]))
     print("各学院各专业{}回答总人数：\n".format(subject))
     print(answer_count)
 
@@ -290,8 +290,7 @@ def major_subject_report(data, subject, answerType, filePath):
     college_major_subject_other.append(subject)
     answer_values_grp = answerUtil.answer_grp_count(data_where,
                                                     college_major_subject_other,
-                                                    college_major_subject,
-                                                    subject)
+                                                    college_major_subject)
     print("各学院各专业{}各答案分布：".format(subject))
     print(answer_values_grp)
 
@@ -397,7 +396,7 @@ def demission_major(data, subject):
     college_major_subject = list(BASE_COLUMN[0:2])
     college_major_subject.append(subject)
     # step1:各学院subject答题总人数
-    answer_count = answerUtil.answer_grp_count(data_where, college_major_subject, list(BASE_COLUMN[0:2]), subject)
+    answer_count = answerUtil.answer_grp_count(data_where, college_major_subject, list(BASE_COLUMN[0:2]))
     answer_count.columns = ['college', 'major', 'count']
     print("各学院各专业{}回答总人数：\n".format(subject))
     print(answer_count)
@@ -405,8 +404,8 @@ def demission_major(data, subject):
     # step2:各学院subject答题分布
     college_major_subject_other = list(BASE_COLUMN)
     college_major_subject_other.append(subject)
-    answer_values_grp = answerUtil.answer_grp_count(data_where, college_major_subject_other, college_major_subject,
-                                                    subject)
+    answer_values_grp = answerUtil.answer_grp_count(data_where, college_major_subject_other,
+                                                    college_major_subject)
     print("{}各答案分布：".format(subject))
     print(answer_values_grp)
 
@@ -434,22 +433,20 @@ def sum_employee_report(data, subject, filePath):
     print("{}回答'{}'人数：{}\n".format(subject, ANSWER_NORMAL_1[-1], answer_except_count))
     employee = ((answer_count - answer_except_count) / answer_count * 100).round(decimals=2)
     print("就业率:{}".format(employee))
-    dict={'rate': employee,'count': answer_count}
-    pd_result = pd.DataFrame(list(dict.items()))
+    pd_result = pd.DataFrame({'就业率':[employee],
+                              subject:[answer_count]})
     print(pd_result)
     excelUtil.writeExcel(pd_result, filePath, '总体就业率')
 
     # 各答案人数
     answer_values = answerUtil.answer_val_count(data, subject)
-    pd_a2_result = pd.DataFrame(data=answer_values)
-    pd_a2_result['rate'] = (pd_result[subject] / answer_count * 100).round(decimals=2)
+    pd_last = pd.DataFrame({"答案": answer_values.index,
+                            "答案人数": answer_values.values})
+    pd_last['比例'] = (pd_last['答案人数'] / answer_count * 100).round(decimals=2)
     print("{}各答案分布：".format(subject))
-    print(pd_a2_result)
+    print(pd_last)
 
-    pd_last = pd.DataFrame({"answer": pd_a2_result.index,
-                            "rate": pd_a2_result.values})
-    flexiable = pd_last[pd_last['answer'].isin(A2_ANSWER[1:3])].sum()
-    pd_last['灵活就业'] = flexiable
+    pd_last['灵活就业'] = pd_last[pd_last['答案'].isin(A2_ANSWER[1:3])]['比例'].sum()
     excelUtil.writeExcel(pd_last, filePath, '总体毕业去向')
 
 
@@ -519,7 +516,7 @@ def major_employee_report(data, subject, filePath):
     print(pd_answers_valid)
     excelUtil.writeExcel(pd_answers_valid, filePath, '专业总体就业率')
 
-    college_grp_value = answerUtil.answer_grp_count(data, [BASE_COLUMN[0],BASE_COLUMN[1], subject], [BASE_COLUMN[0],BASE_COLUMN[1], subject])
+    college_grp_value = answerUtil.answer_grp_count(data, [BASE_COLUMN[0],BASE_COLUMN[1], subject], [BASE_COLUMN[0],BASE_COLUMN[1],subject])
     pd_answers_left = pd.merge(college_grp_value, answer_count, how='left',
                                left_on=list(BASE_COLUMN[0:2]), right_on=list(BASE_COLUMN[0:2]), validate='many_to_one')
     print(pd_answers_left)
