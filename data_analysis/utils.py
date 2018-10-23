@@ -27,16 +27,18 @@ def answer_val_count(data,subject):
     sub_value=subjects.value_counts()
     return  sub_value
 
-def answer_grp_count(data,arry_columns,array_groupby,subject):
+def answer_grp_count(data, array_columns, array_groupby):
     '''
     根据分组条件，统计某-题回答人数
     :param data: 数据源
-    :param subject: 列名（题目ID）
+    :param array_groupby
     :return:
     '''
-    grp=pd.DataFrame(data,columns=arry_columns)
-    grp_count=grp.groupby(array_groupby, as_index=False).count()
-    return  grp_count
+    grp = pd.DataFrame(data, columns=array_columns)
+    if len(array_columns)==len(array_groupby):
+        grp['cnt']=1
+    grp_count = grp.groupby(array_groupby, as_index=False).count()
+    return grp_count
 
 def answer_of_subject_count_grp(data,arry_columns,array_groupby,subject,answer):
     '''

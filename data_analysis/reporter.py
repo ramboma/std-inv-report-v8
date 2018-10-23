@@ -23,14 +23,14 @@ A2_ANSWER = ['在国内工作', '自主创业', '自由职业', '在国内求学
 REPORT_FOLDER = '../test-data/san-ming/report/'
 
 
-def sum_subject_report(data, subject, answerType, filePath):
+def sum_subject_report(data, subject, answerType, filePath,a2_answer_index=0):
     '''就业竞争力报告'''
 
     column_relative = list(BASE_COLUMN)
     column_relative.append(subject)
     print(column_relative)
     data_relative = pd.DataFrame(data, columns=column_relative)
-    data_where = data_relative[data_relative['A2'] == A2_ANSWER[0]]
+    data_where = data_relative[data_relative['A2'] == A2_ANSWER[a2_answer_index]]
     print(data_where)
 
     # step1:答题总人数
@@ -458,11 +458,77 @@ def college_employee_report(data, subject, filePath):
 
     # step1:各学院答题总人数
     answer_count = answerUtil.answer_grp_count(data, [BASE_COLUMN[0], subject], [BASE_COLUMN[0]])
-    print("{}回答总人数：{}\n".format(subject, answer_count))
+    print("{}各学院回答总人数：".format(subject))
+    print(answer_count)
 
-    # step2:回答"未就业"人数
+    # step2:各学院回答"未就业"人数
+    answer_except_count = answerUtil.answer_of_subject_count_grp(data,
+                                                                 [BASE_COLUMN[0], subject],
+                                                                 [BASE_COLUMN[0]], subject,
+                                                                 A2_ANSWER[-1])
 
-    answer_except_count = answerUtil.answer_of_subject_count(data, subject, A2_ANSWER[-1])
+    # step3:左连计算占比
+    pd_answers_valid = pd.merge(answer_count, answer_except_count, how='left',
+                                left_on=BASE_COLUMN[0], right_on=BASE_COLUMN[0], validate='one_to_one')
+    print(pd_answers_valid)
+    pd_answers_valid.fillna(0)
+    pd_answers_valid['rate'] = (
+                (pd_answers_valid[subject + '_x'] - pd_answers_valid[subject + '_y']) / pd_answers_valid[
+            subject + '_x'] * 100).round(decimals=2)
 
-    print("{}回答'{}'人数：{}\n".format(subject, ANSWER_NORMAL_1[-1], answer_except_count))
-    print("就业率:{}".format((answer_count - answer_except_count) / answer_count).round(decimals=2))
+    print(pd_answers_valid)
+    excelUtil.writeExcel(pd_answers_valid, filePath, '学院总体就业率')
+
+    college_grp_value = answerUtil.answer_grp_count(data, [BASE_COLUMN[0], subject], [BASE_COLUMN[0], subject])
+    pd_answers_left = pd.merge(college_grp_value, answer_count, how='left',
+                                left_on=BASE_COLUMN[0], right_on=BASE_COLUMN[0], validate='many_to_one')
+    print(pd_answers_left)
+    pd_answers_left['rate']=(pd_answers_left['cnt']/pd_answers_left[subject+'_y']*100).round(decimals=2)
+    print(pd_answers_left)
+
+    flexiable = pd_answers_left[pd_answers_left[subject+'_x'].isin(A2_ANSWER[1:3])]
+    pd_flexiable=answerUtil.answer_grp_sum(flexiable,[BASE_COLUMN[0],'rate'],[BASE_COLUMN[0]])
+    pd_answers_merge = pd.merge(pd_answers_left, pd_flexiable, how='left',
+                               left_on=BASE_COLUMN[0], right_on=BASE_COLUMN[0], validate='many_to_one')
+    print(pd_answers_merge)
+    excelUtil.writeExcel(pd_answers_merge, filePath, '学院就业去向')
+
+def major_employee_report(data, subject, filePath):
+    '''就业力报告'''
+
+    # step1:答题总人数
+    answer_count = answerUtil.answer_grp_count(data, [BASE_COLUMN[0],BASE_COLUMN[1], subject], [BASE_COLUMN[0],BASE_COLUMN[1]])
+    print("{}各学院回答总人数：".format(subject))
+    print(answer_count)
+
+    # step2:各学院回答"未就业"人数
+    answer_except_count = answerUtil.answer_of_subject_count_grp(data,
+                                                                 [BASE_COLUMN[0],BASE_COLUMN[1], subject],
+                                                                 [BASE_COLUMN[0],BASE_COLUMN[1]], subject,
+                                                                 A2_ANSWER[-1])
+
+    # step3:左连计算占比
+    pd_answers_valid = pd.merge(answer_count, answer_except_count, how='left',
+                                left_on=list(BASE_COLUMN[0:2]), right_on=list(BASE_COLUMN[0:2]), validate='one_to_one')
+    print(pd_answers_valid)
+    pd_answers_valid.fillna(0)
+    pd_answers_valid['rate'] = (
+            (pd_answers_valid[subject + '_x'] - pd_answers_valid[subject + '_y']) / pd_answers_valid[
+        subject + '_x'] * 100).round(decimals=2)
+
+    print(pd_answers_valid)
+    excelUtil.writeExcel(pd_answers_valid, filePath, '专业总体就业率')
+
+    college_grp_value = answerUtil.answer_grp_count(data, [BASE_COLUMN[0],BASE_COLUMN[1], subject], [BASE_COLUMN[0],BASE_COLUMN[1], subject])
+    pd_answers_left = pd.merge(college_grp_value, answer_count, how='left',
+                               left_on=list(BASE_COLUMN[0:2]), right_on=list(BASE_COLUMN[0:2]), validate='many_to_one')
+    print(pd_answers_left)
+    pd_answers_left['rate'] = (pd_answers_left['cnt'] / pd_answers_left[subject + '_y'] * 100).round(decimals=2)
+    print(pd_answers_left)
+
+    flexiable = pd_answers_left[pd_answers_left[subject + '_x'].isin(A2_ANSWER[1:3])]
+    pd_flexiable = answerUtil.answer_grp_sum(flexiable, [BASE_COLUMN[0],BASE_COLUMN[1], 'rate'], [BASE_COLUMN[0],BASE_COLUMN[1]])
+    pd_answers_merge = pd.merge(pd_answers_left, pd_flexiable, how='left',
+                        left_on=list(BASE_COLUMN[0:2]), right_on=list(BASE_COLUMN[0:2]), validate='many_to_one')
+    print(pd_answers_merge)
+    excelUtil.writeExcel(pd_answers_merge, filePath, '专业就业去向')
