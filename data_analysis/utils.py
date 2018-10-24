@@ -89,6 +89,16 @@ def answer_grp_period(data,arry_columns,array_groupby,array_periods):
     print(peroids)
     return  peroids
 
+def answer_sum(data, subject):
+    '''
+    统计某题求和
+    :param data: 数据源
+    :param subject: 列名（题目ID）
+    :return:
+    '''
+    sum = pd.DataFrame(data)[subject].sum()
+    return sum
+
 def test():
     df = pd.DataFrame({'A': [0, 1, 2, 3, 4],
                        'B': [5, 6, 5, 8, 9],
