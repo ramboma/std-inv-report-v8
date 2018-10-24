@@ -284,6 +284,33 @@ def employee_job(data,filePath):
 
     return
 
+def school_satisfy_report(data, filePath):
+    '''母校满意度报告'''
+
+    five_rate = answer_five_rate(data, 'H7', 2)
+    excelUtil.writeExcel(five_rate, filePath, '母校满意度')
+
+    return
+
+def school_recommed_report(data, filePath):
+    '''母校推荐报告'''
+
+    df_value_rate = answer_value_rate(data, 'H8')
+    df_value_rate.sort_values('比例', ascending=0, inplace=True)
+    excelUtil.writeExcel(df_value_rate, filePath, '母校推荐度')
+
+    df_college_rate=answer_college_value_rate(data,'H8')
+    df_college_rate.sort_values(['答题总人数', '比例'], ascending=[0, 0], inplace=True)
+    df_college_rate_five = df_college_rate.groupby('学院', as_index=False).head(5)
+    excelUtil.writeExcel(df_college_rate_five, filePath, '各学院母校推荐度')
+
+    df_major_rate=answer_major_value_rate(data,'H8')
+    df_major_rate.sort_values(['答题总人数', '比例'], ascending=[0, 0], inplace=True)
+    df_major_rate_five = df_major_rate.groupby(['学院', '专业'], as_index=False).head(5)
+    excelUtil.writeExcel(df_major_rate_five, filePath, '各专业母校推荐度')
+
+    return
+
 def employee_indurstry(data, filePath):
     '''就业行业分布'''
     data_a2 = data[data['A2'] == config.A2_ANSWER[0]]
