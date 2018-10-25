@@ -111,6 +111,43 @@ def test():
     grouped=df.groupby(['C','B'], as_index=False).count()
     print(grouped)
 
+def multi_columns(data, subject):
+    '''多选题的选项列'''
+    multi_column = []
+    for col in data.columns:
+        if subject in str(col):
+            multi_column.append(col)
+    return multi_column
+
+
+def multi_answer_count(data, subject):
+    '''多选题 答题人数统计'''
+    multi_column = multi_columns(data, subject)
+    df_answer = data[multi_column]
+    # resolve SettingWithCopyWarning problem
+    df_copy = df_answer.copy()
+    df_copy.dropna(how='all', inplace=True)
+    df_copy.fillna(0, inplace=True)
+    answer_count = df_copy[multi_column[0]].count()
+    return answer_count
+
+def multi_answer_distribution(data, subject):
+    '''多选题 每个选项人数统计'''
+    # step1 答题总人数
+    answer_count = multi_answer_count(data, subject)
+    # step2 结果集
+    multi_column = multi_columns(data, subject)
+    df_answer = data[multi_column]
+    key = []
+    result = []
+    for col in df_answer.columns:
+        key.append(col)
+        result.append(df_answer[col].count())
+    df_result = pd.DataFrame({'答案': key, '回答此答案人数': result})
+    df_result['答题总人数'] = answer_count
+    df_result['比例'] = (df_result['回答此答案人数'] / df_result['答题总人数']*100).round(decimals=2)
+    # df_result['比例']=df_result['比例'].map(lambda x:'%.2f' % x) 格式化后无法参与计算
+    return df_result
 
 
 

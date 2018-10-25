@@ -9,16 +9,16 @@ import pandas as pd
 import numpy as np
 import data_analysis.utils as answerUtil
 import data_analysis.read_excel_util as excelUtil
-import data_analysis.config as config
+import data_analysis.config as CONFIG
 
 
 def study_abroad_report(data, filePath):
     a2_count = answerUtil.answer_count(data, 'A2')
     study_value = answer_value_rate(data, 'F1')
     study_value['答A2题总人数'] = a2_count
-    study_value.drop(config.VALUE_RATE_COLUMN[2:4], axis='columns', inplace=True)
-    study_value[config.VALUE_RATE_COLUMN[-1]] = (
-            study_value[config.VALUE_RATE_COLUMN[1]] / study_value['答A2题总人数'] * 100).round(decimals=2)
+    study_value.drop(CONFIG.VALUE_RATE_COLUMN[2:4], axis='columns', inplace=True)
+    study_value[CONFIG.VALUE_RATE_COLUMN[-1]] = (
+            study_value[CONFIG.VALUE_RATE_COLUMN[1]] / study_value['答A2题总人数'] * 100).round(decimals=2)
     excelUtil.writeExcel(study_value, filePath, '留学比列')
 
     study_satisfy = answer_five_rate(data, 'F2', 2)
@@ -32,7 +32,7 @@ def study_abroad_report(data, filePath):
 
 
 def further_report(data, filePath):
-    further_rate = answer_rate(data, 'A2', config.A2_ANSWER[3])
+    further_rate = answer_rate(data, 'A2', CONFIG.A2_ANSWER[3])
     excelUtil.writeExcel(further_rate, filePath, '总体国内升学比例')
 
     further_reason = answer_value_rate(data, 'E2')
@@ -50,14 +50,14 @@ def further_report(data, filePath):
 
 def work_stability_report(data, filePath):
     change_times = answer_value_rate(data, 'B10-1')
-    no_changes = change_times[change_times[config.VALUE_RATE_COLUMN[0]].isin([config.B10_1_ANSWER[0]])][
-        [config.VALUE_RATE_COLUMN[-1]]]
+    no_changes = change_times[change_times[CONFIG.VALUE_RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])][
+        [CONFIG.VALUE_RATE_COLUMN[-1]]]
     no_changes.fillna(0, inplace=True)
     change_times['离职率'] = 100 - no_changes
     excelUtil.writeExcel(change_times, filePath, '总体离职情况分布')
 
     college_changes = answer_college_value_rate(data, 'B10-1')
-    college_no_change = college_changes[college_changes['答案'].isin([config.B10_1_ANSWER[0]])][['学院', '比例']]
+    college_no_change = college_changes[college_changes['答案'].isin([CONFIG.B10_1_ANSWER[0]])][['学院', '比例']]
     college_no_change['离职率'] = 100 - college_no_change['比例']
     college_no_change.drop('比例', axis='columns', inplace=True)
     college_changes_left = pd.merge(college_changes, college_no_change,
@@ -66,7 +66,7 @@ def work_stability_report(data, filePath):
     excelUtil.writeExcel(college_changes_left, filePath, '各学院离职情况')
 
     major_changes = answer_major_value_rate(data, 'B10-1')
-    major_no_change = major_changes[major_changes['答案'].isin([config.B10_1_ANSWER[0]])][['学院', '专业', '比例']]
+    major_no_change = major_changes[major_changes['答案'].isin([CONFIG.B10_1_ANSWER[0]])][['学院', '专业', '比例']]
     major_no_change['离职率'] = 100 - major_no_change['比例']
     major_no_change.drop('比例', axis='columns', inplace=True)
     major_changes_left = pd.merge(major_changes, major_no_change,
@@ -80,17 +80,17 @@ def work_stability_report(data, filePath):
 
 def work_option_report(data, filePath):
     option = answer_value_rate(data, 'A3')
-    no_option = option[option['答案'].isin([config.EXCEPTED_ANSWER])][[config.VALUE_RATE_COLUMN[1]]]
+    no_option = option[option['答案'].isin([CONFIG.EXCEPTED_ANSWER])][[CONFIG.VALUE_RATE_COLUMN[1]]]
     no_option.fillna(0, inplace=True)
-    option['有效人数'] = option[config.VALUE_RATE_COLUMN[2]] - no_option[config.VALUE_RATE_COLUMN[1]]
+    option['有效人数'] = option[CONFIG.VALUE_RATE_COLUMN[2]] - no_option[CONFIG.VALUE_RATE_COLUMN[1]]
 
-    option[config.VALUE_RATE_COLUMN[-1]] = (option[config.VALUE_RATE_COLUMN[1]] / option['有效人数'] * 100).round(
+    option[CONFIG.VALUE_RATE_COLUMN[-1]] = (option[CONFIG.VALUE_RATE_COLUMN[1]] / option['有效人数'] * 100).round(
         decimals=2)
     excelUtil.writeExcel(option, filePath, '总体就业机会')
 
     college_changes = answer_college_value_rate(data, 'A3')
-    college_no_change = college_changes[college_changes['答案'].isin([config.EXCEPTED_ANSWER])][
-        ['学院', config.VALUE_RATE_COLUMN[1]]]
+    college_no_change = college_changes[college_changes['答案'].isin([CONFIG.EXCEPTED_ANSWER])][
+        ['学院', CONFIG.VALUE_RATE_COLUMN[1]]]
 
     pd_left = pd.merge(college_changes, college_no_change,
                        how='left',
@@ -98,19 +98,19 @@ def work_option_report(data, filePath):
                        )
     pd_left.fillna(0, inplace=True)
 
-    pd_left[config.VALUE_RATE_COLUMN[-1]] = (pd_left[config.VALUE_RATE_COLUMN[1] + '_x'] / (
-                pd_left[config.VALUE_RATE_COLUMN[2]] - pd_left[config.VALUE_RATE_COLUMN[1] + '_y']) * 100).round(
+    pd_left[CONFIG.VALUE_RATE_COLUMN[-1]] = (pd_left[CONFIG.VALUE_RATE_COLUMN[1] + '_x'] / (
+                pd_left[CONFIG.VALUE_RATE_COLUMN[2]] - pd_left[CONFIG.VALUE_RATE_COLUMN[1] + '_y']) * 100).round(
         decimals=2)
     excelUtil.writeExcel(pd_left, filePath, '各学院就业机会')
 
     major_changes = answer_major_value_rate(data, 'A3')
-    major_no_change = major_changes[major_changes['答案'].isin([config.EXCEPTED_ANSWER])][
-        ['学院', '专业', config.VALUE_RATE_COLUMN[1]]]
+    major_no_change = major_changes[major_changes['答案'].isin([CONFIG.EXCEPTED_ANSWER])][
+        ['学院', '专业', CONFIG.VALUE_RATE_COLUMN[1]]]
     pd_left_major = pd.merge(major_changes, major_no_change, how='left', on=['学院', '专业'])
     pd_left_major.fillna(0, inplace=True)
-    pd_left_major[config.VALUE_RATE_COLUMN[-1]] = (pd_left_major[config.VALUE_RATE_COLUMN[1] + '_x'] / (
-                pd_left_major[config.VALUE_RATE_COLUMN[2]] - pd_left_major[
-            config.VALUE_RATE_COLUMN[1] + '_y']) * 100).round(decimals=2)
+    pd_left_major[CONFIG.VALUE_RATE_COLUMN[-1]] = (pd_left_major[CONFIG.VALUE_RATE_COLUMN[1] + '_x'] / (
+                pd_left_major[CONFIG.VALUE_RATE_COLUMN[2]] - pd_left_major[
+            CONFIG.VALUE_RATE_COLUMN[1] + '_y']) * 100).round(decimals=2)
 
     excelUtil.writeExcel(pd_left_major, filePath, '各专业就业机会')
 
@@ -270,13 +270,13 @@ def employee_job(data,filePath):
     excelUtil.writeExcel(pd_single_grp_mean, filePath, '主要就业职业月均收入')
 
     single_value = answer_single_value_rate(data, 'B9-1', 'B4-A')
-    pd_relative = single_value[single_value['答案'].isin(config.ANSWER_NORMAL_2[0:3])]['比例'].sum()
+    pd_relative = single_value[single_value['答案'].isin(CONFIG.ANSWER_NORMAL_2[0:3])]['比例'].sum()
     relativeName = '相关度'
     single_value[relativeName] = pd_relative
     excelUtil.writeExcel(single_value, filePath, '各就业职业专业相关度差异分析')
 
     single_value1 = answer_single_value_rate(data, 'B7-A', 'B4-A')
-    pd_relative1 = single_value1[single_value1['答案'].isin(config.ANSWER_NORMAL_3[0:3])]['比例'].sum()
+    pd_relative1 = single_value1[single_value1['答案'].isin(CONFIG.ANSWER_NORMAL_3[0:3])]['比例'].sum()
     relativeName1 = '满意度'
     single_value1[relativeName1] = pd_relative1
     excelUtil.writeExcel(single_value1, filePath, '各就业职业就业满意度差异分析')
@@ -313,7 +313,7 @@ def school_recommed_report(data, filePath):
 
 def employee_indurstry(data, filePath):
     '''就业行业分布'''
-    data_a2 = data[data['A2'] == config.A2_ANSWER[0]]
+    data_a2 = data[data['A2'] == CONFIG.A2_ANSWER[0]]
 
     df_value_rate = answer_value_rate(data_a2, 'B5-A')
     df_value_rate.sort_values('比例', ascending=1, inplace=True)
@@ -334,13 +334,13 @@ def employee_indurstry(data, filePath):
 
 
     single_value = answer_single_value_rate(data_a2, 'B9-1','B5-A')
-    pd_relative = single_value[single_value['答案'].isin(config.ANSWER_NORMAL_2[0:3])]['比例'].sum()
+    pd_relative = single_value[single_value['答案'].isin(CONFIG.ANSWER_NORMAL_2[0:3])]['比例'].sum()
     relativeName = '相关度'
     single_value[relativeName] = pd_relative
     excelUtil.writeExcel(single_value, filePath, '各就业行业专业相关度差异分析')
 
     single_value1 = answer_single_value_rate(data_a2, 'B7-A', 'B5-A')
-    pd_relative1 = single_value1[single_value1['答案'].isin(config.ANSWER_NORMAL_3[0:3])]['比例'].sum()
+    pd_relative1 = single_value1[single_value1['答案'].isin(CONFIG.ANSWER_NORMAL_3[0:3])]['比例'].sum()
     relativeName1 = '满意度'
     single_value1[relativeName1] = pd_relative1
     excelUtil.writeExcel(single_value1, filePath, '各就业行业就业满意度差异分析')
@@ -349,7 +349,7 @@ def employee_indurstry(data, filePath):
 
 def employee_difficult_report(data, filePath):
     '''求职过程报告'''
-    data_a2 = data[data['A2'].isin([config.A2_ANSWER[0],config.A2_ANSWER[2]])]
+    data_a2 = data[data['A2'].isin([CONFIG.A2_ANSWER[0],CONFIG.A2_ANSWER[2]])]
 
     df_value_rate = answer_value_rate(data_a2, 'D2')
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
@@ -366,75 +366,36 @@ def employee_difficult_report(data, filePath):
 
     return
 
-
-def business_report(data,filePath):
+def self_employed_report(data, filePath):
     '''自主创业报告'''
-    business_rate = answer_rate(data, 'A2', config.A2_ANSWER[1])
+    business_rate = answer_rate(data, 'A2', CONFIG.A2_ANSWER[1])
     excelUtil.writeExcel(business_rate, filePath, '自主创业比例')
+    
+    subject = 'G3'
+    df_distribution = answerUtil.multi_answer_distribution(data, subject)
+    df_distribution.sort_values([CONFIG.VALUE_RATE_COLUMN[-1]], ascending=[0], inplace=True)
+    excelUtil.writeExcel(df_distribution, filePath, '创业原因')
 
-    multi_reason=0
-    g3_a_count=answerUtil.answer_count(data,'G3-A')
-    g3_b_count=answerUtil.answer_count(data,'G3-A')
-    g3_c_count=answerUtil.answer_count(data,'G3-A')
-    g3_d_count=answerUtil.answer_count(data,'G3-A')
-    g3_e_count=answerUtil.answer_count(data,'G3-A')
-    g3_d_count=answerUtil.answer_count(data,'G3-A')
-    g3_e_count=answerUtil.answer_count(data,'G3-A')
+    subject = 'G4'
+    df_distribution = answerUtil.multi_answer_distribution(data, subject)
+    df_distribution.sort_values([CONFIG.VALUE_RATE_COLUMN[-1]], ascending=[0], inplace=True)
+    excelUtil.writeExcel(df_distribution, filePath, '创业资金来源')
 
-    business_reason = answer_value_rate(data, 'G3')
-    excelUtil.writeExcel(business_reason, filePath, '自主创业原因')
+    subject = 'G5'
+    df_distribution = answerUtil.multi_answer_distribution(data, subject)
+    df_distribution.sort_values([CONFIG.VALUE_RATE_COLUMN[-1]], ascending=[0], inplace=True)
+    excelUtil.writeExcel(df_distribution, filePath, '创业困难')
 
-    further_satisfy = answer_five_rate(data, 'E1', 2)
-    excelUtil.writeExcel(further_satisfy, filePath, '自主创业行业')
+    subject = 'G1'
+    df_distribution = answerUtil.multi_answer_distribution(data, subject)
+    df_distribution.sort_values([CONFIG.VALUE_RATE_COLUMN[-1]], ascending=[0], inplace=True)
+    excelUtil.writeExcel(df_distribution, filePath, '创业行业')
 
-    further_relative = answer_five_rate(data, 'E3', 1)
-    excelUtil.writeExcel(further_relative, filePath, '自主创业与所学专业')
-
-    change_reason = answer_value_rate(data, 'E4')
-    excelUtil.writeExcel(change_reason, filePath, '自主创业资金来源')
-
-    change_reason = answer_value_rate(data, 'E4')
-    excelUtil.writeExcel(change_reason, filePath, '自主创业困难')
+    subject = 'G2'
+    df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
+    excelUtil.writeExcel(df_mean, filePath, '创业行业与所学专业相关度')
 
     return
-
-
-
-
-def answer_five_rate(data, subject, answerType):
-    '''某一题五维占比'''
-    # step1：各个答案占比
-    pd_five_rate = answer_value_rate(data, subject)
-    pd_five_rate.drop('比例', axis='columns', inplace=True)
-    invalid_count = answerUtil.answer_of_subject_count(data, subject, config.EXCEPTED_ANSWER)
-    pd_five_rate['比例'] = (pd_five_rate['回答此答案人数'] / (pd_five_rate['答题总人数'] - invalid_count) * 100).round(decimals=2)
-
-    # step2: 相关度/满意度
-    if answerType == 0:
-        pd_relative = pd_five_rate[pd_five_rate['答案'].isin(config.ANSWER_NORMAL_1[0:3])]['比例'].sum()
-        relativeName = '符合度'
-    elif answerType == 1:
-        pd_relative = pd_five_rate[pd_five_rate['答案'].isin(config.ANSWER_NORMAL_2[0:3])]['比例'].sum()
-        relativeName = '相关度'
-    elif answerType == 2:
-        pd_relative = pd_five_rate[pd_five_rate['答案'].isin(config.ANSWER_NORMAL_3[0:3])]['比例'].sum()
-        relativeName = '满意度'
-    pd_five_rate[relativeName] = pd_relative
-
-    pd_five_rate['val_score'] = pd_five_rate['答案']
-
-    if answerType == 0:
-        pd_five_rate.replace({'val_score': config.ANSWER_SCORE_DICT_1}, inplace=True)
-    elif answerType == 1:
-        pd_five_rate.replace({'val_score': config.ANSWER_SCORE_DICT_2}, inplace=True)
-    elif answerType == 2:
-        pd_five_rate.replace({'val_score': config.ANSWER_SCORE_DICT_3}, inplace=True)
-
-    pd_five_rate['val_score'] = pd_five_rate['回答此答案人数'] * pd_five_rate['val_score']
-    alpha_x = pd_five_rate['val_score'].sum()
-    pd_five_rate['均值'] = (alpha_x / (pd_five_rate['答题总人数'] - invalid_count)).round(decimals=2)
-    pd_five_rate.drop('val_score', axis='columns', inplace=True)
-    return pd_five_rate
 
 
 def answer_rate(data, subject, answer):
@@ -461,11 +422,11 @@ def answer_value_rate(data, subject):
 
 
 def answer_college_value_rate(data, subject):
-    pd_count = answerUtil.answer_grp_count(data, [config.BASE_COLUMN[0], subject], [config.BASE_COLUMN[0]])
-    pd_value_count = answerUtil.answer_grp_count(data, [config.BASE_COLUMN[0], subject],
-                                                 [config.BASE_COLUMN[0], subject])
+    pd_count = answerUtil.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject], [CONFIG.BASE_COLUMN[0]])
+    pd_value_count = answerUtil.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject],
+                                                 [CONFIG.BASE_COLUMN[0], subject])
 
-    pd_left = pd.merge(pd_value_count, pd_count, on=config.BASE_COLUMN[0], how='left', suffixes=('_x', '_y'))
+    pd_left = pd.merge(pd_value_count, pd_count, on=CONFIG.BASE_COLUMN[0], how='left', suffixes=('_x', '_y'))
     pd_left.columns = ['学院', '答案', '回答此答案人数', '答题总人数']
     pd_left['比例'] = (pd_left['回答此答案人数'] / pd_left['答题总人数'] * 100).round(decimals=2)
 
@@ -485,13 +446,13 @@ def answer_single_value_rate(data, subject, single_grp):
 
 def answer_major_value_rate(data, subject):
     pd_count = answerUtil.answer_grp_count(data,
-                                           [config.BASE_COLUMN[0], config.BASE_COLUMN[1], subject],
-                                           [config.BASE_COLUMN[0], config.BASE_COLUMN[1]])
+                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
+                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]])
     pd_value_count = answerUtil.answer_grp_count(data,
-                                                 [config.BASE_COLUMN[0], config.BASE_COLUMN[1], subject],
-                                                 [config.BASE_COLUMN[0], config.BASE_COLUMN[1], subject])
+                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
+                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject])
     pd_left = pd.merge(pd_value_count, pd_count,
-                       on=[config.BASE_COLUMN[0], config.BASE_COLUMN[1]],
+                       on=[CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                        how='left', suffixes=('_x', '_y'))
     pd_left.columns = ['学院', '专业', '答案', '回答此答案人数', '答题总人数']
     pd_left['比例'] = (pd_left['回答此答案人数'] / pd_left['答题总人数'] * 100).round(decimals=2)
@@ -510,8 +471,8 @@ def answer_mean(data, subject):
 
 
 def college_mean(data, subject):
-    pd_source = pd.DataFrame(data, columns=[config.BASE_COLUMN[0], subject])
-    grouped = pd_source.groupby(config.BASE_COLUMN[0], as_index=False)
+    pd_source = pd.DataFrame(data, columns=[CONFIG.BASE_COLUMN[0], subject])
+    grouped = pd_source.groupby(CONFIG.BASE_COLUMN[0], as_index=False)
     pd_result = grouped[subject].agg([np.sum, np.mean, np.count_nonzero])
     formate = lambda x: "%.2f" % x
     pd_result = pd_result.applymap(formate)
@@ -519,8 +480,8 @@ def college_mean(data, subject):
 
 
 def major_mean(data, subject):
-    pd_source = pd.DataFrame(data, columns=[config.BASE_COLUMN[0], config.BASE_COLUMN[1], subject])
-    grouped = pd_source.groupby([config.BASE_COLUMN[0], config.BASE_COLUMN[1]], as_index=False)
+    pd_source = pd.DataFrame(data, columns=[CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject])
+    grouped = pd_source.groupby([CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]], as_index=False)
     pd_result = grouped[subject].agg([np.sum, np.mean, np.count_nonzero])
     formate = lambda x: "%.2f" % x
     pd_result = pd_result.applymap(formate)
@@ -552,6 +513,125 @@ def answer_period(data, subject, start, end, step):
     print(pd_period)
 
     return pd_period
+
+
+
+def parse_measure(measure_type):
+    if CONFIG.ANSWER_TYPE_MEET == measure_type:
+        measure = CONFIG.ANSWER_NORMAL_MEET
+    elif CONFIG.ANSWER_TYPE_RELATIVE == measure_type:
+        measure = CONFIG.ANSWER_NORMAL_RELATIVE
+    elif CONFIG.ANSWER_TYPE_SATISFY == measure_type:
+        measure = CONFIG.ANSWER_NORMAL_SATISFY
+    return measure
+
+
+def parse_measure_name(measure_type):
+    if CONFIG.ANSWER_TYPE_MEET == measure_type:
+        measure = CONFIG.MEASURE_NAME_MEET
+    elif CONFIG.ANSWER_TYPE_RELATIVE == measure_type:
+        measure = CONFIG.MEASURE_NAME_RELATIVE
+    elif CONFIG.ANSWER_TYPE_SATISFY == measure_type:
+        measure = CONFIG.ANSWER_NORMAL_SATISFY
+    return measure
+
+
+def parse_measure_score(measure_type):
+    if CONFIG.ANSWER_TYPE_MEET == measure_type:
+        measure = CONFIG.ANSWER_SCORE_DICT_MEET
+    elif CONFIG.ANSWER_TYPE_RELATIVE == measure_type:
+        measure = CONFIG.ANSWER_SCORE_DICT_RELATIVE
+    elif CONFIG.ANSWER_TYPE_SATISFY == measure_type:
+        measure = CONFIG.ANSWER_SCORE_DICT_SATISFY
+    return measure
+
+
+def answer_five_rate(data, subject, measure_type, has_unknown=True):
+    '''某题五维占比'''
+    # step1：各个答案占比
+    pd_five_rate = answer_value_rate(data, subject)
+    # step2:处理“无法评价”
+    if has_unknown:
+        unknown_count = answerUtil.answer_of_subject_count(data, subject, CONFIG.EXCEPTED_ANSWER)
+        pd_five_rate['比例'] = (pd_five_rate['回答此答案人数'] / (pd_five_rate['答题总人数'] - unknown_count) * 100).round(2)
+
+    # step3: 相关度/满意度/符合度
+    ls_measure = parse_measure(measure_type)
+    dict_measure_score = parse_measure_score(measure_type)
+    measure_name = parse_measure_name(measure_type)
+
+    pd_measure = pd_five_rate[pd_five_rate['答案'].isin(ls_measure[0:3])]
+    measure_rate = pd_measure['比例'].sum().round(decimals=2)
+    pd_five_rate[measure_name] = measure_rate
+
+    # step4: 均值
+    pd_five_rate['measure_score'] = pd_five_rate['答案']
+    pd_five_rate.replace({'measure_score': dict_measure_score}, inplace=True)
+    pd_five_rate['measure_score'] = pd_five_rate['回答此答案人数'] * pd_five_rate['measure_score']
+    alpha_x = pd_five_rate['measure_score'].sum()
+    if has_unknown:
+        pd_five_rate['均值'] = (alpha_x / (pd_five_rate['答题总人数'] - unknown_count)).round(decimals=2)
+    else:
+        pd_five_rate['均值'] = (alpha_x / pd_five_rate['答题总人数']).round(decimals=2)
+
+    # pd_five_rate['均值'] = pd_five_rate['均值'].map(lambda x: '%.2f' % x)
+    pd_five_rate.drop('measure_score', axis='columns', inplace=True)
+
+    return pd_five_rate
+
+def answer_five_rate_single_grp(data, subject,grp, measure_type,has_unknown=True):
+    '''某题单维分组的五维占比'''
+
+    # 分组算总数
+    pd_total=answerUtil.answer_grp_count(data,[grp,subject],[grp])
+    pd_total.columns=['分组','答题总人数']
+    print(pd_total)
+    # 分组算各答案分布
+    pd_distribution=answerUtil.answer_grp_count(data,[grp,subject],[grp,subject])
+    pd_distribution.columns = ['分组', '答案','回答此答案人数']
+    print(pd_distribution)
+    # 合并答案、回答此答案人数、答题总人数
+    pd_left_for_rate=pd.merge(pd_distribution,pd_total,how='left',on='分组',validate='many_to_one')
+    print(pd_left_for_rate)
+
+    if has_unknown:
+        pd_unknown=pd_distribution[pd_distribution['答案']==CONFIG.EXCEPTED_ANSWER]
+        if pd_unknown.empty:
+            print("***********无人回答'{}'".format(CONFIG.EXCEPTED_ANSWER))
+            pd_left_for_rate['比例'] = (pd_left_for_rate['回答此答案人数'] / pd_left_for_rate['答题总人数'] * 100).round(2)
+        else:
+            print("***************过滤'{}'".format(CONFIG.EXCEPTED_ANSWER))
+            pd_left_unknown=pd.merge(pd_left_for_rate,pd_unknown,on='分组',how='left',suffixes=['','_y'])
+            pd_left_unknown['回答此答案人数_y'].fillna(0,inplace=True)
+            pd_left_unknown['比例']=(pd_left_unknown['回答此答案人数'] / (pd_left_unknown['答题总人数']-pd_left_unknown['回答此答案人数_y']) * 100).round(2)
+            pd_left_for_rate['比例']=pd_left_unknown['比例']
+    else:
+        pd_left_for_rate['比例']=(pd_left_for_rate['回答此答案人数'] / pd_left_for_rate['答题总人数'] * 100).round(2)
+    print('**************')
+    print(pd_left_for_rate)
+
+    # step3: 相关度/满意度/符合度
+    ls_measure = parse_measure(measure_type)
+    dict_measure_score = parse_measure_score(measure_type)
+    measure_name = parse_measure_name(measure_type)
+
+    pd_measure = pd_left_for_rate[pd_left_for_rate['答案'].isin(ls_measure[0:3])]
+    pd_measure_sum = answerUtil.answer_grp_sum(pd_measure, ['分组', '比例'], ['分组'])
+    print("各学院各专业{}吻合度：\n".format(subject))
+    print(pd_measure_sum)
+
+    pd_left_rate_measure = pd.merge(pd_left_for_rate, pd_measure_sum, on='分组', how='left', suffixes=['', '_y'])
+    pd_left_rate_measure.columns['分组_y'] = measure_name
+
+    # step6:计算alpha
+    pd_left_rate_measure['measure_score'] = pd_left_rate_measure['答案']
+    pd_left_rate_measure.replace({'measure_score': dict_measure_score}, inplace=True)
+
+    pd_left_rate_measure['measure_score'] = pd_left_rate_measure['回答此答案人数'] * pd_left_rate_measure['measure_score']
+    pd_measure_sum = answerUtil.answer_grp_sum(pd_left_rate_measure, ['分组', 'measure_score'], ['分组'])
+
+    # step5:计算mean
+    return
 
 
 
