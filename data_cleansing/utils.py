@@ -158,24 +158,24 @@ class DataCleanser:
         self._remove_rows_by_index_list(remove_list, '1', sys._getframe().f_code.co_name)
 
     @clocking
-    def remove_unsubmitted_records(self):
-        """rule 2, 3: remove un-submitted row, e.g. no submit-time exist"""
-        print('rule 2, 3: removing rows which have no submit time')
-        # find them
-        remove_list = self._query_row_indexes_by_column_filter(SUBMIT_TIME_COLUMN_EXCEL_INDEX,
-                                                          lambda val: (val is None or val == ''))
-        # remove them
-        self._remove_rows_by_index_list(remove_list, '2, 3', sys._getframe().f_code.co_name)
-
-    @clocking
     def remove_unqualified_records(self):
-        """rule 2, 3: remove un-qualified row, e.g. no answer for question A2"""
-        print('rule 2, 3: removing rows which have no A2 answers')
+        """rule 2.1: remove un-qualified row, e.g. no answer for question A2"""
+        print('rule 2.1: removing rows which have no A2 answers')
         # find them
         remove_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['A2'][0],
                                                           lambda val: (val is None or val == ''))
         # remove them
-        self._remove_rows_by_index_list(remove_list, '2, 3', sys._getframe().f_code.co_name)
+        self._remove_rows_by_index_list(remove_list, '2.1', sys._getframe().f_code.co_name)
+
+    @clocking
+    def remove_unsubmitted_records(self):
+        """rule 2.2: remove un-submitted row, e.g. no submit-time exist"""
+        print('rule 2.2: removing rows which have no submit time')
+        # find them
+        remove_list = self._query_row_indexes_by_column_filter(SUBMIT_TIME_COLUMN_EXCEL_INDEX,
+                                                          lambda val: (val is None or val == ''))
+        # remove them
+        self._remove_rows_by_index_list(remove_list, '2.2', sys._getframe().f_code.co_name)
 
     @clocking
     def rinse_irrelevant_answers(self, irrelevant_question_rules, rule_no):
