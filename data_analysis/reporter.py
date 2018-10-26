@@ -8,6 +8,8 @@ __author__ = 'kuoren'
 import pandas as pd
 import data_analysis.utils as answerUtil
 import data_analysis.read_excel_util as excelUtil
+import data_analysis.formulas as formulas
+import data_analysis.config as CONFIG
 
 # _10:学院；_14:专业; 元组不能被修改
 BASE_COLUMN = ('_10', '_14', 'A2')
@@ -83,275 +85,6 @@ def sum_subject_report(data, subject, answerType, filePath,a2_answer_index=0):
     excelUtil.writeExcel(pd_ret, filePath, subject + '_总体')
     print(pd_ret)
     return pd_ret
-
-
-def college_subject_report(data, subject, answerType, filePath):
-    '''
-    按学院分组，产生某个题目的总人数、五维占比、均值报告
-    前提：和A2相关，需要去除一部分答案
-    :param data: 元数据
-    :param subject: 题目号
-    :param answerType:0-符合；1-相关；
-    :param filePath:输出文件
-    :return:
-    '''
-    column_relative = list(BASE_COLUMN)
-    column_relative.append(subject)
-    data_relative = pd.DataFrame(data, columns=column_relative)
-    data_where = data_relative[data_relative['A2'] == A2_ANSWER[0]]
-
-    # step1:各学院答题总人数
-    answer_count = answerUtil.answer_grp_count(data_where, [BASE_COLUMN[0], subject], BASE_COLUMN[0])
-    print("各学院{}回答总人数：\n".format(subject))
-    print(answer_count)
-
-    # step2:回答"无法评价"人数
-    if answerType == 0:
-        answer_except_count = answerUtil.answer_of_subject_count_grp(data_where,
-                                                                     [BASE_COLUMN[0], subject],
-                                                                     BASE_COLUMN[0],
-                                                                     subject, ANSWER_NORMAL_1[-1])
-        print("各学院各专业{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_1[-1]))
-        print(answer_except_count)
-    elif answerType == 1:
-        answer_except_count = answerUtil.answer_of_subject_count_grp(data_where,
-                                                                     [BASE_COLUMN[0], subject],
-                                                                     BASE_COLUMN[0],
-                                                                     subject, ANSWER_NORMAL_2[-1])
-        print("各学院各专业{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_2[-1]))
-        print(answer_except_count)
-    elif answerType == 2:
-        answer_except_count = answerUtil.answer_of_subject_count_grp(data_where,
-                                                                     [BASE_COLUMN[0], subject],
-                                                                     BASE_COLUMN[0],
-                                                                     subject, ANSWER_NORMAL_3[-1])
-        print("各学院各专业{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_3[-1]))
-        print(answer_except_count)
-
-    print("各学院{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_1[-1]))
-    print(answer_except_count)
-
-    # step3:B9-1 填答此题总人数-选项6无法评价的人数
-    if answer_except_count.empty:
-        print('no except')
-        pd_five_total = pd.DataFrame({'college': answer_count[BASE_COLUMN[0]],
-                                      'count': answer_count[subject]})
-    else:
-        print('need except')
-        pd_left = pd.merge(answer_count, answer_except_count, how='left',
-                           on=BASE_COLUMN[0], validate='one_to_one')
-        pd_left['count'] = pd_left['B9-1-x'] - pd_left['B9-1-y']
-        pd_left.fillna(0)
-        pd_five_total = pd.DataFrame({'college': pd_left[BASE_COLUMN[0]],
-                                      'count': pd_left['count']})
-    print("各学院{}有效回答总人数：\n".format(subject))
-    print(pd_five_total)
-
-    # step3:分组统计有效答题人数=总人数-选项6无法评价的人数
-    if answer_except_count.empty:
-        print('no except')
-        pd_five_total = pd.DataFrame({'college': answer_count[BASE_COLUMN[0]],
-                                      'count': answer_count[subject]})
-    else:
-        print('need except')
-        pd_left = pd.merge(answer_count, answer_except_count, how='left',
-                           on=list(BASE_COLUMN[0]), validate='one_to_one')
-        pd_left.fillna(0)
-        pd_left['count'] = pd_left[subject + '-x'] - pd_left[subject + '-y']
-        pd_five_total = pd.DataFrame({'college': pd_left[BASE_COLUMN[0]],
-                                      'count': pd_left['count']})
-
-    answer_values_grp = answerUtil.answer_grp_count(data_where, [BASE_COLUMN[0], subject, 'A2'],
-                                                    [BASE_COLUMN[0],subject])
-    print("{}各答案分布：".format(subject))
-    print(answer_values_grp)
-
-    # step4:B9-1五维占比
-    pd_five = pd.merge(answer_values_grp, pd_five_total, how='inner',
-                       left_on=BASE_COLUMN[0], right_on='college', validate='many_to_one')
-    pd_five['rate'] = (pd_five['A2'] / pd_five['count'] * 100).round(decimals=2)
-
-    pd_five_rate = pd.DataFrame(pd_five, columns=[BASE_COLUMN[0], subject, 'rate'])
-    print("各学院{}五维占比：\n".format(subject))
-    print(pd_five_rate)
-
-    if answerType == 0:
-        matches = pd_five_rate[pd_five_rate[subject].isin(ANSWER_NORMAL_1[0:3])]
-    elif answerType == 1:
-        matches = pd_five_rate[pd_five_rate[subject].isin(ANSWER_NORMAL_2[0:3])]
-    elif answerType == 2:
-        matches = pd_five_rate[pd_five_rate[subject].isin(ANSWER_NORMAL_3[0:3])]
-
-    matches_sum = answerUtil.answer_grp_sum(matches,
-                                            [BASE_COLUMN[0], 'rate'],
-                                            [BASE_COLUMN[0]])
-    print("各学院{}吻合度：\n".format(subject))
-    print(matches_sum)
-
-    # step5:计算alpha
-    answer_values_grp['val_score'] = answer_values_grp[subject]
-    if answerType == 0:
-        answer_values_grp.replace({'val_score': ANSWER_SCORE_DICT_1}, inplace=True)
-    elif answerType == 1:
-        answer_values_grp.replace({'val_score': ANSWER_SCORE_DICT_2}, inplace=True)
-    elif answerType == 2:
-        answer_values_grp.replace({'val_score': ANSWER_SCORE_DICT_3}, inplace=True)
-    answer_values_grp['total_score'] = answer_values_grp['A2'] * answer_values_grp['val_score']
-    answer_alpha = answerUtil.answer_grp_sum(answer_values_grp, [BASE_COLUMN[0], 'total_score'], [BASE_COLUMN[0]])
-
-    # step5:计算mean
-    pd_mean = pd.merge(answer_alpha, pd_five_total, how='inner',
-                       left_on=BASE_COLUMN[0], right_on='college', validate='one_to_one')
-    pd_mean['mean'] = (pd_mean['total_score'] / pd_mean['count']).round(decimals=2)
-    print("各学院{}均值：".format(subject))
-    print(pd_mean)
-
-    pd_mean_match = pd.DataFrame({'college': pd_mean[BASE_COLUMN[0]],
-                                  'mean': pd_mean['mean'],
-                                  'match': matches_sum['rate'],
-                                  'count': answer_count[subject]})
-    pd_rate_mean_match = pd.merge(pd_five_rate, pd_mean_match, how='left',
-                                  left_on=BASE_COLUMN[0], right_on='college', validate='many_to_one')
-    print(pd_rate_mean_match)
-    pd_result = pd.DataFrame(pd_rate_mean_match, columns=['college',
-                                                          subject, 'rate', 'match',
-                                                          'mean', 'count'])
-    excelUtil.writeExcel(pd_result, filePath, subject + '各学院')
-    return pd_result
-
-
-def major_subject_report(data, subject, answerType, filePath):
-    '''
-    按专业分组，产生某个题目的总人数、五维占比、均值报告
-    :param data: 元数据
-    :param subject: 题目号
-    :param answerType:0-符合；1-相关；
-    :param filePath:输出文件
-    :return:
-    '''
-
-    column_relative = list(BASE_COLUMN)
-    column_relative.append(subject)
-    data_relative = pd.DataFrame(data, columns=column_relative)
-    data_where = data_relative[data_relative['A2'] == A2_ANSWER[0]]
-    excelUtil.writeExcel(data_where, filePath, subject + '_source')
-
-    college_major_subject = list(BASE_COLUMN[0:2])
-    college_major_subject.append(subject)
-    # step1:分组统计答题总人数
-    answer_count = answerUtil.answer_grp_count(data_where, college_major_subject, list(BASE_COLUMN[0:2]))
-    print("各学院各专业{}回答总人数：\n".format(subject))
-    print(answer_count)
-
-    # step2:回答"无法评价"人数
-    if answerType == 0:
-        answer_except_count = answerUtil.answer_of_subject_count_grp(data_where,
-                                                                     college_major_subject,
-                                                                     list(BASE_COLUMN[0:2]),
-                                                                     subject,
-                                                                     ANSWER_NORMAL_1[-1])
-        print("各学院各专业{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_1[-1]))
-        print(answer_except_count)
-    elif answerType == 1:
-        answer_except_count = answerUtil.answer_of_subject_count_grp(data_where,
-                                                                     college_major_subject,
-                                                                     list(BASE_COLUMN[0:2]),
-                                                                     subject,
-                                                                     ANSWER_NORMAL_2[-1])
-        print("各学院各专业{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_2[-1]))
-        print(answer_except_count)
-    elif answerType == 2:
-        answer_except_count = answerUtil.answer_of_subject_count_grp(data_where,
-                                                                     college_major_subject,
-                                                                     list(BASE_COLUMN[0:2]),
-                                                                     subject,
-                                                                     ANSWER_NORMAL_3[-1])
-        print("各学院各专业{}回答'{}'人数：\n".format(subject, ANSWER_NORMAL_3[-1]))
-        print(answer_except_count)
-
-    # step3:分组统计有效答题人数=总人数-选项6无法评价的人数
-    if answer_except_count.empty:
-        print('no except')
-        pd_five_total = pd.DataFrame({'college': answer_count[BASE_COLUMN[0]],
-                                      'major': answer_count[BASE_COLUMN[1]],
-                                      'count': answer_count[subject]})
-    else:
-        print('need except')
-        pd_left = pd.merge(answer_count, answer_except_count, how='left',
-                           on=list(BASE_COLUMN[0:2]), validate='one_to_one')
-        pd_left.fillna(0)
-        pd_left['count'] = pd_left[subject + '-x'] - pd_left[subject + '-y']
-        pd_five_total = pd.DataFrame({'college': pd_left[BASE_COLUMN[0]],
-                                      'major': pd_left[BASE_COLUMN[1]],
-                                      'count': pd_left['count']})
-
-    # step4:分组统计各答案人数
-    college_major_subject_other = list(BASE_COLUMN)
-    college_major_subject_other.append(subject)
-    answer_values_grp = answerUtil.answer_grp_count(data_where,
-                                                    college_major_subject_other,
-                                                    college_major_subject)
-    print("各学院各专业{}各答案分布：".format(subject))
-    print(answer_values_grp)
-
-    # step5:五维占比
-    pd_five = pd.merge(answer_values_grp, pd_five_total, how='inner',
-                       left_on=list(BASE_COLUMN[0:2]), right_on=['college', 'major'],
-                       validate='many_to_one')
-    pd_five['rate'] = (pd_five['A2'] / pd_five['count'] * 100).round(decimals=2)
-
-    pd_five_rate = pd.DataFrame(pd_five, columns=[BASE_COLUMN[0], BASE_COLUMN[1],
-                                                  subject, 'rate'])
-    print("各学院各专业{}五维占比：\n".format(subject))
-    print(pd_five_rate)
-
-    if answerType == 0:
-        matches = pd_five_rate[pd_five_rate[subject].isin(ANSWER_NORMAL_1[0:3])]
-    elif answerType == 1:
-        matches = pd_five_rate[pd_five_rate[subject].isin(ANSWER_NORMAL_2[0:3])]
-    elif answerType == 2:
-        matches = pd_five_rate[pd_five_rate[subject].isin(ANSWER_NORMAL_3[0:3])]
-
-    matches_sum = answerUtil.answer_grp_sum(matches,
-                                            [BASE_COLUMN[0], BASE_COLUMN[1], 'rate'],
-                                            [BASE_COLUMN[0], BASE_COLUMN[1]])
-    print("各学院各专业{}吻合度：\n".format(subject))
-    print(matches_sum)
-
-    # step6:计算alpha
-    answer_values_grp['val_score'] = answer_values_grp[subject]
-    if answerType == 0:
-        answer_values_grp.replace({'val_score': ANSWER_SCORE_DICT_1}, inplace=True)
-    elif answerType == 1:
-        answer_values_grp.replace({'val_score': ANSWER_SCORE_DICT_2}, inplace=True)
-    elif answerType == 2:
-        answer_values_grp.replace({'val_score': ANSWER_SCORE_DICT_3}, inplace=True)
-    answer_values_grp['total_score'] = answer_values_grp['A2'] * answer_values_grp['val_score']
-    answer_alpha = answerUtil.answer_grp_sum(answer_values_grp,
-                                             [BASE_COLUMN[0], BASE_COLUMN[1], 'total_score'],
-                                             [BASE_COLUMN[0], BASE_COLUMN[1]])
-
-    # step5:计算mean
-    pd_mean = pd.merge(answer_alpha, pd_five_total, how='inner',
-                       left_on=list(BASE_COLUMN[0:2]), right_on=['college', 'major'], validate='one_to_one')
-    pd_mean['mean'] = (pd_mean['total_score'] / pd_mean['count']).round(decimals=2)
-    print("各学院{}均值：".format(subject))
-    print(pd_mean)
-
-    pd_mean_match = pd.DataFrame({'college': pd_mean[BASE_COLUMN[0]],
-                                  'major': pd_mean[BASE_COLUMN[1]],
-                                  'mean': pd_mean['mean'],
-                                  'match': matches_sum['rate'],
-                                  'count': answer_count[subject]})
-    pd_rate_mean_match = pd.merge(pd_five_rate, pd_mean_match, how='left',
-                                  left_on=list(BASE_COLUMN[0:2]), right_on=['college', 'major'], validate='many_to_one')
-    print(pd_rate_mean_match)
-    pd_result = pd.DataFrame(pd_rate_mean_match, columns=['college', 'major',
-                                                          subject, 'rate', 'match',
-                                                          'mean', 'count'])
-    excelUtil.writeExcel(pd_result, filePath, subject + '各专业')
-    return pd_result
-
 
 def demission_reason(data, subject):
     '''
@@ -529,3 +262,17 @@ def major_employee_report(data, subject, filePath):
                         left_on=list(BASE_COLUMN[0:2]), right_on=list(BASE_COLUMN[0:2]), validate='many_to_one')
     print(pd_answers_merge)
     excelUtil.writeExcel(pd_answers_merge, filePath, '专业就业去向')
+
+def special_gender_report(data,filePath):
+    subject='_3'
+    dict_where={"column":subject,"cond":CONFIG.GENDER[0]}
+    df_male=formulas.formula_employee_unit(data,dict_where,['比例'],[0],5)
+    df_male['性别']=dict_where["cond"]
+    print(df_male)
+
+    df_male_employee_indurstry = formulas.formula_employee_indurstry(data,
+                                                                     dict_where,
+                                                                     ['比例'],
+                                                                     [0], 5)
+    df_male_employee_indurstry['性别'] = dict_where["cond"]
+    print(df_male_employee_indurstry)

@@ -65,7 +65,16 @@ ABILITY_REVERSE = ['I2-2-4', 'I2-6-15', 'I2-7-20', 'I2-8-22', 'I2-13-33', 'I2-14
 COLUMN_NAME_GRP_COUNT = {'grp': '分组', 'subject': '答题总人数'}
 COLUMN_NAME_GRP_VAL_COUNT = {'grp': '分组', 'subject': '答题总人数', 'cnt': '回答此答案人数'}
 
-VALUE_RATE_COLUMN = ['答案', '回答此答案人数', '答题总人数', '比例']
-MEAN_COLUMN = ['答案', '回答此答案人数', '答题总人数', '比例','度量','均值']
-
+RATE_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例')
+MEAN_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例','度量','均值')
+EMPLOYEE_RATE_COLUMN='就业率'
 B10_1_ANSWER = ['0次']
+
+# 条件过滤的key值
+DICT_KEY=('column','cond')
+
+
+COLLEGE_MAJOR=('_10', '_14')
+GENDER=('男','女')
+
+ERROR_PARAMS="参数错误"
