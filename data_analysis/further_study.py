@@ -738,25 +738,25 @@ def special_gender_report(data,filePath):
     df_emp_competitive1=special_employee_competitive(data, dict_where1)
     df_emp_competitive2=special_employee_competitive(data,dict_where2)
     df_concat=pd.concat([df_emp_competitive1,df_emp_competitive2])
-    excelUtil.writeExcel(df_concat, filePath, suffix+ '就业就业竞争力')
+    excelUtil.writeExcel(df_concat, filePath, suffix+ '就业竞争力')
 
     df_lesson1=special_lesson(data, dict_where1)
-    df_lesson2=special_lesson(data, dict_where1)
+    df_lesson2=special_lesson(data, dict_where2)
     df_concat=pd.concat([df_lesson1,df_lesson2])
-    excelUtil.writeExcel(df_concat, filePath, suffix+ '就业就业课堂教学')
+    excelUtil.writeExcel(df_concat, filePath, suffix+ '就业课堂教学')
 
     df_practice1=special_practice(data, dict_where1)
-    df_practice2=special_practice(data, dict_where1)
+    df_practice2=special_practice(data, dict_where2)
     df_concat=pd.concat([df_practice1,df_practice2])
     excelUtil.writeExcel(df_concat, filePath, suffix+ '实践教学')
 
     df_teacher1 = special_teacher(data, dict_where1)
-    df_teacher2 = special_teacher(data, dict_where1)
+    df_teacher2 = special_teacher(data, dict_where2)
     df_concat = pd.concat([df_teacher1, df_teacher2])
     excelUtil.writeExcel(df_concat, filePath, suffix + '教师评价')
 
     df_school1 = special_school(data, dict_where1)
-    df_school2 = special_school(data, dict_where1)
+    df_school2 = special_school(data, dict_where2)
     df_concat = pd.concat([df_school1, df_school2])
     excelUtil.writeExcel(df_concat, filePath, suffix + '母校总和评价')
 
