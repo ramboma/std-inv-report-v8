@@ -263,16 +263,3 @@ def major_employee_report(data, subject, filePath):
     print(pd_answers_merge)
     excelUtil.writeExcel(pd_answers_merge, filePath, '专业就业去向')
 
-def special_gender_report(data,filePath):
-    subject='_3'
-    dict_where={"column":subject,"cond":CONFIG.GENDER[0]}
-    df_male=formulas.formula_employee_unit(data,dict_where,['比例'],[0],5)
-    df_male['性别']=dict_where["cond"]
-    print(df_male)
-
-    df_male_employee_indurstry = formulas.formula_employee_indurstry(data,
-                                                                     dict_where,
-                                                                     ['比例'],
-                                                                     [0], 5)
-    df_male_employee_indurstry['性别'] = dict_where["cond"]
-    print(df_male_employee_indurstry)
