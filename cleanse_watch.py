@@ -9,12 +9,13 @@ import os
 import click
 import time
 # import sys
-# import logging
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from data_cleansing.runner import *
+
+logger = get_logger(__name__)
 
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
@@ -42,7 +43,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         filename = os.path.basename(event.src_path)
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
-            print('input file {} detected'.format(event.src_path))
+            logger.info('input file {} detected'.format(event.src_path))
             self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__trace_mode)
         pass
 
@@ -68,16 +69,18 @@ def batch_cleansing(input_file, output_folder, trace_mode):
     backup_file = os.path.join(output_folder, filename)
     shutil.move(input_file, backup_file)
 
-    output_file_customer_public = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
-    output_file_customer_private = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_customer_private', ext))
-    output_file_analysis_public = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
-    output_file_analysis_private = os.path.join(output_folder, '{}{}{}'.format(name, '_cleaned_analysis_private', ext))
+    dirpath = output_folder
+    output_file_customer_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
+    output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_private', ext))
+    output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
+    output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_private', ext))
 
-    run_cleansing(backup_file, output_file_analysis_private, keep_unsubmitted=False, v6_compatible=True, trace_mode=trace_mode)
-    run_cleansing(backup_file, output_file_analysis_private, keep_unsubmitted=False, v6_compatible=True, trace_mode=trace_mode)
-    run_cleansing(backup_file, output_file_customer_private, keep_unsubmitted=False, v6_compatible=False, trace_mode=trace_mode)
-    run_cleansing(backup_file, output_file_analysis_public, keep_unsubmitted=True, v6_compatible=True, trace_mode=trace_mode)
-    run_cleansing(backup_file, output_file_customer_public, keep_unsubmitted=True, v6_compatible=False, trace_mode=trace_mode)
+    run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=False, with_rule_8=True,
+                  trace_mode=trace_mode)
+    run_cleansing(input_file, output_file_customer_internal, with_rule_2_2=False, with_rule_8=False,
+                  trace_mode=trace_mode)
+    run_cleansing(input_file, output_file_analysis_public, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
+    run_cleansing(input_file, output_file_customer_public, with_rule_2_2=True, with_rule_8=False, trace_mode=trace_mode)
 
 
 @click.command()
@@ -88,16 +91,12 @@ def batch_cleansing(input_file, output_folder, trace_mode):
 def main(input_folder, output_folder, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
-    # logging.basicConfig(level=logging.INFO,
-    #                     format='%(asctime)s - %(message)s',
-    #                     datefmt='%Y-%m-%d %H:%M:%S')
-
     if not os.path.exists(input_folder):
-        print('input path [{}] not exist, quit'.format(input_folder))
+        logger.error('input path [{}] not exist, quit'.format(input_folder))
         exit(0)
 
     if not os.path.isdir(input_folder):
-        print('input path [{}] is not folder, quit'.format(input_folder))
+        logger.error('input path [{}] is not folder, quit'.format(input_folder))
         exit(0)
 
     if output_folder is None:
@@ -106,14 +105,20 @@ def main(input_folder, output_folder, trace_mode):
             os.mkdir(output_folder)
 
     if not os.path.exists(output_folder):
-        print('output path [{}] not exist, quit'.format(output_folder))
+        logger.error('output path [{}] not exist, quit'.format(output_folder))
         exit(0)
 
     if not os.path.isdir(output_folder):
-        print('output path [{}] is not folder, quit'.format(output_folder))
+        logger.error('output path [{}] is not folder, quit'.format(output_folder))
         exit(0)
 
-    print('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
+    if trace_mode is None:
+        trace_mode = False
+
+    if trace_mode:
+        logger.info('** TRACING MODE ENABLED **')
+
+    logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
     event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, trace_mode)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
@@ -122,11 +127,16 @@ def main(input_folder, output_folder, trace_mode):
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print('program stopped')
+        logger.info('program stopped')
         observer.stop()
     observer.join()
 
 
 if __name__ == '__main__':
+    try:
         main()
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
+        pass
 

@@ -13,6 +13,8 @@ from itertools import product
 from data_cleansing.clock import *
 from data_cleansing.config import *
 
+logger = get_logger(__name__)
+
 
 def create_excel_col(seed=list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), iter_cnt=1):
     col_lst = ['0']
@@ -45,7 +47,7 @@ class DataCleanser:
     @clocking
     def validate_data_dimensions(self):
         """rule 0: data dimension checking: row >=3 and col >= 231 """
-        print('rule 0: validating data dimensions, cols: {}, rows: {}'.format(self.__work_sheet.max_column, self.__work_sheet.max_row))
+        logger.info('rule 0: validating data dimensions, cols: {}, rows: {}'.format(self.__work_sheet.max_column, self.__work_sheet.max_row))
         if self.__work_sheet.max_column < 231:
             raise Exception("column count must >= 231")
         if self.__work_sheet.max_row < 3:
@@ -54,13 +56,9 @@ class DataCleanser:
     @clocking
     def remove_unnecessary_headers(self):
         """rule 0: remove row 1~2: include question description and option description"""
-        print('rule 0: removing unnecessary header rows start at {}, count 2'.format(HEADER_ROW_INDEX + 1))
-        # if self.__trace_mode:
-        #     for row in self.__work_sheet['A{}:{}{}'.format(HEADER_ROW_INDEX + 1, self.__question_to_excel_column_map['I2-22-68'][0], HEADER_ROW_INDEX + 1 + 1)]:
-        #         for cell in row:
-        #             self._add_tracing_comment(cell, '0', sys._getframe().f_code.co_name)
-        # else:
+        logger.info('rule 0: removing unnecessary header rows start at {}, count 2'.format(HEADER_ROW_INDEX + 1))
         self.__work_sheet.delete_rows(HEADER_ROW_INDEX + 1, 2)
+        logger.debug('>> current total rows: {}'.format(self.__work_sheet.max_row))
 
     def _register_question_column(self, question_id, excel_column):
         if question_id not in self.__question_to_excel_column_map:
@@ -72,7 +70,7 @@ class DataCleanser:
     @clocking
     def scan_reset_column_names(self):
         """rule 0: set first 23 column name set with _1~_23, rest set follow predefined rules, e.g. A1-A"""
-        print('rule 0: batch reset column names with standard codes')
+        logger.info('rule 0: batch reset column names with standard codes')
         BOUNDARY_0 = 0 + EXCEL_INDEX_BASE
         BOUNDARY_1 = A1_COLUMN_INDEX
         BOUNDARY_2 = (self.__work_sheet.max_column - 1) + EXCEL_INDEX_BASE
@@ -82,7 +80,7 @@ class DataCleanser:
             header_name = '_' + str(i)
             self.__work_sheet.cell(HEADER_ROW_INDEX, i, header_name)
             self._register_question_column(header_name, self.__excel_column_list[i])
-            # print('write: "' + value + '"')
+            # logger.info('write: "' + value + '"')
 
         # Set question-answers column headers
         header_name = ''
@@ -113,7 +111,7 @@ class DataCleanser:
                 self.__work_sheet.cell(HEADER_ROW_INDEX, i, new_header_name)
                 self._register_question_column(prefix, self.__excel_column_list[i])
                 self._register_question_column(new_header_name, self.__excel_column_list[i])
-                # print('write: "' + value_to_write + '"')
+                # logger.info('write: "' + value_to_write + '"')
             else:
                 self._register_question_column(header_name, self.__excel_column_list[i])
                 pass
@@ -131,19 +129,19 @@ class DataCleanser:
     @clocking
     def reset_emplty_values_with_na(self):
         """rule 0: replace empty values with NaN """
-        print('rule 0: replace empty values with NaN ')
+        logger.info('rule 0: replace empty values with NaN ')
         i = 0
         for row in self.__work_sheet['{}:{}'.format(self.__question_to_excel_column_map['A1'][0], self.__question_to_excel_column_map['I2-22-68'][0])]:
             for cell in row:
                 if cell.value == '':
                     cell.value = None
                     i += 1
-        print('>> {} cells replaced'.format(i))
+        logger.info('>> {} cells replaced'.format(i))
 
     @clocking
     def clear_all_cells_bgcolor(self):
         """rule 0: clear all cells' BG color """
-        print('rule 0: clear all cells\' BG color ')
+        logger.info('rule 0: clear all cells\' BG color ')
         for row in self.__work_sheet['{}:{}'.format('A', self.__question_to_excel_column_map['I2-22-68'][0])]:
             for cell in row:
                 cell.fill = xl.styles.PatternFill(None)
@@ -151,38 +149,41 @@ class DataCleanser:
     @clocking
     def remove_fake_records(self):
         """rule 1: remove fake data, e.g. column 14(专业名称) with value "测试专业" """
-        print('rule 1: removing rows which major in {}'.format(MAJOR_FILTER_LIST))
+        logger.info('rule 1: removing rows which major in {}'.format(MAJOR_FILTER_LIST))
         # find them
         remove_list = self._query_row_indexes_by_column_filter(MAJOR_COLUMN_EXCEL_INDEX, lambda val: val in MAJOR_FILTER_LIST)
         # remove them
         self._remove_rows_by_index_list(remove_list, '1', sys._getframe().f_code.co_name)
+        logger.debug('>> current total rows: {}'.format(self.__work_sheet.max_row))
 
     @clocking
     def remove_unqualified_records(self):
         """rule 2.1: remove un-qualified row, e.g. no answer for question A2"""
-        print('rule 2.1: removing rows which have no A2 answers')
+        logger.info('rule 2.1: removing rows which have no A2 answers')
         # find them
         remove_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['A2'][0],
                                                           lambda val: (val is None or val == ''))
         # remove them
         self._remove_rows_by_index_list(remove_list, '2.1', sys._getframe().f_code.co_name)
+        logger.debug('>> current total rows: {}'.format(self.__work_sheet.max_row))
 
     @clocking
     def remove_unsubmitted_records(self):
         """rule 2.2: remove un-submitted row, e.g. no submit-time exist"""
-        print('rule 2.2: removing rows which have no submit time')
+        logger.info('rule 2.2: removing rows which have no submit time')
         # find them
         remove_list = self._query_row_indexes_by_column_filter(SUBMIT_TIME_COLUMN_EXCEL_INDEX,
                                                           lambda val: (val is None or val == ''))
         # remove them
         self._remove_rows_by_index_list(remove_list, '2.2', sys._getframe().f_code.co_name)
+        logger.debug('>> current total rows: {}'.format(self.__work_sheet.max_row))
 
     @clocking
     def rinse_irrelevant_answers(self, irrelevant_question_rules, rule_no):
         """rule 4/8: replace non-relevance answers(cell) with NaN against question-relevance rules"""
-        print('rule {}: replace non-relevance answers(cell) with NaN against question-relevance rules'.format(rule_no))
+        logger.info('rule {}: replace non-relevance answers(cell) with NaN against question-relevance rules'.format(rule_no))
         for rule in irrelevant_question_rules:
-            print('apply rule: {}'.format(rule))
+            logger.info('apply rule: {}'.format(rule))
             question_index = self.__question_to_excel_column_map[rule[RINSE_RULE_KEY_QUESTION]][0]
             j = 0
             for q_cell in self.__work_sheet[question_index]:
@@ -200,18 +201,18 @@ class DataCleanser:
                 elif rule[RINSE_RULE_KEY_OPERATOR] == RINSE_RULE_OPERATOR_NOTIN:
                     flag = answer not in rule[RINSE_RULE_KEY_ANSWER]
                 else:
-                    # print(">> no applicable operator: {}".format(rule[KEY_OPERATOR]))
+                    # logger.info(">> no applicable operator: {}".format(rule[KEY_OPERATOR]))
                     pass
 
                 if flag:
-                    # print('>> condition meet: {} answer({}) {} {}, rinsing following question/answers: {}'.format(
+                    # logger.info('>> condition meet: {} answer({}) {} {}, rinsing following question/answers: {}'.format(
                     #       rule[KEY_QUESTION], answer, rule[KEY_OPERATOR], rule[KEY_ANSWER], rule[KEY_ACTION]))
                     i = 0
                     for question_id in rule[RINSE_RULE_KEY_ACTION]:
                         for col_index in self.__question_to_excel_column_map[question_id]:
                             coordinate = '{}{}'.format(col_index, q_cell.row)
                             if self.__work_sheet[coordinate].value is not None:
-                                # print('>> rinsing {}({}) as NaN'.format(coordinate[coordinate].value))
+                                # logger.info('>> rinsing {}({}) as NaN'.format(coordinate[coordinate].value))
                                 if self.__trace_mode:
                                     self._add_tracing_comment(self.__work_sheet[coordinate], rule_no, sys._getframe().f_code.co_name, rule)
                                 else:
@@ -219,36 +220,36 @@ class DataCleanser:
                                 i += 1
                             # break
                     j += i
-                    # print('{} cells rinsed'.format(i))
+                    # logger.info('{} cells rinsed'.format(i))
                 else:
-                    # print('>> condition not meet: {} answer({}) {} {}'.format(
+                    # logger.info('>> condition not meet: {} answer({}) {} {}'.format(
                     #     rule[KEY_QUESTION], q_cell.value, rule[KEY_OPERATOR], rule[KEY_ANSWER]))
                     pass
                 # break
-            print('>> {} cells rinsed'.format(j))
+            logger.info('>> {} cells rinsed'.format(j))
 
     @clocking
     def rinse_nc_option_values(self):
         """rule 5: replace values like "无法评价", "以上均不需要改进" with NaN """
-        print('rule 5: rinse answers which in {} into NaN'.format(NC_OPTION_FILTER_LIST))
+        logger.info('rule 5: rinse answers which in {} into NaN'.format(NC_OPTION_FILTER_LIST))
         i = 0
         # for row in range(HEADER_ROW_INDEX + 1.max_row + 1):
         #     for col in range(A1_COLUMN_INDEX.max_column + 1):
         #         if self.st.cell(row, col).value in NC_OPTION_FILTER_LIST:
         #             cell = self.st.cell(row, col, None)
-        #             # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
+        #             # logger.info('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
         #             i += 1
         for row in self.__work_sheet['{}:{}'.format(self.__question_to_excel_column_map['A1'][0], self.__question_to_excel_column_map['I2-22-68'][0])]:
             for cell in row:
                 if cell.value in NC_OPTION_FILTER_LIST:
-                    # print('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
+                    # logger.info('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
                     if cell.value is not None:
                         if self.__trace_mode:
                             self._add_tracing_comment(cell, '5', sys._getframe().f_code.co_name)
                         else:
                             cell.value = None
                         i += 1
-        print('>> {} cells rinsed'.format(i))
+        logger.info('>> {} cells rinsed'.format(i))
 
         self._rinse_values_by_column_rowindex(H5_COLUMN_EXCEL_INDEX_NC, range(HEADER_ROW_INDEX + 1, self.__work_sheet.max_row + 1), '5', sys._getframe().f_code.co_name)
         self._rinse_values_by_column_rowindex(H6_COLUMN_EXCEL_INDEX_NC, range(HEADER_ROW_INDEX + 1, self.__work_sheet.max_row + 1), '5', sys._getframe().f_code.co_name)
@@ -256,7 +257,7 @@ class DataCleanser:
     @clocking
     def rinse_invalid_answers(self):
         """rule 6: replace invalid answers(cell) with NaN"""
-        print('rule 6: rinse G1 answers which in {}'.format(G1_OPTION_FILTER_LIST))
+        logger.info('rule 6: rinse G1 answers which in {}'.format(G1_OPTION_FILTER_LIST))
         # find them
         rinse_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['G1'][0],
                                                          lambda val: val in G1_OPTION_FILTER_LIST)
@@ -267,100 +268,140 @@ class DataCleanser:
     @clocking
     def rinse_unusual_salary_values(self):
         """rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV """
-        print('rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV ')
-        print('>> 7.1 rinsing salary < 1000')
-        rinse_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['B6'][0], self._filter_low_salary)
-        self._rinse_values_by_column_rowindex(self.__question_to_excel_column_map['B6'][0], rinse_list, '7.1', sys._getframe().f_code.co_name)
+        logger.info('rule 7: remove < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV ')
 
-        print('>> 7.2 rinsing top N salary')
-        sort_range = '{}{}:{}{}'.format(self.__question_to_excel_column_map['B6'][0], 2,
-                                        self.__question_to_excel_column_map['B6'][0], self.__work_sheet.max_row);
-        # self.st.auto_filter.add_sort_condition(sort_range)
-        salary_list = {}
-        for row in self.__work_sheet[sort_range]:
+        salary_cell_range = '{}{}:{}{}'.format(self.__question_to_excel_column_map['B6'][0], 2,
+                                               self.__question_to_excel_column_map['B6'][0], self.__work_sheet.max_row);
+        sorted_salary_list = []
+        for row in self.__work_sheet[salary_cell_range]:
             if row[0].value is not None and row[0].value != '':
-                salary_list[row[0].coordinate] = int(row[0].value)
+                sorted_salary_list.append([row[0].coordinate, int(row[0].value)])
+        sorted_salary_list = sorted(sorted_salary_list, key=lambda kv: kv[1], reverse=True)
+        logger.debug('>> current total rows: {}'.format(self.__work_sheet.max_row))
+        total = sorted_salary_list.__len__()
+        logger.debug('>> current valid salary values: {}'.format(total))
 
-        top_n = round(salary_list.__len__() * SALARY_FILTER_TOP_RATIO)
+        # rinse_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['B6'][0], self._filter_low_salary)
+        # self._rinse_values_by_column_rowindex(self.__question_to_excel_column_map['B6'][0], rinse_list, '7.1', sys._getframe().f_code.co_name, True)
+        logger.info('>> 7.1 rinsing salary < 1000')
+        n = 0
+        _debug_info_ = []
+        sorted_salary_list_copy = list(sorted_salary_list)
+        for i in range(0, sorted_salary_list_copy.__len__())[::-1]:
+            coordinate = sorted_salary_list_copy[i][0]
+            value = sorted_salary_list_copy[i][1]
+            if value < SALARY_FILTER_LOWER_LIMIT:
+                _debug_info_.append(value)
+                self.__work_sheet[coordinate].value = None
+                sorted_salary_list.pop(i)
+                n += 1
+            else:
+                break
+        logger.info('>> {} cells rinsed from {}'.format(n, total))
+        logger.debug('>> {}'.format(_debug_info_))
+        total -= n
+        logger.debug('>> current valid salary values: {}'.format(total))
+
+        logger.info('>> 7.2 rinsing top N salary')
+        top_n = round(sorted_salary_list.__len__() * SALARY_FILTER_TOP_RATIO)
+        logger.info('>> top N = {}'.format(top_n))
         if top_n >= 1:
             top_n_list = []
-            sorted_salary_list = sorted(salary_list.items(), key=lambda kv: kv[1], reverse=True)
             for n in range(0, top_n):
                 top_n_list.append(sorted_salary_list[n][1])
 
-            i = 0
-            for item in sorted_salary_list:
-                if item[1] < top_n_list[top_n_list.__len__() - 1]:
+            n = 0
+            _debug_info_ = []
+            sorted_salary_list_copy = list(sorted_salary_list)
+            for i in range(0, sorted_salary_list_copy.__len__()):
+                coordinate = sorted_salary_list_copy[i][0]
+                value = sorted_salary_list_copy[i][1]
+                if value < top_n_list[top_n_list.__len__() - 1]:
                     break
-                if item[1] in top_n_list:
-                    coordinate = item[0]
-                    # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
+                if value in top_n_list:
+                    _debug_info_.append(value)
                     if self.__trace_mode:
                         self._add_tracing_comment(self.__work_sheet[coordinate], '7.2', sys._getframe().f_code.co_name)
                     else:
                         self.__work_sheet[coordinate] = None
-                    salary_list.pop(coordinate)
-                    i += 1
-                # if i >= top_n:
-                #     break
-            print('>> {} cells rinsed from {}'.format(i, sorted_salary_list.__len__()))
+                    sorted_salary_list.pop(0)
+                    n += 1
+            logger.info('>> {} cells rinsed from {}'.format(n, total))
+            logger.debug('>> {}'.format(_debug_info_))
+            total -= n
+            logger.debug('>> current valid salary values: {}'.format(total))
         else:
-            print('>> no cell need to be rinsed')
+            logger.info('>> no cell need to be rinsed')
 
-        print('>> 7.3 rinsing ABS(salary - MEAN) > 4 * STDEV')
-        np_salary_list = np.array(list(salary_list.values()), dtype=int)
-        print('>> {} values in total'.format(np_salary_list.size))
+        logger.info('>> 7.3 rinsing ABS(salary - MEAN) > 4 * STDEV')
+        np_salary_list = np.array(list(map(lambda x: x[1], sorted_salary_list)), dtype=int)
+        logger.info('>> {} values in total'.format(np_salary_list.size))
         salary_mean = np_salary_list.mean()
-        print('>> MEAN = {}'.format(salary_mean))
+        logger.info('>> MEAN = {}'.format(salary_mean))
         salary_stdev = np_salary_list.std()
-        print('>> STDEV = {}'.format(salary_stdev))
+        logger.info('>> STDEV = {}'.format(salary_stdev))
         salary_stdev_4 = salary_stdev * 4
-        print('>> * 4 = {}'.format(salary_stdev_4))
-        i = 0
-        for coordinate in salary_list:
-            salary = int(self.__work_sheet[coordinate].value)
-            if abs(salary - salary_mean) > salary_stdev_4:
-                # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
+        logger.info('>> * 4 = {}'.format(salary_stdev_4))
+        n = 0
+        _debug_info_ = []
+        sorted_salary_list_copy = list(sorted_salary_list)
+        for i in range(0, sorted_salary_list_copy.__len__()):
+            coordinate = sorted_salary_list_copy[i][0]
+            value = sorted_salary_list_copy[i][1]
+            if abs(value - salary_mean) > salary_stdev_4:
+                _debug_info_.append(value)
                 if self.__trace_mode:
                     self._add_tracing_comment(self.__work_sheet[coordinate], '7.3', sys._getframe().f_code.co_name)
                 else:
                     self.__work_sheet[coordinate] = None
-                i += 1
-        print('>> {} cells rinsed'.format(i))
+                sorted_salary_list.pop(0)
+                n += 1
+            else:
+                break
+        logger.info('>> {} cells rinsed from {}'.format(n, total))
+        logger.debug('>> {}'.format(_debug_info_))
+        logger.debug('>> {}'.format(list(map(lambda x: abs(x - salary_mean), _debug_info_))))
+        total -= n
+        logger.debug('>> current valid salary values: {}'.format(total))
 
     def _query_row_indexes_by_column_filter(self, xl_col, cb_filter):
         idx_list = []
         for cell in self.__work_sheet[xl_col]:
             if cell.row <= HEADER_ROW_INDEX:
                 continue
-            # print("cell: {}".format(cell.value))
+            # logger.info("cell: {}".format(cell.value))
             if cb_filter(cell.value):
                 idx_list.append(cell.row)
-        # print(idx_list)
+        # logger.info(idx_list)
         return idx_list
 
     def _remove_rows_by_index_list(self, index_list, rule, func):
         for i in range(0, index_list.__len__())[::-1]:
-            print('remove row: {}'.format(self.__work_sheet['A{}'.format(index_list[i])].value))
+            # logger.debug('remove row: {}'.format(self.__work_sheet['A{}'.format(index_list[i])].value))
             if self.__trace_mode:
                 for cell in self.__work_sheet[index_list[i]]:
                     self._add_tracing_comment(cell, rule, func)
             else:
                 self.__work_sheet.delete_rows(index_list[i])
-        print('>> {} rows removed'.format(index_list.__len__()))
-        print('>> {}'.format(index_list))
+        logger.info('>> {} rows removed'.format(index_list.__len__()))
+        logger.debug('>> {}'.format(index_list))
 
-    def _rinse_values_by_column_rowindex(self, col, index_list, rule, func):
+    def _rinse_values_by_column_rowindex(self, col, index_list, rule, func, debug=False):
+        _debug_info_ = []
         for i in index_list:
             coordinate = '{}{}'.format(col, i)
             if self.__work_sheet[coordinate] is not None:
-                # print('rinse cell: {} - {}'.format(coordinate[coordinate].value))
+                # logger.info('rinse cell: {} - {}'.format(coordinate[coordinate].value))
+                if debug:
+                    _debug_info_.append(self.__work_sheet[coordinate].value)
                 if self.__trace_mode:
                     self._add_tracing_comment(self.__work_sheet[coordinate], rule, func)
                 else:
                     self.__work_sheet[coordinate] = None
                 i += 1
-        print('>> {} cells rinsed'.format(index_list.__len__()))
+        logger.info('>> {} cells rinsed'.format(index_list.__len__()))
+        if debug:
+            logger.debug('>> {}'.format(_debug_info_))
 
     @staticmethod
     def _add_tracing_comment(cell, rule_no, func, addition=None):
@@ -379,7 +420,7 @@ class DataCleanser:
             s = int(val)
             result = s < SALARY_FILTER_LOWER_LIMIT
         except ValueError as e:
-            print('>> failed to process {} - {}'.format(val, e))
+            logger.info('>> failed to process {} - {}'.format(val, e))
         finally:
             pass
         return result
