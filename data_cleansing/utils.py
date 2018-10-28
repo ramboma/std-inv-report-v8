@@ -124,7 +124,9 @@ class DataCleanser:
                 option = 1
 
         self._register_question_column(next_header_name, self.__excel_column_list[BOUNDARY_2])
-        self.__work_sheet.title = "cleaned"
+
+    def set_sheet_name(self, name):
+        self.__work_sheet.title = name
 
     @clocking
     def reset_emplty_values_with_na(self):
@@ -281,8 +283,6 @@ class DataCleanser:
         total = sorted_salary_list.__len__()
         logger.debug('>> current valid salary values: {}'.format(total))
 
-        # rinse_list = self._query_row_indexes_by_column_filter(self.__question_to_excel_column_map['B6'][0], self._filter_low_salary)
-        # self._rinse_values_by_column_rowindex(self.__question_to_excel_column_map['B6'][0], rinse_list, '7.1', sys._getframe().f_code.co_name, True)
         logger.info('>> 7.1 rinsing salary < 1000')
         n = 0
         _debug_info_ = []
@@ -335,13 +335,12 @@ class DataCleanser:
 
         logger.info('>> 7.3 rinsing ABS(salary - MEAN) > 4 * STDEV')
         np_salary_list = np.array(list(map(lambda x: x[1], sorted_salary_list)), dtype=int)
-        logger.info('>> {} values in total'.format(np_salary_list.size))
         salary_mean = np_salary_list.mean()
         logger.info('>> MEAN = {}'.format(salary_mean))
         salary_stdev = np_salary_list.std()
         logger.info('>> STDEV = {}'.format(salary_stdev))
         salary_stdev_4 = salary_stdev * 4
-        logger.info('>> * 4 = {}'.format(salary_stdev_4))
+        logger.info('>> STDEV * 4 = {}'.format(salary_stdev_4))
         n = 0
         _debug_info_ = []
         sorted_salary_list_copy = list(sorted_salary_list)

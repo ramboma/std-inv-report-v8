@@ -70,18 +70,25 @@ def batch_cleansing(input_file, output_folder, trace_mode):
     shutil.move(input_file, backup_file)
 
     dirpath = output_folder
-    output_file_customer_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
-    output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_internal', ext))
-    output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
-    output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_internal', ext))
+    # output_file_customer_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
+    # output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_internal', ext))
+    # output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
+    # output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_internal', ext))
 
-    run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=True, with_rule_8=True,
-                  trace_mode=trace_mode)
-    run_cleansing(input_file, output_file_customer_internal, with_rule_2_2=True, with_rule_8=False,
-                  trace_mode=trace_mode)
-    run_cleansing(input_file, output_file_analysis_public, with_rule_2_2=False, with_rule_8=True, trace_mode=trace_mode)
-    run_cleansing(input_file, output_file_customer_public, with_rule_2_2=False, with_rule_8=False,
-                  trace_mode=trace_mode)
+    tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
+
+    # internal, analysis
+    output_file = get_output_filename(dirpath, filename, ext, internal=True, analysis=True, tag=tag)
+    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
+    # internal, customer
+    output_file = get_output_filename(dirpath, filename, ext, internal=True, analysis=False, tag=tag)
+    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_8=False, trace_mode=trace_mode)
+    # public, analysis
+    output_file = get_output_filename(dirpath, filename, ext, internal=False, analysis=True, tag=tag)
+    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_8=True, trace_mode=trace_mode)
+    # public, customer
+    output_file = get_output_filename(dirpath, filename, ext, internal=False, analysis=False, tag=tag)
+    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_8=False, trace_mode=trace_mode)
 
 
 @click.command()
