@@ -46,9 +46,9 @@ def main(input_file, output_folder, customer, external, all, trace_mode):
 
     output_file = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned', ext))
     output_file_customer_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
-    output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_private', ext))
+    output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_internal', ext))
     output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
-    output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_private', ext))
+    output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_internal', ext))
 
     if customer is None:
         customer = False

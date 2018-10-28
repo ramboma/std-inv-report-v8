@@ -71,9 +71,9 @@ def batch_cleansing(input_file, output_folder, trace_mode):
 
     dirpath = output_folder
     output_file_customer_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_public', ext))
-    output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_private', ext))
+    output_file_customer_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_customer_internal', ext))
     output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
-    output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_private', ext))
+    output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_internal', ext))
 
     run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=False, with_rule_8=True,
                   trace_mode=trace_mode)
