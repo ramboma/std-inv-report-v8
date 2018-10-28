@@ -75,12 +75,13 @@ def batch_cleansing(input_file, output_folder, trace_mode):
     output_file_analysis_public = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_public', ext))
     output_file_analysis_internal = os.path.join(dirpath, '{}{}{}'.format(name, '_cleaned_analysis_internal', ext))
 
-    run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=False, with_rule_8=True,
+    run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=True, with_rule_8=True,
                   trace_mode=trace_mode)
-    run_cleansing(input_file, output_file_customer_internal, with_rule_2_2=False, with_rule_8=False,
+    run_cleansing(input_file, output_file_customer_internal, with_rule_2_2=True, with_rule_8=False,
                   trace_mode=trace_mode)
-    run_cleansing(input_file, output_file_analysis_public, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
-    run_cleansing(input_file, output_file_customer_public, with_rule_2_2=True, with_rule_8=False, trace_mode=trace_mode)
+    run_cleansing(input_file, output_file_analysis_public, with_rule_2_2=False, with_rule_8=True, trace_mode=trace_mode)
+    run_cleansing(input_file, output_file_customer_public, with_rule_2_2=False, with_rule_8=False,
+                  trace_mode=trace_mode)
 
 
 @click.command()

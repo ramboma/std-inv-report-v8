@@ -17,8 +17,8 @@ def run_cleansing(input_file, output_file, with_rule_2_2, with_rule_8, trace_mod
     logger.info('############################## Cleansing start ##################################')
     logger.info('input file: {}'.format(input_file))
     logger.info('output file: {}'.format(output_file))
-    logger.info('remove un-submitted records: {}'.format(with_rule_2_2))
-    logger.info('rinse by rule 7: {}'.format(with_rule_8))
+    logger.info('with rule 2.2: {}'.format(with_rule_2_2))
+    logger.info('with rule 8: {}'.format(with_rule_8))
     logger.info('#################################################################################')
     logger.info('')
 
@@ -39,8 +39,8 @@ def run_cleansing(input_file, output_file, with_rule_2_2, with_rule_8, trace_mod
     cleaner.remove_fake_records()
     # Rule 2.1
     cleaner.remove_unqualified_records()
+    # Rule 2.2
     if with_rule_2_2:
-        # Rule 2.2
         cleaner.remove_unsubmitted_records()
     # Rule 4
     cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS, '4')

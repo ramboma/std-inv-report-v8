@@ -64,10 +64,10 @@ def main(input_file, output_folder, customer, external, all, trace_mode):
     if not all:
         run_cleansing(input_file, output_file, with_rule_2_2=not external, with_rule_8=not customer, trace_mode=trace_mode)
     else:
-        run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=False, with_rule_8=True, trace_mode=trace_mode)
-        run_cleansing(input_file, output_file_customer_internal, with_rule_2_2=False, with_rule_8=False, trace_mode=trace_mode)
-        run_cleansing(input_file, output_file_analysis_public, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
-        run_cleansing(input_file, output_file_customer_public, with_rule_2_2=True, with_rule_8=False, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_analysis_internal, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_customer_internal, with_rule_2_2=True, with_rule_8=False, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_analysis_public, with_rule_2_2=False, with_rule_8=True, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file_customer_public, with_rule_2_2=False, with_rule_8=False, trace_mode=trace_mode)
 
 
 if __name__ == '__main__':
