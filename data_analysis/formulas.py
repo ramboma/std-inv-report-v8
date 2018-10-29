@@ -126,3 +126,32 @@ def formula_income_mean(data,dict_cond={}):
                             CONFIG.MEAN_COLUMN[-1]: [mean]})
     return pd_mean
 
+
+def rate_T(df_sigle, column_name=CONFIG.TOTAL_COLUMN):
+    '''总体 比率转置'''
+    if df_sigle.empty:
+        return df_sigle
+    join_num = df_sigle.loc[0, CONFIG.RATE_COLUMN[2]]
+    df_metrics = df_sigle[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_metrics = df_metrics.set_index([CONFIG.RATE_COLUMN[0]])
+    df_t = df_metrics.T
+    df_t[CONFIG.RATE_COLUMN[2]] = join_num
+    df_t.columns.name = column_name
+    return df_t
+
+
+def college_rate_T(df_data, column_name=CONFIG.GROUP_COLUMN[0]):
+    '''学院 比率转置'''
+    if df_data.empty:
+        return df_data
+    df_metrics = df_data[[CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_metrics = df_metrics.set_index([CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0]])
+    df_t = df_metrics.unstack()
+    # df_t.columns.name = column_name
+    df_t.reset_index(inplace=True)
+    df_t.fillna(0,inplace=True)
+    print(df_t)
+    return df_t
+
+
+

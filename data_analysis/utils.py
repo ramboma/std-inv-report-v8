@@ -54,7 +54,7 @@ def answer_of_subject_count_grp(data,arry_columns,array_groupby,subject,answer):
     grp_answer_count=pd_answer.groupby(array_groupby, as_index=False).count()
     return  grp_answer_count
 
-def answer_of_subject_count(data,subject,answer):
+def answer_of_subject_count(data, subject, answer):
     '''
     统计某-题回答某个答案的人数
     :param data: 数据源
@@ -62,9 +62,10 @@ def answer_of_subject_count(data,subject,answer):
     :param answer: 答案
     :return:
     '''
-    subj=pd.DataFrame(data)[subject]
-    answer_count=subj[subj==answer].count()
-    return  answer_count
+    if data.empty:
+        return 0
+    count = data[data[subject]==answer][subject].count()
+    return count
 
 def answer_grp_sum(data,arry_columns,array_groupby):
     '''

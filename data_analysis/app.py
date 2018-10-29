@@ -15,9 +15,7 @@ import data_analysis.further_study as further
 def main(file):
 
     data = excelUtil.read_excel(file)
-
-
-
+    further.work_option_report(data, report.REPORT_FOLDER + '就业机会.xlsx')
 
 
 if __name__ == '__main__':

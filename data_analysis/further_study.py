@@ -17,7 +17,7 @@ def employee_indurstry(data, filePath):
     '''就业行业分布'''
     data_a2 = data[data['A2'] == CONFIG.A2_ANSWER[0]]
 
-    subject='B5-B'
+    subject = 'B5-B'
     df_value_rate = answer_value_rate(data_a2, subject)
     df_value_rate.sort_values('比例', ascending=1, inplace=True)
     excelUtil.writeExcel(df_value_rate, filePath, '总体就业行业分布')
@@ -48,6 +48,7 @@ def employee_indurstry(data, filePath):
     excelUtil.writeExcel(single_value1, filePath, '各就业行业就业满意度差异分析')
 
     return
+
 
 def employee_industry_type(data, filePath):
     '''就业行业类型'''
@@ -146,7 +147,7 @@ def employee_region_report(data, filePath):
 
 def employee_job(data, filePath):
     '''就业职业分布'''
-    subject='B4-B'
+    subject = 'B4-B'
     df_value_rate = answer_value_rate(data, subject)
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
     excelUtil.writeExcel(df_value_rate, filePath, '总体就业职业分布')
@@ -246,40 +247,38 @@ def work_stability_report(data, filePath):
 
 
 def work_option_report(data, filePath):
-    option = answer_value_rate(data, 'A3')
-    no_option = option[option['答案'].isin([CONFIG.EXCEPTED_ANSWER])][[CONFIG.RATE_COLUMN[1]]]
-    no_option.fillna(0, inplace=True)
-    option['有效人数'] = option[CONFIG.RATE_COLUMN[2]] - no_option[CONFIG.RATE_COLUMN[1]]
+    '''
+    就业机会
+    :param data:
+    :param filePath:
+    :return:
+    '''
+    subject = 'A3'
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = data[ls_metrics_cols]
 
-    option[CONFIG.RATE_COLUMN[-1]] = (option[CONFIG.RATE_COLUMN[1]] / option['有效人数'] * 100).round(
+    option = answer_value_rate(df_metrics, subject)
+    unknown_num = answerUtil.answer_of_subject_count(df_metrics, subject, CONFIG.EXCEPTED_ANSWER)
+    option[CONFIG.RATE_COLUMN[2]] = option[CONFIG.RATE_COLUMN[2]] - unknown_num
+    option[CONFIG.RATE_COLUMN[-1]] = (option[CONFIG.RATE_COLUMN[1]] / option[CONFIG.RATE_COLUMN[2]] * 100).round(
         decimals=2)
-    excelUtil.writeExcel(option, filePath, '总体就业机会')
+    rate_t = formulas.rate_T(option, '总体就业机会')
+    excelUtil.writeExcel(rate_t, filePath, '总体就业机会')
 
-    college_changes = answer_college_value_rate(data, 'A3')
-    college_no_change = college_changes[college_changes['答案'].isin([CONFIG.EXCEPTED_ANSWER])][
-        ['学院', CONFIG.RATE_COLUMN[1]]]
+    college_changes = answer_college_value_rate(df_metrics, subject, [CONFIG.EXCEPTED_ANSWER])
+    college_summary=college_changes[[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[2]]]
+    df_duplicate=college_summary.drop_duplicates()
+    print(df_duplicate)
 
-    pd_left = pd.merge(college_changes, college_no_change,
-                       how='left',
-                       on='学院',
-                       )
-    pd_left.fillna(0, inplace=True)
+    college_t = formulas.college_rate_T(college_changes, '各学院就业机会')
+    df_colleage=pd.merge(df_duplicate,college_t,how='left',
+                         on=CONFIG.GROUP_COLUMN[0])
 
-    pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1] + '_x'] / (
-            pd_left[CONFIG.RATE_COLUMN[2]] - pd_left[CONFIG.RATE_COLUMN[1] + '_y']) * 100).round(
-        decimals=2)
-    excelUtil.writeExcel(pd_left, filePath, '各学院就业机会')
+    excelUtil.writeExcel(df_colleage, filePath, '各学院就业机会')
 
-    major_changes = answer_major_value_rate(data, 'A3')
-    major_no_change = major_changes[major_changes['答案'].isin([CONFIG.EXCEPTED_ANSWER])][
-        ['学院', '专业', CONFIG.RATE_COLUMN[1]]]
-    pd_left_major = pd.merge(major_changes, major_no_change, how='left', on=['学院', '专业'])
-    pd_left_major.fillna(0, inplace=True)
-    pd_left_major[CONFIG.RATE_COLUMN[-1]] = (pd_left_major[CONFIG.RATE_COLUMN[1] + '_x'] / (
-            pd_left_major[CONFIG.RATE_COLUMN[2]] - pd_left_major[
-        CONFIG.RATE_COLUMN[1] + '_y']) * 100).round(decimals=2)
-
-    excelUtil.writeExcel(pd_left_major, filePath, '各专业就业机会')
+    major_changes = answer_major_value_rate(df_metrics, subject, [CONFIG.EXCEPTED_ANSWER])
+    excelUtil.writeExcel(major_changes, filePath, '各专业就业机会')
 
 
 def non_employee_report(data, filePath):
@@ -447,24 +446,25 @@ def evelution_lesson_report(data, file):
     '''课堂教学报告'''
     subject = 'H2'
     sub_column = answerUtil.multi_columns(data, subject)
-    ls_column=list(CONFIG.MEAN_COLUMN)
-    ls_column=ls_column.append('题目')
+    ls_column = list(CONFIG.MEAN_COLUMN)
+    ls_column = ls_column.append('题目')
     df_init = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
 
     for col in sub_column:
         df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_MEET_V)
         df_mean['题目'] = col
-        excelUtil.writeExcel(df_mean, file, '课堂教学各方面评价_'+str(col))
+        excelUtil.writeExcel(df_mean, file, '课堂教学各方面评价_' + str(col))
 
-        df_grp=answer_five_rate_single_grp(data,col,'_10',CONFIG.ANSWER_TYPE_MEET_V)
+        df_grp = answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_MEET_V)
         df_mean['题目'] = col
         excelUtil.writeExcel(df_grp, file, '学院课堂教学各方面评价_' + str(col))
 
-        df_major = answer_five_rate_major_grp(data, col,  CONFIG.ANSWER_TYPE_MEET_V)
+        df_major = answer_five_rate_major_grp(data, col, CONFIG.ANSWER_TYPE_MEET_V)
         df_major['题目'] = col
         excelUtil.writeExcel(df_major, file, '专业课堂教学各方面评价_' + str(col))
 
     return
+
 
 def evelution_practice_report(data, file):
     '''实践教学报告'''
@@ -474,9 +474,9 @@ def evelution_practice_report(data, file):
     for col in sub_column:
         df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_HELP)
         df_mean['题目'] = col
-        excelUtil.writeExcel(df_mean, file, '实践教学各方面评价_'+str(col))
+        excelUtil.writeExcel(df_mean, file, '实践教学各方面评价_' + str(col))
 
-        df_grp=answer_five_rate_single_grp(data,col,'_10',CONFIG.ANSWER_TYPE_HELP)
+        df_grp = answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_HELP)
         df_mean['题目'] = col
         excelUtil.writeExcel(df_grp, file, '学院实践教学各方面评价_' + str(col))
 
@@ -485,6 +485,7 @@ def evelution_practice_report(data, file):
         excelUtil.writeExcel(df_major, file, '专业实践教学各方面评价_' + str(col))
 
     return
+
 
 def evelution_H4_ALL_report(data, file):
     '''H4组合'''
@@ -500,21 +501,22 @@ def evelution_H4_ALL_report(data, file):
     for col in sub_column:
         df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_SATISFY)
         df_mean['题目'] = col
-        df_init1=pd.concat([df_init1,df_mean])
+        df_init1 = pd.concat([df_init1, df_mean])
 
-        df_grp=answer_five_rate_single_grp(data,col,'_10',CONFIG.ANSWER_TYPE_SATISFY)
+        df_grp = answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_SATISFY)
         df_grp['题目'] = col
-        df_init2=pd.concat([df_init2,df_grp])
+        df_init2 = pd.concat([df_init2, df_grp])
 
         df_major = answer_five_rate_major_grp(data, col, CONFIG.ANSWER_TYPE_SATISFY)
         df_major['题目'] = col
-        df_init3=pd.concat([df_init3,df_major])
+        df_init3 = pd.concat([df_init3, df_major])
 
-    excelUtil.writeExcel(df_init1, file, 'H4组合评价' )
+    excelUtil.writeExcel(df_init1, file, 'H4组合评价')
     excelUtil.writeExcel(df_init2, file, '学院H4组合评价')
     excelUtil.writeExcel(df_init3, file, '专业H4组合评价')
 
     return
+
 
 def evelution_H4_E_report(data, file):
     '''母校任课教师总体报告'''
@@ -522,11 +524,11 @@ def evelution_H4_E_report(data, file):
 
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
 
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    excelUtil.writeExcel(df_mean, file, '母校任课教师总体评价' )
+    excelUtil.writeExcel(df_mean, file, '母校任课教师总体评价')
     excelUtil.writeExcel(df_grp, file, '各学院对母校任课教师总体评价')
     excelUtil.writeExcel(df_major, file, '各专业对母校任课教师总体评价')
 
@@ -539,15 +541,16 @@ def evelution_academic_report(data, file):
 
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_FEEL)
 
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_FEEL)
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_FEEL)
 
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_FEEL)
 
-    excelUtil.writeExcel(df_mean, file, '母校的学风总体评价' )
+    excelUtil.writeExcel(df_mean, file, '母校的学风总体评价')
     excelUtil.writeExcel(df_grp, file, '各学院对母校的学风评价')
     excelUtil.writeExcel(df_major, file, '各专业对母校的学风评价')
 
     return
+
 
 def evelution_H4_T_report(data, file):
     '''教育教学报告'''
@@ -555,15 +558,16 @@ def evelution_H4_T_report(data, file):
 
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
 
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    excelUtil.writeExcel(df_mean, file, '教育教学总体评价' )
+    excelUtil.writeExcel(df_mean, file, '教育教学总体评价')
     excelUtil.writeExcel(df_grp, file, '各学院对教育教学评价')
     excelUtil.writeExcel(df_major, file, '各专业对教育教学评价')
 
     return
+
 
 def evelution_H4_S_report(data, file):
     '''实践教学报告'''
@@ -571,15 +575,16 @@ def evelution_H4_S_report(data, file):
 
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
 
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    excelUtil.writeExcel(df_mean, file, '实践教学总体评价' )
+    excelUtil.writeExcel(df_mean, file, '实践教学总体评价')
     excelUtil.writeExcel(df_grp, file, '各学院对实践教学评价')
     excelUtil.writeExcel(df_major, file, '各专业对实践教学评价')
 
     return
+
 
 def evelution_H4_R_report(data, file):
     '''社团活动报告'''
@@ -587,15 +592,16 @@ def evelution_H4_R_report(data, file):
 
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
 
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    excelUtil.writeExcel(df_mean, file, '社团活动总体评价' )
+    excelUtil.writeExcel(df_mean, file, '社团活动总体评价')
     excelUtil.writeExcel(df_grp, file, '各学院对社团活动评价')
     excelUtil.writeExcel(df_major, file, '各专业对社团活动评价')
 
     return
+
 
 def evelution_H4_P_report(data, file):
     '''母校学生管理报告'''
@@ -603,7 +609,7 @@ def evelution_H4_P_report(data, file):
 
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
 
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
 
@@ -611,7 +617,7 @@ def evelution_H4_P_report(data, file):
     df_distribution = answerUtil.multi_answer_distribution(data, subject)
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
 
-    excelUtil.writeExcel(df_mean, file, '母校学生管理总体评价' )
+    excelUtil.writeExcel(df_mean, file, '母校学生管理总体评价')
     excelUtil.writeExcel(df_grp, file, '各学院对母校学生管理评价')
     excelUtil.writeExcel(df_major, file, '各专业对母校学生管理评价')
     excelUtil.writeExcel(df_distribution, file, '学生管理工作改进')
@@ -640,6 +646,7 @@ def evelution_H4_Q_report(data, file):
 
     return
 
+
 def evelution_H4_L_O_report(data, file):
     '''创业教育报告'''
     ls_column = list(CONFIG.MEAN_COLUMN)
@@ -654,50 +661,50 @@ def evelution_H4_L_O_report(data, file):
 
     subject = 'H4-L'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']='创业课程和讲座'
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']='创业课程和讲座'
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = '创业课程和讲座'
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = '创业课程和讲座'
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']='创业课程和讲座'
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = '创业课程和讲座'
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H4-M'
-    title='创新创业大赛'
+    title = '创新创业大赛'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H4-N'
-    title='创业模拟与实训'
+    title = '创业模拟与实训'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H4-O'
-    title='创业指导服务'
+    title = '创业指导服务'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H3-E'
     title = '创业场地支持'
@@ -723,7 +730,7 @@ def evelution_H4_L_O_report(data, file):
     df_major['题目'] = title
     df_init6 = pd.concat([df_init6, df_major])
 
-    excelUtil.writeExcel(df_init1, file, '创业教育总体评价' )
+    excelUtil.writeExcel(df_init1, file, '创业教育总体评价')
     excelUtil.writeExcel(df_init2, file, '各学院对创业教育评价')
     excelUtil.writeExcel(df_init3, file, '各专业对创业教育评价')
     excelUtil.writeExcel(df_init4, file, '创业总体支持')
@@ -731,6 +738,7 @@ def evelution_H4_L_O_report(data, file):
     excelUtil.writeExcel(df_init6, file, '各专业对创业支持')
 
     return
+
 
 def evelution_H4_F_K_report(data, file):
     '''就业教育服务报告'''
@@ -741,94 +749,95 @@ def evelution_H4_F_K_report(data, file):
     df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
 
     subject = 'H4-F'
-    title='生涯规划和就业指导'
+    title = '生涯规划和就业指导'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H4-G'
-    title='职业咨询与辅导'
+    title = '职业咨询与辅导'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H4-H'
-    title='校园招聘会'
+    title = '校园招聘会'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
 
     subject = 'H4-I'
-    title='学校招聘信息发布'
+    title = '学校招聘信息发布'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
     subject = 'H4-J'
-    title='就业帮助与推荐'
+    title = '就业帮助与推荐'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
     subject = 'H4-K'
-    title='就业手续办理'
+    title = '就业手续办理'
     df_mean = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目']=title
-    df_init1=pd.concat([df_init1,df_mean])
-    df_grp=answer_five_rate_single_grp(data,subject,'_10',CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目']=title
-    df_init2=pd.concat([df_init2,df_grp])
+    df_mean['题目'] = title
+    df_init1 = pd.concat([df_init1, df_mean])
+    df_grp = answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+    df_grp['题目'] = title
+    df_init2 = pd.concat([df_init2, df_grp])
     df_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目']=title
-    df_init3=pd.concat([df_init3,df_major])
-    excelUtil.writeExcel(df_init1, file, '就业教育服务总体评价' )
+    df_major['题目'] = title
+    df_init3 = pd.concat([df_init3, df_major])
+    excelUtil.writeExcel(df_init1, file, '就业教育服务总体评价')
     excelUtil.writeExcel(df_init2, file, '各学院对就业教育服务评价')
     excelUtil.writeExcel(df_init3, file, '各专业对就业教育服务评价')
 
 
-def major_relative_report(data,filePath):
+def major_relative_report(data, filePath):
     '''专业相关度'''
-    subject='B9-1'
-    pd_summary=answer_five_rate(data,subject,CONFIG.ANSWER_TYPE_RELATIVE)
+    subject = 'B9-1'
+    pd_summary = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(pd_summary, filePath, '总体专业相关情况')
 
-    pd_college=answer_five_rate_single_grp(data,subject,
-                                           CONFIG.BASE_COLUMN[0],
-                                           CONFIG.ANSWER_TYPE_RELATIVE)
+    pd_college = answer_five_rate_single_grp(data, subject,
+                                             CONFIG.BASE_COLUMN[0],
+                                             CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(pd_college, filePath, '学院专业相关情况')
 
-    pd_major=answer_five_rate_major_grp(data,subject,CONFIG.ANSWER_TYPE_RELATIVE)
+    pd_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(pd_major, filePath, '各专业专业相关情况')
 
-def job_meet_report(data,filePath):
+
+def job_meet_report(data, filePath):
     '''职业期待吻合度'''
     subject = 'B8'
     pd_summary = answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_MEET)
@@ -842,7 +851,8 @@ def job_meet_report(data,filePath):
     pd_major = answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_MEET)
     excelUtil.writeExcel(pd_major, filePath, '各专业职业期待吻合度')
 
-def job_satisfy_report(data,filePath):
+
+def job_satisfy_report(data, filePath):
     '''职业满意度'''
 
     subject = 'B7-A'
@@ -913,8 +923,9 @@ def special_employee_featured(data, dict_where={}):
     df_male_job = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
 
     df_concat = pd.concat([df_male_indurstry, df_male_indurstry_type,
-                           df_male_region, df_male_job],axis=1)
+                           df_male_region, df_male_job], axis=1)
     return df_concat
+
 
 def special_employee_competitive(data, dict_where={}):
     '''特殊人群就业竞争力分析'''
@@ -927,7 +938,7 @@ def special_employee_competitive(data, dict_where={}):
         col_cond = str(dict_where[CONFIG.DICT_KEY[0]])
         df_data = data[data[col_cond] == dict_where[CONFIG.DICT_KEY[1]]]
     else:
-        df_data=data
+        df_data = data
 
     # 专业相关度
     subject = 'B9-1'
@@ -955,7 +966,7 @@ def special_employee_competitive(data, dict_where={}):
 
     # 离职率
     subject = 'B10-1'
-    change_times = answer_value_rate(data,subject)
+    change_times = answer_value_rate(data, subject)
     no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])][
         [CONFIG.RATE_COLUMN[-1]]]
     no_changes.fillna(0, inplace=True)
@@ -963,9 +974,10 @@ def special_employee_competitive(data, dict_where={}):
 
     df_concat = pd.concat([df_income, df_salary, df_major_relative, df_job_satisfy,
                            df_salary_satisfy, df_industry_satisfy,
-                           df_job_content_satisfy,df_job_hope,change_times],axis=1)
+                           df_job_content_satisfy, df_job_hope, change_times], axis=1)
     print(df_concat)
-    return  df_concat
+    return df_concat
+
 
 def special_lesson(data, dict_where={}):
     '''特殊人课堂教学分析'''
@@ -975,7 +987,7 @@ def special_lesson(data, dict_where={}):
         col_cond = str(dict_where[CONFIG.DICT_KEY[0]])
         df_data = data[data[col_cond] == dict_where[CONFIG.DICT_KEY[1]]]
     else:
-        df_data=data
+        df_data = data
 
     sub_column = answerUtil.multi_columns(df_data, subject)
     ls_column = list(CONFIG.MEAN_COLUMN)
@@ -984,9 +996,10 @@ def special_lesson(data, dict_where={}):
     for col in sub_column:
         df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_MEET_V)
         df_mean['题目'] = col
-        df_init=pd.concat([df_init,df_mean])
+        df_init = pd.concat([df_init, df_mean])
     print(df_init)
     return df_init
+
 
 def special_practice(data, dict_where={}):
     '''特殊人群实践教学报告'''
@@ -996,7 +1009,7 @@ def special_practice(data, dict_where={}):
         col_cond = str(dict_where[CONFIG.DICT_KEY[0]])
         df_data = data[data[col_cond] == dict_where[CONFIG.DICT_KEY[1]]]
     else:
-        df_data=data
+        df_data = data
 
     sub_column = answerUtil.multi_columns(df_data, subject)
     ls_column = list(CONFIG.MEAN_COLUMN)
@@ -1008,6 +1021,7 @@ def special_practice(data, dict_where={}):
         df_init = pd.concat([df_init, df_mean])
     return df_init
 
+
 def special_teacher(data, dict_where={}):
     '''特殊人群教师评价'''
     subject = 'H4'
@@ -1015,7 +1029,7 @@ def special_teacher(data, dict_where={}):
         col_cond = str(dict_where[CONFIG.DICT_KEY[0]])
         df_data = data[data[col_cond] == dict_where[CONFIG.DICT_KEY[1]]]
     else:
-        df_data=data
+        df_data = data
 
     sub_column = answerUtil.multi_columns(df_data, subject)
     ls_column = list(CONFIG.MEAN_COLUMN)
@@ -1027,14 +1041,14 @@ def special_teacher(data, dict_where={}):
         df_init = pd.concat([df_init, df_mean])
     return df_init
 
+
 def special_school(data, dict_where={}):
     '''特殊人群学校总体评价'''
     if dict_where:
         col_cond = str(dict_where[CONFIG.DICT_KEY[0]])
         df_data = data[data[col_cond] == dict_where[CONFIG.DICT_KEY[1]]]
     else:
-        df_data=data
-
+        df_data = data
 
     # 学校满意度
     subject = 'H7'
@@ -1043,54 +1057,54 @@ def special_school(data, dict_where={}):
     # 学校推荐度
     df_recommend = answer_value_rate(df_data, 'H8')
 
-    df_result=pd.concat([df_mean_satisfy,df_recommend],axis=1)
+    df_result = pd.concat([df_mean_satisfy, df_recommend], axis=1)
     return df_result
 
 
-def special_gender_report(data,filePath):
-    subject='_3'
-    suffix='不同性别'
+def special_gender_report(data, filePath):
+    subject = '_3'
+    suffix = '不同性别'
 
-    dict_where1={CONFIG.DICT_KEY[0]:subject,CONFIG.DICT_KEY[1]:CONFIG.GENDER[0]}
-    dict_where2={CONFIG.DICT_KEY[0]:subject,CONFIG.DICT_KEY[1]:CONFIG.GENDER[1]}
+    dict_where1 = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: CONFIG.GENDER[0]}
+    dict_where2 = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: CONFIG.GENDER[1]}
 
-    df_emp_feature1=special_employee_featured(data,dict_where1)
-    df_emp_feature1['条件']=dict_where1[CONFIG.DICT_KEY[1]]
-    df_emp_feature2=special_employee_featured(data,dict_where2)
-    df_emp_feature2['条件']=dict_where2[CONFIG.DICT_KEY[1]]
-    df_emp_feature=special_employee_featured(data)
-    df_emp_feature['条件']=CONFIG.TOTAL_COLUMN
+    df_emp_feature1 = special_employee_featured(data, dict_where1)
+    df_emp_feature1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_emp_feature2 = special_employee_featured(data, dict_where2)
+    df_emp_feature2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_emp_feature = special_employee_featured(data)
+    df_emp_feature['条件'] = CONFIG.TOTAL_COLUMN
 
-    df_concat=pd.concat([df_emp_feature1,df_emp_feature2,df_emp_feature])
-    excelUtil.writeExcel(df_concat, filePath, suffix+'就业特色')
+    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
 
-    df_emp_competitive1=special_employee_competitive(data, dict_where1)
+    df_emp_competitive1 = special_employee_competitive(data, dict_where1)
     df_emp_competitive1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
-    df_emp_competitive2=special_employee_competitive(data,dict_where2)
+    df_emp_competitive2 = special_employee_competitive(data, dict_where2)
     df_emp_competitive2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
     df_emp_competitive = special_employee_competitive(data)
     df_emp_competitive['条件'] = CONFIG.TOTAL_COLUMN
 
-    df_concat=pd.concat([df_emp_competitive1,df_emp_competitive2,df_emp_competitive])
-    excelUtil.writeExcel(df_concat, filePath, suffix+ '就业竞争力')
+    df_concat = pd.concat([df_emp_competitive1, df_emp_competitive2, df_emp_competitive])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '就业竞争力')
 
-    df_lesson1=special_lesson(data, dict_where1)
+    df_lesson1 = special_lesson(data, dict_where1)
     df_lesson1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
-    df_lesson2=special_lesson(data, dict_where2)
+    df_lesson2 = special_lesson(data, dict_where2)
     df_lesson2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
     df_lesson = special_lesson(data)
     df_lesson['条件'] = CONFIG.TOTAL_COLUMN
-    df_concat=pd.concat([df_lesson1,df_lesson2,df_lesson])
-    excelUtil.writeExcel(df_concat, filePath, suffix+ '就业课堂教学')
+    df_concat = pd.concat([df_lesson1, df_lesson2, df_lesson])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '就业课堂教学')
 
-    df_practice1=special_practice(data, dict_where1)
+    df_practice1 = special_practice(data, dict_where1)
     df_practice1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
-    df_practice2=special_practice(data, dict_where2)
+    df_practice2 = special_practice(data, dict_where2)
     df_practice2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
     df_practice = special_practice(data)
     df_practice['条件'] = CONFIG.TOTAL_COLUMN
-    df_concat=pd.concat([df_practice1,df_practice2,df_practice])
-    excelUtil.writeExcel(df_concat, filePath, suffix+ '实践教学')
+    df_concat = pd.concat([df_practice1, df_practice2, df_practice])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '实践教学')
 
     df_teacher1 = special_teacher(data, dict_where1)
     df_teacher1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
@@ -1098,7 +1112,7 @@ def special_gender_report(data,filePath):
     df_teacher2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
     df_teacher = special_teacher(data)
     df_teacher['条件'] = CONFIG.TOTAL_COLUMN
-    df_concat = pd.concat([df_teacher1, df_teacher2,df_teacher])
+    df_concat = pd.concat([df_teacher1, df_teacher2, df_teacher])
     excelUtil.writeExcel(df_concat, filePath, suffix + '教师评价')
 
     df_school1 = special_school(data, dict_where1)
@@ -1107,7 +1121,7 @@ def special_gender_report(data,filePath):
     df_school2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
     df_school = special_school(data)
     df_school['条件'] = CONFIG.TOTAL_COLUMN
-    df_concat = pd.concat([df_school1, df_school2,df_school])
+    df_concat = pd.concat([df_school1, df_school2, df_school])
     excelUtil.writeExcel(df_concat, filePath, suffix + '母校总和评价')
 
     return
@@ -1119,86 +1133,88 @@ def special_national_report(data, filePath):
     suffix = '不同名族'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: CONFIG.NATIONAL_COLUMN[0]}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.NATIONAL_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.NATIONAL_COLUMN)
     return
 
-def special_origin_province_report(data,filePath):
+
+def special_origin_province_report(data, filePath):
     '''特殊人群生源地报告'''
     subject = 'A1-A'
     suffix = '省内省外生源'
     province = '福建省'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: province}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.ORIGIN_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.ORIGIN_COLUMN)
     return
 
-def special_indurstry_province_report(data,filePath):
+
+def special_indurstry_province_report(data, filePath):
     '''特殊人群省内省外就业报告'''
     subject = 'B3-A'
     suffix = '省内省外就业'
     province = '福建省'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: province}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.INDUSTRY_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.INDUSTRY_COLUMN)
     return
 
-def special_education_report(data,filePath):
+
+def special_education_report(data, filePath):
     '''特殊人群教育和非教育就业报告'''
     subject = 'B5-B'
     suffix = '教育和非教育'
     education = '教育'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: education}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.ORIGIN_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.ORIGIN_COLUMN)
     return
 
 
-def special_teacher_report(data,filePath):
+def special_teacher_report(data, filePath):
     '''特殊人群师范和非师范就业报告'''
     subject = 'B5-B'
     suffix = '师范和非师范'
     where = '师范'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.EDUCATION_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.EDUCATION_COLUMN)
     return
 
-def special_medical_report(data,filePath):
+
+def special_medical_report(data, filePath):
     '''特殊人群医疗卫生就业报告'''
     subject = 'B4-B'
     suffix = '医药卫生'
     where = '医药卫生'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.EDUCATION_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.EDUCATION_COLUMN)
     return
 
-def special_social_health_report(data,filePath):
+
+def special_social_health_report(data, filePath):
     '''特殊人群卫生和社会报告'''
     subject = 'B4-B'
     suffix = '医药卫生'
     where = '医药卫生'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.EDUCATION_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.EDUCATION_COLUMN)
     return
 
 
-def special_admissions_report(data,filePath):
+def special_admissions_report(data, filePath):
     '''特殊招生渠道就业报告'''
     subject = 'B4-B'
     suffix = '医药卫生'
     where = '医药卫生'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where}
-    special_common_report(data, subject, filePath, suffix, dict_where,CONFIG.EDUCATION_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.EDUCATION_COLUMN)
     return
 
 
-
-
-def special_common_report(data,subject, filePath, suffix, dict_where, tuple_title):
-
+def special_common_report(data, subject, filePath, suffix, dict_where, tuple_title):
     col_cond = str(dict_where[CONFIG.DICT_KEY[0]])
     df_data1 = data[data[col_cond] == dict_where[CONFIG.DICT_KEY[1]]]
     cond1 = tuple_title[0]
@@ -1264,6 +1280,7 @@ def special_common_report(data,subject, filePath, suffix, dict_where, tuple_titl
 
     return
 
+
 ##################公式部分
 
 def answer_rate(data, subject, answer):
@@ -1277,6 +1294,7 @@ def answer_rate(data, subject, answer):
                        '比例': [rate]})
     return df
 
+
 # 被formulas answer_rate替代
 def answer_value_rate(data, subject):
     '''各答案占比'''
@@ -1289,31 +1307,87 @@ def answer_value_rate(data, subject):
     return pd_result
 
 
-def answer_college_value_rate(data, subject):
+def answer_college_value_rate(data, subject, eliminate_unknown=[],array_order=[],array_asc=[]):
+    '''
+    根据学院分组计算比例
+    :param data: 源数据
+    :param subject: 题号
+    :param eliminate_unknown:需要剔除的选项
+    :return:
+    '''
     pd_count = answerUtil.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject], [CONFIG.BASE_COLUMN[0]])
     pd_value_count = answerUtil.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject],
                                                  [CONFIG.BASE_COLUMN[0], subject])
 
-    pd_left = pd.merge(pd_value_count, pd_count, on=CONFIG.BASE_COLUMN[0], how='left', suffixes=('_x', '_y'))
-    pd_left.columns = ['学院', '答案', '回答此答案人数', '答题总人数']
-    pd_left['比例'] = (pd_left['回答此答案人数'] / pd_left['答题总人数'] * 100).round(decimals=2)
+    pd_left = pd.merge(pd_value_count, pd_count, on=CONFIG.BASE_COLUMN[0], how='left')
+    # 结构重命名：'学院','答案', '回答此答案人数', '答题总人数'
+    pd_left.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[1], CONFIG.RATE_COLUMN[2]]
 
+    if eliminate_unknown:
+        # 为空无需剔除
+        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+            decimals=2)
+    else:
+        # 过滤要剔除元素的数据
+        df_unknown = pd_left[pd_left[CONFIG.RATE_COLUMN[0]].isin(eliminate_unknown)][
+            [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[1]]]
+        df_unknown.colunms.rename({CONFIG.RATE_COLUMN[1]: 'unknown'})
+        pd_left = pd.merge(pd_left, df_unknown, how='left', on=CONFIG.GROUP_COLUMN[0])
+        pd_left.fillna(0, inplace=True)
+        pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
+        pd_left.drop(['unknown'], axis='columns', inplace=True)
+        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+            decimals=2)
+
+    if array_order:
+        pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
     return pd_left
 
 
-def answer_single_value_rate(data, subject, single_grp):
+def answer_single_value_rate(data, subject, single_grp, eliminate_unknown=[],array_order=[],array_asc=[]):
+    '''
+    根据分组条件计算比例
+    :param data:
+    :param subject:
+    :param single_grp:
+    :param eliminate_unknown:
+    :return:
+    '''
     pd_count = answerUtil.answer_grp_count(data, [single_grp, subject], [single_grp])
     pd_value_count = answerUtil.answer_grp_count(data, [single_grp, subject],
                                                  [single_grp, subject])
 
-    pd_left = pd.merge(pd_value_count, pd_count, on=single_grp, how='left', suffixes=('_x', '_y'))
-    pd_left.columns = ['分组', '答案', '回答此答案人数', '答题总人数']
-    pd_left['比例'] = (pd_left['回答此答案人数'] / pd_left['答题总人数'] * 100).round(decimals=2)
+    pd_left = pd.merge(pd_value_count, pd_count, on=CONFIG.BASE_COLUMN[0], how='left')
+    # 结构重命名：'分组','答案', '回答此答案人数', '答题总人数'
+    pd_left.columns = [CONFIG.GROUP_COLUMN[-1], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[1], CONFIG.RATE_COLUMN[2]]
 
+    if eliminate_unknown:
+        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+            decimals=2)
+    else:
+        # 过滤要剔除元素的数据
+        df_unknown = pd_left[pd_left[CONFIG.RATE_COLUMN[0]].isin(eliminate_unknown)][
+            [CONFIG.GROUP_COLUMN[-1], CONFIG.RATE_COLUMN[1]]]
+        df_unknown.colunms.rename({CONFIG.RATE_COLUMN[1]: 'unknown'})
+        pd_left = pd.merge(pd_left, df_unknown, how='left', on=CONFIG.GROUP_COLUMN[-1])
+        pd_left.fillna(0, inplace=True)
+        pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
+        pd_left.drop(['unknown'], axis='columns', inplace=True)
+        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+            decimals=2)
+    if array_order:
+        pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
     return pd_left
 
 
-def answer_major_value_rate(data, subject):
+def answer_major_value_rate(data, subject, eliminate_unknown=[],array_order=[],array_asc=[]):
+    '''
+    根据专业分组，计算比例
+    :param data:
+    :param subject:
+    :param eliminate_unknown:
+    :return:
+    '''
     pd_count = answerUtil.answer_grp_count(data,
                                            [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
                                            [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]])
@@ -1322,10 +1396,26 @@ def answer_major_value_rate(data, subject):
                                                  [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject])
     pd_left = pd.merge(pd_value_count, pd_count,
                        on=[CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                       how='left', suffixes=('_x', '_y'))
-    pd_left.columns = ['学院', '专业', '答案', '回答此答案人数', '答题总人数']
-    pd_left['比例'] = (pd_left['回答此答案人数'] / pd_left['答题总人数'] * 100).round(decimals=2)
-
+                       how='left')
+    # 结构重命名：'学院','专业','答案', '回答此答案人数', '答题总人数'
+    pd_left.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[1],
+                       CONFIG.RATE_COLUMN[2]]
+    if eliminate_unknown:
+        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+            decimals=2)
+    else:
+        # 过滤要剔除元素的数据=> 答案列 ==某个值
+        df_unknown = pd_left[pd_left[CONFIG.RATE_COLUMN[0]].isin(eliminate_unknown)][
+            [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[1]]]
+        df_unknown.colunms.rename({CONFIG.RATE_COLUMN[1]: 'unknown'})
+        pd_left = pd.merge(pd_left, df_unknown, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
+        pd_left.fillna(0, inplace=True)
+        pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
+        pd_left.drop(['unknown'], axis='columns', inplace=True)
+        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+            decimals=2)
+    if array_order:
+        pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
     return pd_left
 
 
@@ -1479,14 +1569,14 @@ def answer_five_rate_single_grp(data, subject, grp, measure_type):
 
     # 分组算总数
     pd_total = answerUtil.answer_grp_count(data, [grp, subject], [grp])
-    pd_total.columns=['分组', '答题总人数']
-    #pd_total.rename(columns=CONFIG.COLUMN_NAME_GRP_COUNT, inplace=True)
+    pd_total.columns = ['分组', '答题总人数']
+    # pd_total.rename(columns=CONFIG.COLUMN_NAME_GRP_COUNT, inplace=True)
     print(pd_total)
     # 分组算各答案分布
     pd_distribution = answerUtil.answer_grp_count(data, [grp, subject], [grp, subject])
-    pd_distribution.columns=['分组', '答案', '回答此答案人数']
+    pd_distribution.columns = ['分组', '答案', '回答此答案人数']
 
-    #pd_distribution.rename(columns=CONFIG.COLUMN_NAME_GRP_VAL_COUNT, inplace=True)
+    # pd_distribution.rename(columns=CONFIG.COLUMN_NAME_GRP_VAL_COUNT, inplace=True)
     print(pd_distribution)
     # 合并答案、回答此答案人数、答题总人数
     pd_left_rate = pd.merge(pd_distribution, pd_total, how='left', on='分组', validate='many_to_one')
@@ -1522,23 +1612,24 @@ def answer_five_rate_single_grp(data, subject, grp, measure_type):
 
     return pd_left_mean
 
+
 def answer_five_rate_major_grp(data, subject, measure_type):
     '''某题按专业分组的五维占比'''
 
-    grp_column=list(CONFIG.COLLEGE_MAJOR)
+    grp_column = list(CONFIG.COLLEGE_MAJOR)
     relative_column = list(CONFIG.COLLEGE_MAJOR)
     relative_column.append(subject)
     print(relative_column)
     # 分组算总数
 
-    pd_total = answerUtil.answer_grp_count(data, relative_column,grp_column)
-    pd_total.columns=['学院','专业', '答题总人数']
+    pd_total = answerUtil.answer_grp_count(data, relative_column, grp_column)
+    pd_total.columns = ['学院', '专业', '答题总人数']
     # 分组算各答案分布
-    pd_distribution = answerUtil.answer_grp_count(data,relative_column, relative_column)
-    pd_distribution.columns=['学院','专业', '答案', '回答此答案人数']
+    pd_distribution = answerUtil.answer_grp_count(data, relative_column, relative_column)
+    pd_distribution.columns = ['学院', '专业', '答案', '回答此答案人数']
 
     # 合并答案、回答此答案人数、答题总人数
-    pd_left_rate = pd.merge(pd_distribution, pd_total, how='left', on=['学院','专业'], validate='many_to_one')
+    pd_left_rate = pd.merge(pd_distribution, pd_total, how='left', on=['学院', '专业'], validate='many_to_one')
     pd_left_rate['比例'] = (pd_left_rate['回答此答案人数'] / pd_left_rate['答题总人数'] * 100).round(2)
 
     # step3: 相关度/满意度/符合度
@@ -1547,21 +1638,20 @@ def answer_five_rate_major_grp(data, subject, measure_type):
     measure_name = parse_measure_name(measure_type)
 
     pd_measure = pd_left_rate[pd_left_rate['答案'].isin(ls_measure[0:3])]
-    pd_measure_sum = answerUtil.answer_grp_sum(pd_measure, ['学院','专业', '比例'], ['学院','专业'])
+    pd_measure_sum = answerUtil.answer_grp_sum(pd_measure, ['学院', '专业', '比例'], ['学院', '专业'])
 
-    pd_left_rate_measure = pd.merge(pd_left_rate, pd_measure_sum, on=['学院','专业'], how='left', suffixes=['', '_y'])
+    pd_left_rate_measure = pd.merge(pd_left_rate, pd_measure_sum, on=['学院', '专业'], how='left', suffixes=['', '_y'])
     pd_left_rate_measure.rename(columns={'比例_y': measure_name}, inplace=True)
-
 
     # step6:计算alpha
     pd_left_rate_measure['measure_score'] = pd_left_rate_measure['答案']
     pd_left_rate_measure.replace({'measure_score': dict_measure_score}, inplace=True)
 
     pd_left_rate_measure['measure_score'] = pd_left_rate_measure['回答此答案人数'] * pd_left_rate_measure['measure_score']
-    pd_measure_sum = answerUtil.answer_grp_sum(pd_left_rate_measure, ['学院','专业', 'measure_score'], ['学院','专业'])
+    pd_measure_sum = answerUtil.answer_grp_sum(pd_left_rate_measure, ['学院', '专业', 'measure_score'], ['学院', '专业'])
 
     # step5:计算mean
-    pd_left_mean = pd.merge(pd_left_rate_measure, pd_measure_sum, how='left', on=['学院','专业'], suffixes=['', '_y'])
+    pd_left_mean = pd.merge(pd_left_rate_measure, pd_measure_sum, how='left', on=['学院', '专业'], suffixes=['', '_y'])
     pd_left_mean['mean'] = (pd_left_mean['measure_score_y'] / pd_left_mean['答题总人数']).round(2)
     pd_left_mean.rename(columns={'mean': '均值'}, inplace=True)
     pd_left_mean.drop('measure_score', axis='columns', inplace=True)

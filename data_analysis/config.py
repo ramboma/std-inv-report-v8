@@ -86,6 +86,7 @@ NATIONAL_COLUMN=('汉族','少数民族')
 ORIGIN_COLUMN=('省内生源','省外生源')
 INDUSTRY_COLUMN=('省内就业','省外就业')
 EDUCATION_COLUMN=('教育','非教育')
+GROUP_COLUMN=('学院','专业','分组')
 
 
 
