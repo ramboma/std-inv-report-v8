@@ -189,7 +189,7 @@ RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE = [
 def get_logger(name):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    file_handler = logging.FileHandler('runlog.txt', mode='w')
+    file_handler = logging.FileHandler('runlog.txt', mode='a')
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
 
