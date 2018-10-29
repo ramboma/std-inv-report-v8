@@ -1,4 +1,4 @@
-    further.major_relative_report(data, report.REPORT_FOLDER + '专业相关度.xlsx')
+   further.major_relative_report(data, report.REPORT_FOLDER + '专业相关度.xlsx')
 
     further.job_meet_report(data, report.REPORT_FOLDER + '职业期待吻合度.xlsx')
     further.job_satisfy_report(data, report.REPORT_FOLDER + '职业满意度.xlsx')
@@ -30,5 +30,25 @@
     further.self_employed_report(data, report.REPORT_FOLDER + '自主创业.xlsx')
     further.basic_quality_report(data, report.REPORT_FOLDER + '基础素质.xlsx')
     further.major_quality_report(data, report.REPORT_FOLDER + '专业素质.xlsx')
-    further.evelution_lesson_report(data, report.REPORT_FOLDER + '课堂教学的评价.xlsx')
-    further.evelution_practice_report(data, report.REPORT_FOLDER + '实践教学的评价.xlsx')
+
+    # 附加题
+    further.evelution_H4_R_report(data, report.REPORT_FOLDER + '社团活动.xlsx')
+    further.evelution_academic_report(data, report.REPORT_FOLDER + '母校学风认可度.xlsx')
+    # 附加题
+
+    further.evelution_H4_T_report(data, report.REPORT_FOLDER + '教育教学总体评价.xlsx')
+    further.evelution_H4_S_report(data, report.REPORT_FOLDER + '实践教学的评价.xlsx')
+    further.evelution_H4_E_report(data, report.REPORT_FOLDER + '任课教师.xlsx')
+
+    # 学生指导与服务
+    further.evelution_H4_Q_report(data, report.REPORT_FOLDER + '对生学生活服务的评价.xlsx')
+    further.evelution_H4_P_report(data, report.REPORT_FOLDER + '对学生管理工作的评价.xlsx')
+    further.evelution_H4_F_K_report(data, report.REPORT_FOLDER + '对就业教育服务的评价.xlsx')
+    further.evelution_H4_L_O_report(data, report.REPORT_FOLDER + '对创业教育服务的反馈.xlsx')
+
+    # 特殊人群
+    further.special_gender_report(data, report.REPORT_FOLDER + '不同性别.xlsx')
+    further.special_education_report(data, report.REPORT_FOLDER + '教育行业和非教育行业.xlsx')
+    further.special_origin_province_report(data, report.REPORT_FOLDER + '省内省外生源.xlsx')
+    further.special_indurstry_province_report(data, report.REPORT_FOLDER + '省内省外就业.xlsx')
+    further.special_national_report(data, report.REPORT_FOLDER + '汉族少数名族.xlsx')

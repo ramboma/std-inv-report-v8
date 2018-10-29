@@ -17,6 +17,8 @@ MEASURE_NAME_MEET_V = '非常符合度'
 MEASURE_NAME_IMPORTANT = '重要度'
 MEASURE_NAME_PLEASED = '满足度'
 MEASURE_NAME_HELP = '帮助度'
+MEASURE_NAME_FEEL= '体验度'
+
 
 
 ANSWER_TYPE_RELATIVE = 'RELATIVE'
@@ -26,6 +28,7 @@ ANSWER_TYPE_MEET_V = 'MEET_V'
 ANSWER_TYPE_IMPORTANT='IMPORTANT'
 ANSWER_TYPE_PLEASED='PLEASED'
 ANSWER_TYPE_HELP='HELP'
+ANSWER_TYPE_FEEL='FEEL'
 
 
 ANSWER_NORMAL_MEET_V = ['非常符合', '比较符合', '一般', '比较不符合', '非常不符合', '无法评价']
@@ -47,6 +50,8 @@ ANSWER_SCORE_DICT_PLEASED = {'完全满足': 5, '大部分满足': 4, '基本满
 
 ANSWER_NORMAL_HELP = ['很大帮助', '较大帮助', '有些帮助', '没什么帮助', '完全没帮助', '无法评价']
 ANSWER_SCORE_DICT_HELP = {'很大帮助': 5, '较大帮助': 4, '有些帮助': 3, '没什么帮助': 2, '完全没帮助': 1, '无法评价': 0}
+ANSWER_NORMAL_FEEL = ['很好', '比较好', '一般', '比较差', '很差', '无法评价']
+ANSWER_SCORE_DICT_FEEL = {'很好': 5, '比较好': 4, '一般': 3, '比较差': 2, '很差': 1, '无法评价': 0}
 
 
 ANSWER_NORMAL_1 = ['很符合', '比较符合', '一般', '比较不符合', '很不符合', '无法评价']
@@ -75,6 +80,15 @@ DICT_KEY=('column','cond')
 
 
 COLLEGE_MAJOR=('_10', '_14')
+TOTAL_COLUMN='总体'
 GENDER=('男','女')
+NATIONAL_COLUMN=('汉族','少数民族')
+ORIGIN_COLUMN=('省内生源','省外生源')
+INDUSTRY_COLUMN=('省内就业','省外就业')
+EDUCATION_COLUMN=('教育','非教育')
+
+
+
+
 
 ERROR_PARAMS="参数错误"
