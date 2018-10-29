@@ -5,25 +5,27 @@
 
 __author__ = 'Gary.Z'
 
+import os
+
 from data_cleansing.utils import *
+
+logger = get_logger(__name__)
 
 
 @clocking
-def run_cleansing(input_file, output_file, keep_unsubmitted, v6_compatible, trace_mode):
+def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8, trace_mode):
 
-    if keep_unsubmitted is None:
-        keep_unsubmitted = False
+    logger.info('')
+    logger.info('############################## Cleansing start ##################################')
+    logger.info('input file: \'{}\''.format(input_file))
+    logger.info('output file: \'{}\''.format(output_file))
+    logger.info('with rule 2.2: {}'.format(with_rule_2_2))
+    logger.info('with rule 8: {}'.format(with_rule_8))
+    logger.info('trace mode: {}'.format(trace_mode))
+    logger.info('#################################################################################')
+    logger.info('')
 
-    print('')
-    print('############################## Cleansing start ##################################')
-    print('input file: {}'.format(input_file))
-    print('output file: {}'.format(output_file))
-    print('keep un-submitted records: {}'.format(keep_unsubmitted))
-    print('enable v6 compatible : {}'.format(v6_compatible))
-    print('#################################################################################')
-    print('')
-
-    print('loading input file {}'.format(input_file))
+    logger.info('loading input file \'{}\''.format(input_file))
     wb = xl.load_workbook(input_file)
     st = wb.worksheets[0]
 
@@ -40,8 +42,8 @@ def run_cleansing(input_file, output_file, keep_unsubmitted, v6_compatible, trac
     cleaner.remove_fake_records()
     # Rule 2.1
     cleaner.remove_unqualified_records()
-    if keep_unsubmitted:
-        # Rule 2.2
+    # Rule 2.2
+    if with_rule_2_2:
         cleaner.remove_unsubmitted_records()
     # Rule 4
     cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS, '4')
@@ -52,16 +54,31 @@ def run_cleansing(input_file, output_file, keep_unsubmitted, v6_compatible, trac
     # Rule 7
     cleaner.rinse_unusual_salary_values()
     # Rule 8
-    if v6_compatible:
+    if with_rule_8:
         cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE, '8')
 
-    print('writing output file {}'.format(output_file))
+    cleaner.set_sheet_name('cleaned_{}'.format(sheet_tag))
+
+    logger.info('writing output file {}'.format(output_file))
     wb.save(output_file)
 
-    print('')
-    print('############################## Cleansing end ##################################')
-    print('')
+    logger.info('')
+    logger.info('############################## Cleansing end ##################################')
+    logger.info('')
 
     return
+
+
+def get_output_filename(dirpath, name, ext, internal, analysis, tag):
+    if internal:
+        target = 'internal'
+    else:
+        target = 'public'
+    if analysis:
+        scope = 'analysis'
+    else:
+        scope = 'customer'
+
+    return os.path.join(dirpath, '{}_cleaned_{}_{}_{}{}'.format(name, target, scope, tag, ext))
 
 

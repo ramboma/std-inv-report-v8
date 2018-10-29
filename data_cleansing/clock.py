@@ -7,6 +7,10 @@ __author__ = 'Gary.Z'
 
 import timeit
 
+from data_cleansing.config import *
+
+logger = get_logger(__name__)
+
 
 def clocking(func):
     def clocked(*args, **kw):
@@ -16,7 +20,7 @@ def clocking(func):
         name = func.__name__
         arg_str = ', '.join(repr(arg) for arg in args)
         # print('[%0.8fs] %s(%s) -> %r' % (elapsed, name, arg_str, result))
-        print('=> [%0.2fs]' % elapsed)
+        logger.info('=> time cost: [%0.2fs]' % elapsed)
         return result
     return clocked
 
