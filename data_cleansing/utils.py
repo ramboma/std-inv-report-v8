@@ -64,8 +64,8 @@ class DataCleanser:
         if question_id not in self.__question_to_excel_column_map:
             self.__question_to_excel_column_map[question_id] = []
 
-        # if excel_column not in self.__question_to_excel_column_map:
-        self.__question_to_excel_column_map[question_id].append(excel_column)
+        if excel_column not in self.__question_to_excel_column_map:
+            self.__question_to_excel_column_map[question_id].append(excel_column)
 
     @clocking
     def scan_reset_column_names(self):
@@ -83,29 +83,21 @@ class DataCleanser:
             # logger.info('write: "' + value + '"')
 
         # Set question-answers column headers
-        header_name = ''
-        next_header_name = ''
         flag1 = False
         flag2 = False
         for i in range(BOUNDARY_1, BOUNDARY_2):  # loop from index 23 to last - 1
             header_name = self.__work_sheet.cell(HEADER_ROW_INDEX, i).value
             next_header_name = self.__work_sheet.cell(HEADER_ROW_INDEX, i + 1).value
 
-            # if header_name is not None:
-            #     self._register_question_column(header_name, self.__excel_column_list[i])
-
             if header_name is not None and next_header_name is None:
                 flag2 = True
                 prefix = header_name
-                # option = 'A'
                 option = 1
 
             if header_name is None and next_header_name is not None:
                 flag1 = True
 
             if flag2:
-                # new_header_name = prefix + '-' + option
-                # option = chr(ord(option) + 1)
                 new_header_name = '{}-{}'.format(prefix, self.__excel_column_list[option])
                 option += 1
                 self.__work_sheet.cell(HEADER_ROW_INDEX, i, new_header_name)
@@ -133,7 +125,7 @@ class DataCleanser:
         """rule 0: replace empty values with NaN """
         logger.info('rule 0: replace empty values with NaN ')
         i = 0
-        for row in self.__work_sheet['{}:{}'.format(self.__question_to_excel_column_map['A1'][0], self.__question_to_excel_column_map['I2-22-68'][0])]:
+        for row in self.__work_sheet.rows:
             for cell in row:
                 if cell.value == '':
                     cell.value = None
@@ -235,16 +227,9 @@ class DataCleanser:
         """rule 5: replace values like "无法评价", "以上均不需要改进" with NaN """
         logger.info('rule 5: rinse answers which in {} into NaN'.format(NC_OPTION_FILTER_LIST))
         i = 0
-        # for row in range(HEADER_ROW_INDEX + 1.max_row + 1):
-        #     for col in range(A1_COLUMN_INDEX.max_column + 1):
-        #         if self.st.cell(row, col).value in NC_OPTION_FILTER_LIST:
-        #             cell = self.st.cell(row, col, None)
-        #             # logger.info('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
-        #             i += 1
-        for row in self.__work_sheet['{}:{}'.format(self.__question_to_excel_column_map['A1'][0], self.__question_to_excel_column_map['I2-22-68'][0])]:
+        for row in self.__work_sheet.rows:
             for cell in row:
                 if cell.value in NC_OPTION_FILTER_LIST:
-                    # logger.info('rinse cell: {} - {}'.format(cell.coordinate, cell.value))
                     if cell.value is not None:
                         if self.__trace_mode:
                             self._add_tracing_comment(cell, '5', sys._getframe().f_code.co_name)
