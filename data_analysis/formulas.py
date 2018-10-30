@@ -97,6 +97,70 @@ def formulas_employe_rate(data,dict_cond={}):
                               CONFIG.RATE_COLUMN[2]: [count]})
     return pd_result
 
+def formulas_college_employe_rate(data):
+    '''
+
+    Employe rate:各学院就业率
+    公式：（就业人数-未就业人数）/答题总人数
+    :param data:
+    :param dict_cond:
+    :return: 就业率 答题总人数
+    '''
+    subject='A2'
+
+    # step1:各学院答题总人数
+    df_count = Util.answer_grp_count(data,[CONFIG.BASE_COLUMN[0],subject], [CONFIG.BASE_COLUMN[0]])
+    df_count.columns=[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[2]]
+    # step2:各学院回答"未就业"人数
+    df_unemployee = Util.answer_of_subject_count_grp(data, [CONFIG.BASE_COLUMN[0],subject],
+                                                     [CONFIG.BASE_COLUMN[0]],subject,
+                                                    CONFIG.A2_ANSWER[-1])
+    df_unemployee.columns=[CONFIG.GROUP_COLUMN[0],'unemployee']
+
+    df_left=pd.merge(df_count,df_unemployee,how='left',on=CONFIG.GROUP_COLUMN[0])
+    df_left.fillna(0,inplace=True)
+    # 就业率 答题总人数
+    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = ((df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]]* 100).round(decimals=2)
+    df_left.drop(['unemployee'], axis='columns', inplace=True)
+    df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+    return df_left
+
+def formulas_major_employe_rate(data):
+    '''
+
+    Employe rate:各学院就业率
+    公式：（就业人数-未就业人数）/答题总人数
+    :param data:
+    :param dict_cond:
+    :return: 就业率 答题总人数
+    '''
+    subject='A2'
+
+    # step1:各学院答题总人数
+    df_count = Util.answer_grp_count(data,
+                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1],subject],
+                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]])
+    df_count.columns=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1],CONFIG.RATE_COLUMN[2]]
+    # step2:各学院回答"未就业"人数
+    df_unemployee = Util.answer_of_subject_count_grp(data,
+                                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1],subject],
+                                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]],
+                                                     subject,
+                                                    CONFIG.A2_ANSWER[-1])
+    df_unemployee.columns=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1],'unemployee']
+
+    df_left=pd.merge(df_count,df_unemployee,
+                     how='left',
+                     on=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]])
+    df_left.fillna(0,inplace=True)
+    # 就业率 答题总人数
+    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = ((df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]]* 100).round(decimals=2)
+    df_left.drop(['unemployee'], axis='columns', inplace=True)
+    df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+    return df_left
+
 def formula_income_mean(data,dict_cond={}):
     '''
 
@@ -127,30 +191,50 @@ def formula_income_mean(data,dict_cond={}):
     return pd_mean
 
 
-def rate_T(df_sigle, column_name=CONFIG.TOTAL_COLUMN):
+def rate_T(df_data, column_name=CONFIG.TOTAL_COLUMN):
     '''总体 比率转置'''
-    if df_sigle.empty:
-        return df_sigle
-    join_num = df_sigle.loc[0, CONFIG.RATE_COLUMN[2]]
-    df_metrics = df_sigle[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    if df_data.empty:
+        return df_data
+
+    # 答题总人数
+    summary_num = df_data.loc[0,CONFIG.RATE_COLUMN[2]]
+
+    # 转置列 比例
+    df_metrics = df_data[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
     df_metrics = df_metrics.set_index([CONFIG.RATE_COLUMN[0]])
     df_t = df_metrics.T
-    df_t[CONFIG.RATE_COLUMN[2]] = join_num
-    df_t.columns.name = column_name
+    df_t[CONFIG.RATE_COLUMN[2]] = summary_num
     return df_t
 
 
-def college_rate_T(df_data, column_name=CONFIG.GROUP_COLUMN[0]):
+def college_rate_pivot(df_data,column_name=CONFIG.GROUP_COLUMN[0]):
     '''学院 比率转置'''
     if df_data.empty:
         return df_data
-    df_metrics = df_data[[CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
-    df_metrics = df_metrics.set_index([CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0]])
-    df_t = df_metrics.unstack()
-    # df_t.columns.name = column_name
-    df_t.reset_index(inplace=True)
-    df_t.fillna(0,inplace=True)
-    print(df_t)
+    # 非转置列 学院、答题总人数
+    df_summary=df_data[[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[2]]]
+    df_duplicate=df_summary.drop_duplicates()
+    # 转置列 学院、比例
+    df_metrics = df_data.pivot(index=CONFIG.GROUP_COLUMN[0],
+                               columns=CONFIG.RATE_COLUMN[0],values= CONFIG.RATE_COLUMN[-1])
+    df_metrics.columns.name=column_name
+    # 转置合并
+    df_t = pd.merge(df_metrics, df_duplicate, how='left',on=CONFIG.GROUP_COLUMN[0])
+    return df_t
+
+def major_rate_pivot(df_data, column_name=CONFIG.GROUP_COLUMN[0]):
+    '''学院 比率转置'''
+    if df_data.empty:
+        return df_data
+
+    # 非转置列 学院、专业、答题总人数
+    df_summary = df_data[[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[2]]]
+    df_duplicate = df_summary.drop_duplicates()
+    # 转置列
+    df_metrics =pd.pivot_table(df_data, index=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]],columns=CONFIG.RATE_COLUMN[0],values= CONFIG.RATE_COLUMN[-1])
+    df_metrics.columns.name=column_name
+    # 转置合并
+    df_t = pd.merge(df_metrics, df_duplicate, how='left', on=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]])
     return df_t
 
 

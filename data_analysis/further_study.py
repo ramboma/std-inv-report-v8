@@ -245,10 +245,68 @@ def work_stability_report(data, filePath):
     change_reason = answer_value_rate(data, 'B10-2')
     excelUtil.writeExcel(change_reason, filePath, '更换工作原因')
 
+def employee_report(data, filePath):
+    '''
+    就业力报告
+    :param data:
+    :param filePath:
+    :return:
+    '''
+    subject = 'A2'
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    df_metrics = data[ls_metrics_cols]
+    # 总体就业率
+    df_rate=formulas.formulas_employe_rate(df_metrics)
+    excelUtil.writeExcel(df_rate, filePath, '总体就业率')
+    # 各学院就业率
+    df_college_value =formulas.formulas_college_employe_rate(df_metrics)
+    excelUtil.writeExcel(df_college_value, filePath, '各学院就业率')
+    # 各专业就业率
+    df_major_value = formulas.formulas_major_employe_rate(df_metrics)
+    excelUtil.writeExcel(df_major_value, filePath, '各专业就业率')
+
+
+    # 总体就业去向
+    df_value_rate=answer_value_rate(df_metrics,subject)
+    # 灵活就业率
+    flexible = df_value_rate[df_value_rate[CONFIG.RATE_COLUMN[0]] \
+        .isin(CONFIG.A2_ANSWER[1:3])][CONFIG.RATE_COLUMN[-1]].sum()
+    df_t=formulas.rate_T(df_value_rate)
+    df_t[CONFIG.EMP_FREE_RATE_COLUMN]=flexible
+    excelUtil.writeExcel(df_t, filePath, '总体毕业去向')
+
+    # 各学院就业去向
+    college_changes = answer_college_value_rate(df_metrics, subject)
+    college_t = formulas.college_rate_pivot(college_changes)
+    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    # 灵活就业
+    df_flexiable=college_changes[college_changes[CONFIG.RATE_COLUMN[0]].isin(CONFIG.A2_ANSWER[1:3])][[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[-1]]]
+    df_flexiable=answerUtil.answer_grp_sum(df_flexiable,[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[-1]],[CONFIG.GROUP_COLUMN[0]])
+    df_flexiable.rename(columns={CONFIG.RATE_COLUMN[-1]:CONFIG.EMP_FREE_RATE_COLUMN},inplace=True)
+    df_result=pd.merge(college_t,df_flexiable,on=CONFIG.GROUP_COLUMN[0],how='left')
+    excelUtil.writeExcel(df_result, filePath, '各学院毕业去向')
+
+    # 各专业就业去向
+    major_changes = answer_major_value_rate(df_metrics, subject)
+    major_t = formulas.major_rate_pivot(major_changes)
+    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+
+    # 灵活就业
+    df_flexiable = major_changes[major_changes[CONFIG.RATE_COLUMN[0]].isin(CONFIG.A2_ANSWER[1:3])][
+        [CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[-1]]]
+    df_flexiable = answerUtil.answer_grp_sum(df_flexiable, [CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[-1]],
+                                             [CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]])
+    df_flexiable.rename(columns={CONFIG.RATE_COLUMN[-1]: CONFIG.EMP_FREE_RATE_COLUMN}, inplace=True)
+    df_result = pd.merge(major_t, df_flexiable, on=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]], how='left')
+
+    excelUtil.writeExcel(df_result, filePath, '各专业毕业去向')
+    return
+
+
 
 def work_option_report(data, filePath):
     '''
-    就业机会
+    就业率及就业状态
     :param data:
     :param filePath:
     :return:
@@ -258,27 +316,22 @@ def work_option_report(data, filePath):
     ls_metrics_cols.append(subject)
     df_metrics = data[ls_metrics_cols]
 
-    option = answer_value_rate(df_metrics, subject)
-    unknown_num = answerUtil.answer_of_subject_count(df_metrics, subject, CONFIG.EXCEPTED_ANSWER)
-    option[CONFIG.RATE_COLUMN[2]] = option[CONFIG.RATE_COLUMN[2]] - unknown_num
-    option[CONFIG.RATE_COLUMN[-1]] = (option[CONFIG.RATE_COLUMN[1]] / option[CONFIG.RATE_COLUMN[2]] * 100).round(
-        decimals=2)
+    option = answer_value_rate(df_metrics, subject,[CONFIG.EXCEPTED_ANSWER])
+
     rate_t = formulas.rate_T(option, '总体就业机会')
     excelUtil.writeExcel(rate_t, filePath, '总体就业机会')
 
-    college_changes = answer_college_value_rate(df_metrics, subject, [CONFIG.EXCEPTED_ANSWER])
-    college_summary=college_changes[[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[2]]]
-    df_duplicate=college_summary.drop_duplicates()
-    print(df_duplicate)
+    college_changes = answer_college_value_rate(df_metrics, subject,
+                                                [CONFIG.EXCEPTED_ANSWER],[CONFIG.RATE_COLUMN[2]],[0])
+    college_t = formulas.college_rate_pivot(college_changes, '各学院就业机会')
+    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    excelUtil.writeExcel(college_t, filePath, '各学院就业机会')
 
-    college_t = formulas.college_rate_T(college_changes, '各学院就业机会')
-    df_colleage=pd.merge(df_duplicate,college_t,how='left',
-                         on=CONFIG.GROUP_COLUMN[0])
-
-    excelUtil.writeExcel(df_colleage, filePath, '各学院就业机会')
-
-    major_changes = answer_major_value_rate(df_metrics, subject, [CONFIG.EXCEPTED_ANSWER])
-    excelUtil.writeExcel(major_changes, filePath, '各专业就业机会')
+    major_changes = answer_major_value_rate(df_metrics, subject,
+                                            [CONFIG.EXCEPTED_ANSWER],[CONFIG.RATE_COLUMN[2]],[0])
+    major_t=formulas.major_rate_pivot(major_changes,'各专业就业机会')
+    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    excelUtil.writeExcel(major_t, filePath, '各专业就业机会')
 
 
 def non_employee_report(data, filePath):
@@ -1296,14 +1349,21 @@ def answer_rate(data, subject, answer):
 
 
 # 被formulas answer_rate替代
-def answer_value_rate(data, subject):
+def answer_value_rate(data, subject,eliminate_unknown=[]):
     '''各答案占比'''
     count = answerUtil.answer_count(data, subject);
     pd_value_count = answerUtil.answer_val_count(data, subject)
     pd_result = pd.DataFrame({'答案': pd_value_count.index,
                               '回答此答案人数': pd_value_count.values})
-    pd_result['答题总人数'] = count
+
+    if not eliminate_unknown:
+        # 为空无需剔除
+        pd_result['答题总人数'] = count
+    else:
+        unknown_num = answerUtil.answer_of_subject_count(data, subject, eliminate_unknown[0])
+        pd_result['答题总人数']=count-unknown_num
     pd_result['比例'] = (pd_result['回答此答案人数'] / pd_result['答题总人数'] * 100).round(decimals=2)
+
     return pd_result
 
 
@@ -1323,7 +1383,7 @@ def answer_college_value_rate(data, subject, eliminate_unknown=[],array_order=[]
     # 结构重命名：'学院','答案', '回答此答案人数', '答题总人数'
     pd_left.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[1], CONFIG.RATE_COLUMN[2]]
 
-    if eliminate_unknown:
+    if not eliminate_unknown:
         # 为空无需剔除
         pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
             decimals=2)
@@ -1331,13 +1391,19 @@ def answer_college_value_rate(data, subject, eliminate_unknown=[],array_order=[]
         # 过滤要剔除元素的数据
         df_unknown = pd_left[pd_left[CONFIG.RATE_COLUMN[0]].isin(eliminate_unknown)][
             [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[1]]]
-        df_unknown.colunms.rename({CONFIG.RATE_COLUMN[1]: 'unknown'})
-        pd_left = pd.merge(pd_left, df_unknown, how='left', on=CONFIG.GROUP_COLUMN[0])
-        pd_left.fillna(0, inplace=True)
-        pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
-        pd_left.drop(['unknown'], axis='columns', inplace=True)
-        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
-            decimals=2)
+        if df_unknown.empty:
+            pd_left[CONFIG.RATE_COLUMN[-1]] = (
+                        pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+                decimals=2)
+        else:
+            df_unknown.rename(columns={CONFIG.RATE_COLUMN[1]: 'unknown'},inplace=True)
+            pd_left = pd.merge(pd_left, df_unknown, how='left', on=CONFIG.GROUP_COLUMN[0])
+            pd_left.fillna(0, inplace=True)
+            pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
+            pd_left.drop(['unknown'], axis='columns', inplace=True)
+            pd_left[CONFIG.RATE_COLUMN[-1]] = (
+                        pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+                decimals=2)
 
     if array_order:
         pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
@@ -1361,20 +1427,27 @@ def answer_single_value_rate(data, subject, single_grp, eliminate_unknown=[],arr
     # 结构重命名：'分组','答案', '回答此答案人数', '答题总人数'
     pd_left.columns = [CONFIG.GROUP_COLUMN[-1], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[1], CONFIG.RATE_COLUMN[2]]
 
-    if eliminate_unknown:
+    if not eliminate_unknown:
         pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
             decimals=2)
     else:
         # 过滤要剔除元素的数据
         df_unknown = pd_left[pd_left[CONFIG.RATE_COLUMN[0]].isin(eliminate_unknown)][
             [CONFIG.GROUP_COLUMN[-1], CONFIG.RATE_COLUMN[1]]]
-        df_unknown.colunms.rename({CONFIG.RATE_COLUMN[1]: 'unknown'})
-        pd_left = pd.merge(pd_left, df_unknown, how='left', on=CONFIG.GROUP_COLUMN[-1])
-        pd_left.fillna(0, inplace=True)
-        pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
-        pd_left.drop(['unknown'], axis='columns', inplace=True)
-        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
-            decimals=2)
+        if df_unknown.empty:
+            pd_left[CONFIG.RATE_COLUMN[-1]] = (
+                        pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+                decimals=2)
+        else:
+            df_unknown.rename(columns={CONFIG.RATE_COLUMN[1]: 'unknown'},inplace=True)
+            pd_left = pd.merge(pd_left, df_unknown, how='left', on=CONFIG.GROUP_COLUMN[-1])
+            pd_left.fillna(0, inplace=True)
+            pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
+            pd_left.drop(['unknown'], axis='columns', inplace=True)
+            pd_left[CONFIG.RATE_COLUMN[-1]] = (
+                        pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+                decimals=2)
+
     if array_order:
         pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
     return pd_left
@@ -1407,13 +1480,20 @@ def answer_major_value_rate(data, subject, eliminate_unknown=[],array_order=[],a
         # 过滤要剔除元素的数据=> 答案列 ==某个值
         df_unknown = pd_left[pd_left[CONFIG.RATE_COLUMN[0]].isin(eliminate_unknown)][
             [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[1]]]
-        df_unknown.colunms.rename({CONFIG.RATE_COLUMN[1]: 'unknown'})
-        pd_left = pd.merge(pd_left, df_unknown, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
-        pd_left.fillna(0, inplace=True)
-        pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
-        pd_left.drop(['unknown'], axis='columns', inplace=True)
-        pd_left[CONFIG.RATE_COLUMN[-1]] = (pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
-            decimals=2)
+        if df_unknown.empty:
+            pd_left[CONFIG.RATE_COLUMN[-1]] = (
+                        pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+                decimals=2)
+        else:
+            df_unknown.rename(columns={CONFIG.RATE_COLUMN[1]: 'unknown'},inplace=True)
+            pd_left = pd.merge(pd_left, df_unknown, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
+            pd_left.fillna(0, inplace=True)
+            pd_left[CONFIG.RATE_COLUMN[2]] = pd_left[CONFIG.RATE_COLUMN[2]] - pd_left['unknown']
+            pd_left.drop(['unknown'], axis='columns', inplace=True)
+            pd_left[CONFIG.RATE_COLUMN[-1]] = (
+                        pd_left[CONFIG.RATE_COLUMN[1]] / pd_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+                decimals=2)
+
     if array_order:
         pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
     return pd_left

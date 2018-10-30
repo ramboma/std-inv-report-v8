@@ -73,6 +73,8 @@ COLUMN_NAME_GRP_VAL_COUNT = {'grp': '分组', 'subject': '答题总人数', 'cnt
 RATE_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例')
 MEAN_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例','度量','均值')
 EMPLOYEE_RATE_COLUMN='就业率'
+EMP_FREE_RATE_COLUMN='灵活就业率'
+
 B10_1_ANSWER = ['0次']
 
 # 条件过滤的key值

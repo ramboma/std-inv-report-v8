@@ -15,8 +15,8 @@ import data_analysis.further_study as further
 def main(file):
 
     data = excelUtil.read_excel(file)
-    further.work_option_report(data, report.REPORT_FOLDER + '就业机会.xlsx')
 
+    further.employee_report(data, report.REPORT_FOLDER + '就业率及就业就业状态.xlsx')
 
 if __name__ == '__main__':
     main("../test-data/san-ming/cleaned/answer1022_new.xlsx")
