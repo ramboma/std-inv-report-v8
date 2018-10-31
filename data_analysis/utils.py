@@ -113,12 +113,16 @@ def test():
     grouped=df.groupby(['C','B'], as_index=False).count()
     print(grouped)
 
-def multi_columns(data, subject):
+def multi_columns(data, subject,max_times=0):
     '''多选题的选项列'''
     multi_column = []
     for col in data.columns:
         if subject in str(col):
             multi_column.append(col)
+
+    if max_times:
+        multi_column=multi_column[0:max_times]
+
     return multi_column
 
 

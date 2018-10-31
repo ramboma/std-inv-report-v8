@@ -36,6 +36,15 @@
     further.evelution_H4_S_report(data, report.REPORT_FOLDER + '实践教学的评价.xlsx')
     further.evelution_H4_E_report(data, report.REPORT_FOLDER + '任课教师.xlsx')
 
+        # 人才培养
+    further.evelution_practice_report(data, report.REPORT_FOLDER + '对实践教学的评价.xlsx')
+    further.evelution_lesson_report(data, report.REPORT_FOLDER + '对课堂教学的评价.xlsx')
+    further.evelution_teach_report(data, report.REPORT_FOLDER + '对任课教师的评价.xlsx')
+    # 附加题
+    further.evelution_H4_S_report(data, report.REPORT_FOLDER + '实践教学的评价.xlsx')
+    further.evelution_H4_E_report(data, report.REPORT_FOLDER + '任课教师.xlsx')
+    further.evelution_H4_T_report(data, report.REPORT_FOLDER + '教育教学总体评价.xlsx')
+
     # 学生指导与服务
     further.evelution_H4_Q_report(data, report.REPORT_FOLDER + '对生学生活服务的评价.xlsx')
     further.evelution_H4_P_report(data, report.REPORT_FOLDER + '对学生管理工作的评价.xlsx')

@@ -501,20 +501,26 @@ def evelution_lesson_report(data, file):
     sub_column = answerUtil.multi_columns(data, subject)
     ls_column = list(CONFIG.MEAN_COLUMN)
     ls_column = ls_column.append('题目')
-    df_init = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init1 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init2 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
 
     for col in sub_column:
         df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_MEET_V)
         df_mean['题目'] = col
-        excelUtil.writeExcel(df_mean, file, '课堂教学各方面评价_' + str(col))
+        df_init1 = pd.concat([df_init1, df_mean])
 
         df_grp = answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_MEET_V)
         df_mean['题目'] = col
-        excelUtil.writeExcel(df_grp, file, '学院课堂教学各方面评价_' + str(col))
+        df_init2 = pd.concat([df_init2, df_mean])
 
         df_major = answer_five_rate_major_grp(data, col, CONFIG.ANSWER_TYPE_MEET_V)
         df_major['题目'] = col
-        excelUtil.writeExcel(df_major, file, '专业课堂教学各方面评价_' + str(col))
+        df_init3 = pd.concat([df_init3, df_mean])
+
+    excelUtil.writeExcel(df_init1, file, '课堂教学各方面评价')
+    excelUtil.writeExcel(df_init2, file, '学院课堂教学各方面评价')
+    excelUtil.writeExcel(df_init3, file, '专业课堂教学各方面评价')
 
     return
 
@@ -522,20 +528,60 @@ def evelution_lesson_report(data, file):
 def evelution_practice_report(data, file):
     '''实践教学报告'''
     subject = 'H3'
-    sub_column = answerUtil.multi_columns(data, subject)
+    sub_column = answerUtil.multi_columns(data, subject,4)
+    ls_column = list(CONFIG.MEAN_COLUMN)
+    ls_column = ls_column.append('题目')
+    df_init1 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init2 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+
 
     for col in sub_column:
         df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_HELP)
         df_mean['题目'] = col
-        excelUtil.writeExcel(df_mean, file, '实践教学各方面评价_' + str(col))
+        df_init1 = pd.concat([df_init1, df_mean])
 
         df_grp = answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_HELP)
         df_mean['题目'] = col
-        excelUtil.writeExcel(df_grp, file, '学院实践教学各方面评价_' + str(col))
+        df_init2 = pd.concat([df_init2, df_mean])
 
         df_major = answer_five_rate_major_grp(data, col, CONFIG.ANSWER_TYPE_HELP)
         df_major['题目'] = col
-        excelUtil.writeExcel(df_major, file, '专业实践教学各方面评价_' + str(col))
+        df_init3 = pd.concat([df_init3, df_major])
+
+    excelUtil.writeExcel(df_mean, file, '实践教学各方面评价')
+    excelUtil.writeExcel(df_grp, file, '学院实践教学各方面评价')
+    excelUtil.writeExcel(df_major, file, '专业实践教学各方面评价')
+
+    return
+
+def evelution_teach_report(data, file):
+    '''任课教师评价'''
+    subject = 'H4'
+    sub_column = answerUtil.multi_columns(data, subject,4)
+
+    ls_column = list(CONFIG.MEAN_COLUMN)
+    ls_column = ls_column.append('题目')
+    df_init1 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init2 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+
+    for col in sub_column:
+        df_mean = answer_five_rate(data, col, CONFIG.ANSWER_TYPE_SATISFY)
+        df_mean['题目'] = col
+        df_init1 = pd.concat([df_init1, df_mean])
+
+        df_grp = answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_SATISFY)
+        df_grp['题目'] = col
+        df_init2 = pd.concat([df_init2, df_grp])
+
+        df_major = answer_five_rate_major_grp(data, col, CONFIG.ANSWER_TYPE_SATISFY)
+        df_major['题目'] = col
+        df_init3 = pd.concat([df_init3, df_major])
+
+    excelUtil.writeExcel(df_init1, file, '对任课教师的评价')
+    excelUtil.writeExcel(df_init2, file, '各学院对任课教师的评价')
+    excelUtil.writeExcel(df_init3, file, '各专业对任课教师的评价')
 
     return
 
@@ -1236,23 +1282,23 @@ def special_teacher_report(data, filePath):
 
 def special_medical_report(data, filePath):
     '''特殊人群医疗卫生就业报告'''
-    subject = 'B4-B'
-    suffix = '医药卫生'
-    where = '医药卫生'
+    subject = 'B4-A'
+    suffix = '医疗卫生'
+    where = '医疗卫生'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where}
-    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.EDUCATION_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.MEDICAL_COLUMN)
     return
 
 
 def special_social_health_report(data, filePath):
     '''特殊人群卫生和社会报告'''
-    subject = 'B4-B'
-    suffix = '医药卫生'
-    where = '医药卫生'
+    subject = 'B5-A'
+    suffix = '卫生和社会工作'
+    where = '卫生和社会工作'
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where}
-    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.EDUCATION_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.HEALTH_COLUMN)
     return
 
 

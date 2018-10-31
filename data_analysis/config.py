@@ -89,7 +89,8 @@ ORIGIN_COLUMN=('省内生源','省外生源')
 INDUSTRY_COLUMN=('省内就业','省外就业')
 EDUCATION_COLUMN=('教育','非教育')
 GROUP_COLUMN=('学院','专业','分组')
-
+MEDICAL_COLUMN=('医药卫生','非医疗卫生')
+HEALTH_COLUMN=('卫生','非卫生')
 
 
 

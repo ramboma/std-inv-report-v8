@@ -16,7 +16,9 @@ def main(file):
 
     data = excelUtil.read_excel(file)
 
-    further.employee_report(data, report.REPORT_FOLDER + '就业率及就业就业状态.xlsx')
+    further.special_medical_report(data, report.REPORT_FOLDER + '医疗卫生职业.xlsx')
+    further.special_social_health_report(data, report.REPORT_FOLDER + '卫生和社会工作.xlsx')
+
 
 if __name__ == '__main__':
     main("../test-data/san-ming/cleaned/answer1022_new.xlsx")
