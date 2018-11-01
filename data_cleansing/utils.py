@@ -89,6 +89,23 @@ def rinse_values_by_column_rowindex(work_sheet, col, index_list, rule, func, deb
         logger.debug('>> {}'.format(_debug_info_))
 
 
+def rinse_values_by_column(work_sheet, col, rule, func, debug=False, trace_mode=False):
+    _debug_info_ = []
+    i = 0
+    for cell in work_sheet[col]:
+        if cell.value is not None:
+            if debug:
+                _debug_info_.append(cell.value)
+            if trace_mode:
+                add_tracing_comment(cell, rule, func)
+            else:
+                cell.value = None
+        i += 1
+    logger.info('>> {} cells rinsed'.format(i))
+    if debug:
+        logger.debug('>> {}'.format(_debug_info_))
+
+
 def query_row_indexes_by_column_filter(work_sheet, xl_col, cb_filter):
     idx_list = []
     for cell in work_sheet[xl_col]:

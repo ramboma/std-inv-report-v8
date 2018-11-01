@@ -58,6 +58,7 @@ def main(input_file, output_folder, analysis, internal, all, trace_mode):
         output_file = get_output_filename(dirpath, name, ext, internal, analysis, tag)
         run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=internal, with_rule_8=analysis, trace_mode=trace_mode)
     else:
+        # internal, analysis
         output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag)
         run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
         # internal, customer

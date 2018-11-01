@@ -8,6 +8,7 @@ __author__ = 'Gary.Z'
 import os
 
 from data_cleansing.data_cleanser import *
+from data_cleansing.rule.rules_assembler import *
 
 logger = get_logger(__name__)
 
@@ -38,24 +39,17 @@ def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8
     cleanser.reset_emplty_values_with_na()
     # clear_all_cells_bgcolor()
 
-    # Rule 1
-    cleanser.remove_fake_records()
-    # Rule 2.1
-    cleanser.remove_unqualified_records()
-    # Rule 2.2
+    rule_set_assembler = RuleSetAssembler()
+    rule_ids = ['1', '2.1']
     if with_rule_2_2:
-        cleanser.remove_unsubmitted_records()
-    # Rule 4
-    cleanser.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS, '4')
-    # Rule 5
-    cleanser.rinse_nc_option_values()
-    # Rule 6
-    cleanser.rinse_invalid_answers()
-    # Rule 7
-    cleanser.rinse_unusual_salary_values()
-    # Rule 8
+        rule_ids.append('2.2')
+    rule_ids.extend(['4', '5', '6', '7'])
     if with_rule_8:
-        cleanser.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE, '8')
+        rule_ids.append('8')
+    rule_set = rule_set_assembler.assemble(rule_ids)
+
+    cleanser.apply_rule_set(rule_set)
+    cleanser.validate_data_dimensions()
 
     cleanser.set_sheet_name('cleaned_{}'.format(sheet_tag))
 
