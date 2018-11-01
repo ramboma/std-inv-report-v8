@@ -34,7 +34,7 @@ def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8
 
     cleanser.validate_data_dimensions()
     cleanser.remove_unnecessary_headers()
-    cleanser.scan_reset_column_names()
+    cleanser.reset_column_names()
     cleanser.reset_emplty_values_with_na()
     # clear_all_cells_bgcolor()
 
