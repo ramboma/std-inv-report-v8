@@ -66,7 +66,8 @@ def answer_rate_condition(data, subject, dict_cond={}, array_order=[],
 
     return df_result
 
-def formulas_employe_rate(data,dict_cond={}):
+
+def formulas_employe_rate(data, dict_cond={}):
     '''
 
     Employe rate:就业率，支持条件过滤
@@ -75,7 +76,7 @@ def formulas_employe_rate(data,dict_cond={}):
     :param dict_cond:
     :return: 就业率 答题总人数
     '''
-    subject='A2'
+    subject = 'A2'
 
     # 条件过滤
     if not dict_cond:
@@ -97,6 +98,7 @@ def formulas_employe_rate(data,dict_cond={}):
                               CONFIG.RATE_COLUMN[2]: [count]})
     return pd_result
 
+
 def formulas_college_employe_rate(data):
     '''
 
@@ -106,25 +108,28 @@ def formulas_college_employe_rate(data):
     :param dict_cond:
     :return: 就业率 答题总人数
     '''
-    subject='A2'
+    subject = 'A2'
 
     # step1:各学院答题总人数
-    df_count = Util.answer_grp_count(data,[CONFIG.BASE_COLUMN[0],subject], [CONFIG.BASE_COLUMN[0]])
-    df_count.columns=[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[2]]
+    df_count = Util.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject], [CONFIG.BASE_COLUMN[0]])
+    df_count.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[2]]
     # step2:各学院回答"未就业"人数
-    df_unemployee = Util.answer_of_subject_count_grp(data, [CONFIG.BASE_COLUMN[0],subject],
-                                                     [CONFIG.BASE_COLUMN[0]],subject,
-                                                    CONFIG.A2_ANSWER[-1])
-    df_unemployee.columns=[CONFIG.GROUP_COLUMN[0],'unemployee']
+    df_unemployee = Util.answer_of_subject_count_grp(data, [CONFIG.BASE_COLUMN[0], subject],
+                                                     [CONFIG.BASE_COLUMN[0]], subject,
+                                                     CONFIG.A2_ANSWER[-1])
+    df_unemployee.columns = [CONFIG.GROUP_COLUMN[0], 'unemployee']
 
-    df_left=pd.merge(df_count,df_unemployee,how='left',on=CONFIG.GROUP_COLUMN[0])
-    df_left.fillna(0,inplace=True)
+    df_left = pd.merge(df_count, df_unemployee, how='left', on=CONFIG.GROUP_COLUMN[0])
+    df_left.fillna(0, inplace=True)
     # 就业率 答题总人数
-    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = ((df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]]* 100).round(decimals=2)
+    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = (
+            (df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+        decimals=2)
     df_left.drop(['unemployee'], axis='columns', inplace=True)
     df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
 
     return df_left
+
 
 def formulas_major_employe_rate(data):
     '''
@@ -135,33 +140,36 @@ def formulas_major_employe_rate(data):
     :param dict_cond:
     :return: 就业率 答题总人数
     '''
-    subject='A2'
+    subject = 'A2'
 
     # step1:各学院答题总人数
     df_count = Util.answer_grp_count(data,
-                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1],subject],
-                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]])
-    df_count.columns=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1],CONFIG.RATE_COLUMN[2]]
+                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
+                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]])
+    df_count.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[2]]
     # step2:各学院回答"未就业"人数
     df_unemployee = Util.answer_of_subject_count_grp(data,
-                                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1],subject],
-                                                     [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]],
+                                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
+                                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                      subject,
-                                                    CONFIG.A2_ANSWER[-1])
-    df_unemployee.columns=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1],'unemployee']
+                                                     CONFIG.A2_ANSWER[-1])
+    df_unemployee.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], 'unemployee']
 
-    df_left=pd.merge(df_count,df_unemployee,
-                     how='left',
-                     on=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]])
-    df_left.fillna(0,inplace=True)
+    df_left = pd.merge(df_count, df_unemployee,
+                       how='left',
+                       on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
+    df_left.fillna(0, inplace=True)
     # 就业率 答题总人数
-    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = ((df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]]* 100).round(decimals=2)
+    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = (
+            (df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]] * 100).round(
+        decimals=2)
     df_left.drop(['unemployee'], axis='columns', inplace=True)
     df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
 
     return df_left
 
-def formula_income_mean(data,dict_cond={}):
+
+def formula_income_mean(data, dict_cond={}):
     '''
 
     Income mean:薪酬均值
@@ -171,7 +179,7 @@ def formula_income_mean(data,dict_cond={}):
     :param dict_cond:
     :return:
     '''
-    subject='B6'
+    subject = 'B6'
     # 前提要素
     df_primise = data[data[CONFIG.BASE_COLUMN[-1]] == CONFIG.A2_ANSWER[0]]
 
@@ -191,51 +199,140 @@ def formula_income_mean(data,dict_cond={}):
     return pd_mean
 
 
-def rate_T(df_data, column_name=CONFIG.TOTAL_COLUMN):
+def rate_T(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], ):
     '''总体 比率转置'''
     if df_data.empty:
         return df_data
 
     # 答题总人数
-    summary_num = df_data.loc[0,CONFIG.RATE_COLUMN[2]]
+    summary_num = df_data.loc[0, CONFIG.RATE_COLUMN[2]]
+    df_summary = df_data[array_focus]
+    df_duplicate = df_summary.drop_duplicates()
+    print(df_duplicate)
 
     # 转置列 比例
     df_metrics = df_data[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
     df_metrics = df_metrics.set_index([CONFIG.RATE_COLUMN[0]])
     df_t = df_metrics.T
-    df_t[CONFIG.RATE_COLUMN[2]] = summary_num
+    df_t = df_t.reset_index()
+    df_t = pd.concat([df_t, df_duplicate], axis=1)
     return df_t
 
 
-def college_rate_pivot(df_data,column_name=CONFIG.GROUP_COLUMN[0]):
+def college_rate_pivot(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], hasCollege=True):
     '''学院 比率转置'''
     if df_data.empty:
         return df_data
+
+    # 默认为按学院分组 列名为学院，由于五维占比有按其他分组条件分组，则列名为分组
+    if hasCollege:
+        grp_name = CONFIG.GROUP_COLUMN[0]
+    else:
+        grp_name = CONFIG.GROUP_COLUMN[-1]
     # 非转置列 学院、答题总人数
-    df_summary=df_data[[CONFIG.GROUP_COLUMN[0],CONFIG.RATE_COLUMN[2]]]
-    df_duplicate=df_summary.drop_duplicates()
+    ls_focus = array_focus.copy()
+    ls_focus.append(grp_name)
+
+    df_summary = df_data[ls_focus]
+    df_duplicate = df_summary.drop_duplicates()
     # 转置列 学院、比例
-    df_metrics = df_data.pivot(index=CONFIG.GROUP_COLUMN[0],
-                               columns=CONFIG.RATE_COLUMN[0],values= CONFIG.RATE_COLUMN[-1])
-    df_metrics.columns.name=column_name
+    df_metrics = df_data.pivot(index=grp_name,
+                               columns=CONFIG.RATE_COLUMN[0],
+                               values=CONFIG.RATE_COLUMN[-1])
+    df_metrics.fillna(0.00, inplace=True)
+
     # 转置合并
-    df_t = pd.merge(df_metrics, df_duplicate, how='left',on=CONFIG.GROUP_COLUMN[0])
+    df_t = pd.merge(df_metrics, df_duplicate, how='left', on=grp_name)
+    df_t.sort_values(CONFIG.MEAN_COLUMN[2],ascending=0,inplace=True)
+
     return df_t
 
-def major_rate_pivot(df_data, column_name=CONFIG.GROUP_COLUMN[0]):
-    '''学院 比率转置'''
+
+def major_rate_pivot(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]]):
+    '''
+    Major Privot:学院 比率转置
+    :param df_data: 数据源
+    :param array_focus: 非转置列，默认只关注答题总人数、对于均值和相关度需要自行配置
+    :param column_name:
+    :return: 比例行专列后的结果
+    '''
     if df_data.empty:
         return df_data
 
     # 非转置列 学院、专业、答题总人数
-    df_summary = df_data[[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[2]]]
+    ls_focus = array_focus.copy()
+    ls_focus.append(CONFIG.GROUP_COLUMN[0])
+    ls_focus.append(CONFIG.GROUP_COLUMN[1])
+    df_summary = df_data[ls_focus]
     df_duplicate = df_summary.drop_duplicates()
     # 转置列
-    df_metrics =pd.pivot_table(df_data, index=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]],columns=CONFIG.RATE_COLUMN[0],values= CONFIG.RATE_COLUMN[-1])
-    df_metrics.columns.name=column_name
+    df_metrics = pd.pivot_table(df_data,
+                                index=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]],
+                                columns=CONFIG.RATE_COLUMN[0],
+                                values=CONFIG.RATE_COLUMN[-1])
+    df_metrics.fillna(0.00, inplace=True)
+
     # 转置合并
-    df_t = pd.merge(df_metrics, df_duplicate, how='left', on=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]])
+    df_t = pd.merge(df_metrics, df_duplicate, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
+    df_t.sort_values(CONFIG.MEAN_COLUMN[2],ascending=0,inplace=True)
+
     return df_t
 
 
+# df = df[['user_id', 'book_id', 'rating', 'mark_date']]
+# 调整列顺序为'user_id','book_id','rating','mark_date'
 
+
+def major_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
+    if df_data.empty:
+        return df_data
+
+    # 非合并列 学院、专业、答题总人数
+    ls_focus = array_focus.copy()
+    ls_focus.append(CONFIG.GROUP_COLUMN[0])
+    ls_focus.append(CONFIG.GROUP_COLUMN[1])
+    df_summary = df_data[ls_focus]
+    df_duplicate = df_summary.drop_duplicates()
+
+    # 多列合并单列
+    df_combine = df_data[
+        [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + df_combine[
+        CONFIG.RATE_COLUMN[-1]].astype(float).astype(str) + '%)'
+    df_combined = df_combine[[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], 'answer_rate']]
+    df_combined.rename(columns={'answer_rate': combin_name},inplace=True)
+    df_row_combine = df_combined.groupby([CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]],
+                                         as_index=False).aggregate(
+        lambda x: list(x))
+    # 转置合并
+    df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
+    df_result.sort_values(CONFIG.MEAN_COLUMN[2],ascending=0,inplace=True)
+
+    return df_result
+
+
+def college_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
+    if df_data.empty:
+        return df_data
+
+    # 非合并列 学院、答题总人数
+    ls_focus = array_focus.copy()
+    ls_focus.append(CONFIG.GROUP_COLUMN[0])
+    df_summary = df_data[ls_focus]
+    df_duplicate = df_summary.drop_duplicates()
+
+    # 多列合并单列
+    df_combine = df_data[
+        [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + df_combine[
+        CONFIG.RATE_COLUMN[-1]].astype(float).astype(str) + '%)'
+    df_combined = df_combine[[CONFIG.GROUP_COLUMN[0], 'answer_rate']]
+    df_combined.rename(columns={'answer_rate': combin_name},inplace=True)
+    df_row_combine = df_combined.groupby(CONFIG.GROUP_COLUMN[0],
+                                         as_index=False).aggregate(
+        lambda x: list(x))
+    print(df_row_combine)
+    # 转置合并
+    df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=CONFIG.GROUP_COLUMN[0])
+    df_result.sort_values(CONFIG.MEAN_COLUMN[2],ascending=0,inplace=True)
+    return df_result
