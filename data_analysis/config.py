@@ -75,6 +75,7 @@ MEAN_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例','�
 EMPLOYEE_RATE_COLUMN='就业率'
 EMP_FREE_RATE_COLUMN='灵活就业率'
 COMBINE_RATE='行业比率'
+GROUP_COLUMN=('学院','专业','分组')
 
 B10_1_ANSWER = ['0次']
 
@@ -89,7 +90,6 @@ NATIONAL_COLUMN=('汉族','少数民族')
 ORIGIN_COLUMN=('省内生源','省外生源')
 INDUSTRY_COLUMN=('省内就业','省外就业')
 EDUCATION_COLUMN=('教育','非教育')
-GROUP_COLUMN=('学院','专业','分组')
 MEDICAL_COLUMN=('医药卫生','非医疗卫生')
 HEALTH_COLUMN=('卫生','非卫生')
 

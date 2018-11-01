@@ -4,13 +4,6 @@
     further.study_abroad_report(data, report.REPORT_FOLDER + '出国境留学.xlsx')
     further.work_stability_report(data, report.REPORT_FOLDER + '工作稳定性.xlsx')
 
-    further.employee_industry_type(data, report.REPORT_FOLDER + '就业单位分布.xlsx')
-    further.employee_industry_size(data, report.REPORT_FOLDER + '就业单位分布.xlsx')
-
-    further.employee_region_report(data, report.REPORT_FOLDER + '就业地区分布.xlsx')
-
-    further.employee_job(data, report.REPORT_FOLDER + '就业职业分布.xlsx')
-
 
     further.school_satisfy_report(data, report.REPORT_FOLDER + '母校满意度.xlsx')
     further.school_recommed_report(data, report.REPORT_FOLDER + '母校推荐度.xlsx')
@@ -61,12 +54,15 @@
 
     # 完成部分行专列
     # further.job_satisfy_report(data, report.REPORT_FOLDER + '职业满意度.xlsx')
-    # 需修改均值方法/值错误
-    #further.income_report(data, report.REPORT_FOLDER + '月均收入.xlsx')
 
+    further.income_report(data, report.REPORT_FOLDER + '月均收入.xlsx')
     further.employee_difficult_report(data, report.REPORT_FOLDER + '求职过程.xlsx')
-    #  处理月收入
-    further.employee_indurstry(data, report.REPORT_FOLDER + '就业行业分布.xlsx')
 
+    # 就业分布  行业和职业可以共用一套模板 **关于月均收入、满意度、相关度可以抽取
+    further.employee_indurstry(data, report.REPORT_FOLDER + '就业行业分布.xlsx')
+    further.employee_job(data, report.REPORT_FOLDER + '就业职业分布.xlsx')
+    further.employee_industry_type(data, report.REPORT_FOLDER + '就业单位分布.xlsx')
+    further.employee_industry_size(data, report.REPORT_FOLDER + '就业单位分布.xlsx')
+    further.employee_region_report(data, report.REPORT_FOLDER + '就业地区分布.xlsx')
 
 
