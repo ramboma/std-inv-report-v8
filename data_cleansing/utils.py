@@ -16,7 +16,7 @@ from data_cleansing.config import *
 logger = get_logger(__name__)
 
 
-def create_excel_col(seed=list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), iter_cnt=1):
+def generate_excel_column_indexes(seed=list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), iter_cnt=1):
     col_lst = ['0']
     for index in range(1, iter_cnt + 1):
         lst = list(product(seed, repeat=index))  # 得到排列序元组序列
@@ -33,16 +33,18 @@ class DataCleanser:
         self.__work_sheet = work_sheet
         self.__trace_mode = False
         self.__question_to_excel_column_map = {}
-        self.__excel_column_list = create_excel_col(iter_cnt=2)
+        self.__excel_column_list = generate_excel_column_indexes(iter_cnt=2)
 
-    def get_trace_mode(self):
+    @property
+    def trace_mode(self):
         return self.__trace_mode;
 
-    def set_trace_mode(self, enabled=True):
+    @trace_mode.setter
+    def trace_mode(self, enabled):
         self.__trace_mode = enabled
 
-    def set_question_to_excel_column_map(self, map):
-        self.__question_to_excel_column_map = map
+    def set_question_to_excel_column_map(self, column_map):
+        self.__question_to_excel_column_map = column_map
 
     @clocking
     def validate_data_dimensions(self):
@@ -418,7 +420,7 @@ def test():
     st = wb.worksheets[0]
 
     cleanser = DataCleanser(st)
-    cleanser.set_trace_mode(True)
+    cleanser.trace_mode = True
 
     cleanser.validate_data_dimensions()
     cleanser.remove_unnecessary_headers()
