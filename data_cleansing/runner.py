@@ -7,7 +7,7 @@ __author__ = 'Gary.Z'
 
 import os
 
-from data_cleansing.utils import *
+from data_cleansing.data_cleanser import *
 
 logger = get_logger(__name__)
 
