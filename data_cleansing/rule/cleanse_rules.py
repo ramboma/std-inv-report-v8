@@ -108,7 +108,7 @@ class RuleRinseIrrelevantAnswers(CleanseRule):
 
 class RuleRinseNcOptionValues(CleanseRule):
     def __init__(self):
-        super().__init__('5', 'replace values like "无法评价", "以上均不需要改进" with NaN')
+        super().__init__('4', 'replace values like "无法评价", "以上均不需要改进" with NaN')
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
@@ -133,7 +133,7 @@ class RuleRinseNcOptionValues(CleanseRule):
 
 class RuleRinseInvalidAnswers(CleanseRule):
     def __init__(self):
-        super().__init__('6', 'replace invalid answers(cell) with NaN')
+        super().__init__('5', 'replace invalid answers(cell) with NaN')
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
@@ -150,7 +150,7 @@ class RuleRinseInvalidAnswers(CleanseRule):
 
 class RuleRinseUnusualSalaryValues(CleanseRule):
     def __init__(self):
-        super().__init__('7', 'rinse < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
+        super().__init__('6', 'rinse < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):

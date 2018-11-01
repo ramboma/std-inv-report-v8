@@ -25,11 +25,11 @@ class RuleSetAssembler(object):
             RuleRemoveTestRecords(),
             RuleRemoveRecordsWithoutA2Answer(),
             RuleRemoveRecordsWithoutSubmitTime(),
-            RuleRinseIrrelevantAnswers('4', RINSE_RULE_IRRELEVANT_QUESTIONS),
+            RuleRinseIrrelevantAnswers('3', RINSE_RULE_IRRELEVANT_QUESTIONS),
             RuleRinseNcOptionValues(),
             RuleRinseInvalidAnswers(),
             RuleRinseUnusualSalaryValues(),
-            RuleRinseIrrelevantAnswers('8', RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE)
+            RuleRinseIrrelevantAnswers('7', RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE)
         ]
         return rule_list
 

@@ -14,14 +14,14 @@ logger = get_logger(__name__)
 
 
 @clocking
-def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8, trace_mode):
+def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_7, trace_mode):
 
     logger.info('')
     logger.info('############################## Cleansing start ##################################')
     logger.info('input file: \'{}\''.format(input_file))
     logger.info('output file: \'{}\''.format(output_file))
     logger.info('with rule 2.2: {}'.format(with_rule_2_2))
-    logger.info('with rule 8: {}'.format(with_rule_8))
+    logger.info('with rule 8: {}'.format(with_rule_7))
     logger.info('trace mode: {}'.format(trace_mode))
     logger.info('#################################################################################')
     logger.info('')
@@ -43,9 +43,9 @@ def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8
     rule_ids = ['1', '2.1']
     if with_rule_2_2:
         rule_ids.append('2.2')
-    rule_ids.extend(['4', '5', '6', '7'])
-    if with_rule_8:
-        rule_ids.append('8')
+    rule_ids.extend(['3', '4', '5', '6'])
+    if with_rule_7:
+        rule_ids.append('7')
     rule_set = rule_set_assembler.assemble(rule_ids)
 
     cleanser.apply_rule_set(rule_set)
