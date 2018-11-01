@@ -7,20 +7,21 @@ __author__ = 'Gary.Z'
 
 import os
 
-from data_cleansing.utils import *
+from data_cleansing.data_cleanser import *
+from data_cleansing.rule.rules_assembler import *
 
 logger = get_logger(__name__)
 
 
 @clocking
-def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8, trace_mode):
+def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_7, trace_mode):
 
     logger.info('')
     logger.info('############################## Cleansing start ##################################')
     logger.info('input file: \'{}\''.format(input_file))
     logger.info('output file: \'{}\''.format(output_file))
     logger.info('with rule 2.2: {}'.format(with_rule_2_2))
-    logger.info('with rule 8: {}'.format(with_rule_8))
+    logger.info('with rule 8: {}'.format(with_rule_7))
     logger.info('trace mode: {}'.format(trace_mode))
     logger.info('#################################################################################')
     logger.info('')
@@ -29,35 +30,28 @@ def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_8
     wb = xl.load_workbook(input_file)
     st = wb.worksheets[0]
 
-    cleaner = DataCleanser(st)
-    cleaner.set_trace_mode(trace_mode)
+    cleanser = DataCleanser(st)
+    cleanser.trace_mode = trace_mode
 
-    cleaner.validate_data_dimensions()
-    cleaner.remove_unnecessary_headers()
-    cleaner.scan_reset_column_names()
-    cleaner.reset_emplty_values_with_na()
+    cleanser.validate_data_dimensions()
+    cleanser.remove_unnecessary_headers()
+    cleanser.reset_column_names()
+    cleanser.reset_emplty_values_with_na()
     # clear_all_cells_bgcolor()
 
-    # Rule 1
-    cleaner.remove_fake_records()
-    # Rule 2.1
-    cleaner.remove_unqualified_records()
-    # Rule 2.2
+    rule_set_assembler = RuleSetAssembler()
+    rule_ids = ['1', '2.1']
     if with_rule_2_2:
-        cleaner.remove_unsubmitted_records()
-    # Rule 4
-    cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS, '4')
-    # Rule 5
-    cleaner.rinse_nc_option_values()
-    # Rule 6
-    cleaner.rinse_invalid_answers()
-    # Rule 7
-    cleaner.rinse_unusual_salary_values()
-    # Rule 8
-    if with_rule_8:
-        cleaner.rinse_irrelevant_answers(RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE, '8')
+        rule_ids.append('2.2')
+    rule_ids.extend(['3', '4', '5', '6'])
+    if with_rule_7:
+        rule_ids.append('7')
+    rule_set = rule_set_assembler.assemble(rule_ids)
 
-    cleaner.set_sheet_name('cleaned_{}'.format(sheet_tag))
+    cleanser.apply_rule_set(rule_set)
+    cleanser.validate_data_dimensions()
+
+    cleanser.set_sheet_name('cleaned_{}'.format(sheet_tag))
 
     logger.info('writing output file {}'.format(output_file))
     wb.save(output_file)

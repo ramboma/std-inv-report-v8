@@ -56,19 +56,20 @@ def main(input_file, output_folder, analysis, internal, all, trace_mode):
 
     if not all:
         output_file = get_output_filename(dirpath, name, ext, internal, analysis, tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=internal, with_rule_8=analysis, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=internal, with_rule_7=analysis, trace_mode=trace_mode)
     else:
+        # internal, analysis
         output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_8=True, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_7=True, trace_mode=trace_mode)
         # internal, customer
         output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=False, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_8=False, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_7=False, trace_mode=trace_mode)
         # public, analysis
         output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=True, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_8=True, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_7=True, trace_mode=trace_mode)
         # public, customer
         output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=False, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_8=False, trace_mode=trace_mode)
+        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_7=False, trace_mode=trace_mode)
 
 
 if __name__ == '__main__':

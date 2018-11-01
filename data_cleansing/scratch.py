@@ -1,6 +1,6 @@
 
 from itertools import product
-
+import re
 
 def create_excel_col(seed = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),iter_cnt =1):
     col_lst = ['0']
@@ -14,12 +14,22 @@ def create_excel_col(seed = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),iter_cnt =1):
     return col_lst
 
 
-def test():
-    cols = create_excel_col(iter_cnt=2)
-    print(cols)
-    print(cols[27])
+def extract_question_id(title):
+    matches = re.match(r'(?P<prefix>([A-Z0-9]+)(-[0-9]+)*)(-[A-Z]+)?', title)
+    return matches.group('prefix')
 
+
+def test():
+    print(extract_question_id('A1-A'))
+    print(extract_question_id('A1-AB'))
+    print(extract_question_id('A2-1'))
+    print(extract_question_id('A2-2-A'))
+    print(extract_question_id('A11-22'))
+    print(extract_question_id('A11-22-A'))
+    print(extract_question_id('I2-1-A'))
+    print(extract_question_id('I2-2-1-1'))
     pass
+
 
 if __name__ == '__main__' :
     test()
