@@ -16,6 +16,8 @@ import  data_analysis.formulas as formulas
 def main(file):
 
     data = excelUtil.read_excel(file)
+    further.job_meet_report(data, report.REPORT_FOLDER + '职业期待吻合度.xlsx')
+
     further.basic_quality_report(data, report.REPORT_FOLDER + '基础素质.xlsx')
 
 if __name__ == '__main__':

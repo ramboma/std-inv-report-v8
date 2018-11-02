@@ -506,7 +506,11 @@ def basic_quality_report(data, file):
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
     excelUtil.writeExcel(df_distribution, file, '重要度')
 
-    return
+    subject='I2-2'
+    df_ability=answerUtil.ability_distribution(data,subject)
+    df_ability.sort_values(CONFIG.RATE_COLUMN[1],ascending=0,inplace=True)
+    excelUtil.writeExcel(df_ability, file, '满足度')
+
 
 
 def major_quality_report(data, file):

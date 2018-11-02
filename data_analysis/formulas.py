@@ -206,14 +206,13 @@ def rate_T(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], ):
 
     # 答题总人数
     summary_num = df_data.loc[0, CONFIG.RATE_COLUMN[2]]
-    df_summary = df_data[array_focus]
+    df_summary = df_data.loc[:,array_focus]
     df_duplicate = df_summary.drop_duplicates()
 
     # 转置列 比例
-    df_metrics = df_data[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
-    df_metrics[CONFIG.RATE_COLUMN[0]]=df_metrics[CONFIG.RATE_COLUMN[0]].astype('str')
+    df_metrics = df_data.loc[:,[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_metrics.loc[:,CONFIG.RATE_COLUMN[0]]=df_metrics.loc[:,CONFIG.RATE_COLUMN[0]].astype('str')
     df_metrics = df_metrics.set_index([CONFIG.RATE_COLUMN[0]])
-    print(df_metrics)
     df_t = df_metrics.T
     df_t = df_t.reset_index()
     df_t = pd.concat([df_t, df_duplicate], axis=1)
@@ -234,7 +233,7 @@ def college_rate_pivot(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], hasCollege=
     ls_focus = array_focus.copy()
     ls_focus.append(grp_name)
 
-    df_summary = df_data[ls_focus]
+    df_summary = df_data.loc[:,ls_focus]
     df_duplicate = df_summary.drop_duplicates()
     # 转置列 学院、比例
     df_metrics = df_data.pivot(index=grp_name,
@@ -264,7 +263,7 @@ def major_rate_pivot(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]]):
     ls_focus = array_focus.copy()
     ls_focus.append(CONFIG.GROUP_COLUMN[0])
     ls_focus.append(CONFIG.GROUP_COLUMN[1])
-    df_summary = df_data[ls_focus]
+    df_summary = df_data.loc[:,ls_focus]
     df_duplicate = df_summary.drop_duplicates()
     # 转置列
     df_metrics = pd.pivot_table(df_data,
@@ -292,15 +291,15 @@ def major_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=
     ls_focus = array_focus.copy()
     ls_focus.append(CONFIG.GROUP_COLUMN[0])
     ls_focus.append(CONFIG.GROUP_COLUMN[1])
-    df_summary = df_data[ls_focus]
+    df_summary = df_data.loc[:,ls_focus]
     df_duplicate = df_summary.drop_duplicates()
 
     # 多列合并单列
-    df_combine = df_data[
+    df_combine = df_data.loc[:,
         [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
     df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + df_combine[
         CONFIG.RATE_COLUMN[-1]].astype(float).astype(str) + '%)'
-    df_combined = df_combine[[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], 'answer_rate']]
+    df_combined = df_combine.loc[:,[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], 'answer_rate']]
     df_combined.rename(columns={'answer_rate': combin_name},inplace=True)
     df_row_combine = df_combined.groupby([CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]],
                                          as_index=False).aggregate(
@@ -319,15 +318,15 @@ def college_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_nam
     # 非合并列 学院、答题总人数
     ls_focus = array_focus.copy()
     ls_focus.append(CONFIG.GROUP_COLUMN[0])
-    df_summary = df_data[ls_focus]
+    df_summary = df_data.loc[:,ls_focus]
     df_duplicate = df_summary.drop_duplicates()
 
     # 多列合并单列
-    df_combine = df_data[
+    df_combine = df_data.loc[:,
         [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
     df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + df_combine[
         CONFIG.RATE_COLUMN[-1]].astype(float).astype(str) + '%)'
-    df_combined = df_combine[[CONFIG.GROUP_COLUMN[0], 'answer_rate']]
+    df_combined = df_combine.loc[:,[CONFIG.GROUP_COLUMN[0], 'answer_rate']]
     df_combined.rename(columns={'answer_rate': combin_name},inplace=True)
     df_row_combine = df_combined.groupby(CONFIG.GROUP_COLUMN[0],
                                          as_index=False).aggregate(
