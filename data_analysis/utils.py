@@ -155,11 +155,26 @@ def multi_answer_distribution(data, subject):
     # df_result['比例']=df_result['比例'].map(lambda x:'%.2f' % x) 格式化后无法参与计算
     return df_result
 
+
 def ability_distribution(data, subject):
     '''能力题 答题人数，能力水平分析'''
+    # step1 答题总人数 N2
+    answer_count = multi_answer_count(data, subject)
 
     multi_column = multi_columns(data, subject)
+    # 单项能力水平题目数量N1
+    item_size=multi_column.count()
+    #结果集
     df_answer = data[multi_column]
+    for col in multi_column:
+        # 反向分
+        if col in CONFIG.ABILITY_REVERSE:
+            df_answer[col + '_score'] = df_answer[col].map(CONFIG.ABILITY_SCORE_REVERSE)
+        else:
+            df_answer[col + '_score'] = df_answer[col].map(CONFIG.ABILITY_SCORE)
+
+    # 单个学生能力
+    df_answer['ability']=df_answer[0]
     key = []
     result = []
     ability=[]
@@ -171,6 +186,7 @@ def ability_distribution(data, subject):
     df_result['比例'] = (df_result['回答此答案人数'] / df_result['答题总人数']*100).round(decimals=2)
     # df_result['比例']=df_result['比例'].map(lambda x:'%.2f' % x) 格式化后无法参与计算
     return df_result
+
 
 def parse_ability_score(column_name):
     '''解析能力分值'''

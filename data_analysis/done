@@ -9,7 +9,6 @@
     further.school_recommed_report(data, report.REPORT_FOLDER + '母校推荐度.xlsx')
 
     further.self_employed_report(data, report.REPORT_FOLDER + '自主创业.xlsx')
-    further.basic_quality_report(data, report.REPORT_FOLDER + '基础素质.xlsx')
     further.major_quality_report(data, report.REPORT_FOLDER + '专业素质.xlsx')
 
     # 附加题
