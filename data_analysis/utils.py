@@ -156,7 +156,9 @@ def multi_answer_distribution(data, subject):
     return df_result
 
 
-def ability_distribution(data, subject):
+def ability_dis(data,subject):
+    return 
+def ability_item_distribution(data, subject):
     '''能力题 答题人数，能力水平分析'''
     # step1 答题总人数 N2
     answer_count = multi_answer_count(data, subject)
@@ -166,25 +168,22 @@ def ability_distribution(data, subject):
     item_size=multi_column.count()
     #结果集
     df_answer = data[multi_column]
+    df_answer.dropna(how='all', inplace=True)
+
+    df_answer['sum']=0
     for col in multi_column:
         # 反向分
         if col in CONFIG.ABILITY_REVERSE:
             df_answer[col + '_score'] = df_answer[col].map(CONFIG.ABILITY_SCORE_REVERSE)
         else:
             df_answer[col + '_score'] = df_answer[col].map(CONFIG.ABILITY_SCORE)
+        df_answer['sum']=df_answer['sum']+df_answer[col + '_score']
 
     # 单个学生能力
-    df_answer['ability']=df_answer[0]
-    key = []
-    result = []
-    ability=[]
-    for col in df_answer.columns:
-        key.append(col)
-        result.append(df_answer[col].count())
-    df_result = pd.DataFrame({'答案': key, '回答此答案人数': result})
-    df_result['答题总人数'] = answer_count
-    df_result['比例'] = (df_result['回答此答案人数'] / df_result['答题总人数']*100).round(decimals=2)
-    # df_result['比例']=df_result['比例'].map(lambda x:'%.2f' % x) 格式化后无法参与计算
+    df_answer['ability']=df_answer['sum']/item_size
+    ability=(df_answer['ability'].sum()/answer_count).round(2)
+
+    df_result = pd.DataFrame({'答案': subject, '回答此答案人数': answer_count,'能力':ability})
     return df_result
 
 
