@@ -62,7 +62,7 @@ class DataCleanser:
 
             if not answer_column:
                 if header_name is None or header_name == '':
-                    header_name = '_' + str(i)
+                    header_name = '_' + str(i+1)
                     header_cells[i].value = header_name
                     continue
 
@@ -117,7 +117,7 @@ class DataCleanser:
         """rule 0: filter records with degree"""
         logger.info('rule 0: filter records with degree: {}'.format(degree))
         # find them
-        remove_list = query_row_indexes_by_column_filter(self.__work_sheet, self.__question_to_column_mapping['_11'][0],
+        remove_list = query_row_indexes_by_column_filter(self.__work_sheet, self.__question_to_column_mapping['_12'][0],
                                                          lambda val: (val != degree))
         # remove them
         remove_rows_by_index_list(self.__work_sheet, remove_list, "0", sys._getframe().f_code.co_name, self.__trace_mode)

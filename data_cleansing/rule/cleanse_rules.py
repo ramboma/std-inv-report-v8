@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 
 class RuleRemoveTestRecords(CleanseRule):
-    def __init__(self, filter_column='_13'):
+    def __init__(self, filter_column='_14'):
         super().__init__('1', 'remove test data, e.g. column {} (专业名称) with value {}'.format(filter_column, MAJOR_FILTER_LIST))
         self.__filter_column = filter_column
 
@@ -47,7 +47,7 @@ class RuleRemoveRecordsWithoutA2Answer(CleanseRule):
 
 
 class RuleRemoveRecordsWithoutSubmitTime(CleanseRule):
-    def __init__(self, filter_column='_21'):
+    def __init__(self, filter_column='_22'):
         super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time exist')
         self.__filter_column = filter_column
 
