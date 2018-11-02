@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 
 @clocking
-def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_7, trace_mode):
+def run_cleansing(input_file, output_file, sheet_tag, degree=False, with_rule_2_2=False, with_rule_7=False, trace_mode=False):
 
     logger.info('')
     logger.info('############################## Cleansing start ##################################')
@@ -37,7 +37,9 @@ def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_7
     cleanser.remove_unnecessary_headers()
     cleanser.reset_column_names()
     cleanser.reset_emplty_values_with_na()
-    # clear_all_cells_bgcolor()
+
+    if degree is not None:
+        cleanser.filter_records_with_degree(degree)
 
     rule_set_assembler = RuleSetAssembler()
     rule_ids = ['1', '2.1']
@@ -63,7 +65,7 @@ def run_cleansing(input_file, output_file, sheet_tag, with_rule_2_2, with_rule_7
     return
 
 
-def get_output_filename(dirpath, name, ext, internal, analysis, tag):
+def get_output_filename(dirpath, name, ext,  internal, analysis, tag, degree=None):
     if internal:
         target = 'internal'
     else:
@@ -73,6 +75,8 @@ def get_output_filename(dirpath, name, ext, internal, analysis, tag):
     else:
         scope = 'customer'
 
-    return os.path.join(dirpath, '{}_cleaned_{}_{}_{}{}'.format(name, target, scope, tag, ext))
-
+    if degree is None:
+        return os.path.join(dirpath, '{}_cleaned_{}_{}_{}{}'.format(name, target, scope, tag, ext))
+    else:
+        return os.path.join(dirpath, '{}_cleaned_{}_{}_{}_{}{}'.format(name, degree, target, scope, tag, ext))
 

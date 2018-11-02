@@ -15,14 +15,15 @@ logger = get_logger(__name__)
 
 
 class RuleRemoveTestRecords(CleanseRule):
-    def __init__(self):
-        super().__init__('1', 'remove test data, e.g. column 14(专业名称) with value {}'.format(MAJOR_FILTER_LIST))
+    def __init__(self, filter_column='_13'):
+        super().__init__('1', 'remove test data, e.g. column {} (专业名称) with value {}'.format(filter_column, MAJOR_FILTER_LIST))
+        self.__filter_column = filter_column
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
         # find them
-        remove_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping['_13'][0],
+        remove_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping[self.__filter_column][0],
                                                          lambda val: val in MAJOR_FILTER_LIST)
         # remove them
         remove_rows_by_index_list(work_sheet, remove_list, self.id, sys._getframe().f_code.co_name, trace_mode)
@@ -30,14 +31,15 @@ class RuleRemoveTestRecords(CleanseRule):
 
 
 class RuleRemoveRecordsWithoutA2Answer(CleanseRule):
-    def __init__(self):
-        super().__init__('2.1', 'remove un-qualified row, e.g. no answer for question A2')
+    def __init__(self, filter_column='A2'):
+        super().__init__('2.1', 'remove un-qualified row, e.g. no answer for question {}'.format(filter_column))
+        self.__filter_column = filter_column
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
         # find them
-        remove_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping['A2'][0],
+        remove_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping[self.__filter_column][0],
                                                          lambda val: (val is None or val == ''))
         # remove them
         remove_rows_by_index_list(work_sheet, remove_list, self.id, sys._getframe().f_code.co_name, trace_mode)
@@ -45,14 +47,15 @@ class RuleRemoveRecordsWithoutA2Answer(CleanseRule):
 
 
 class RuleRemoveRecordsWithoutSubmitTime(CleanseRule):
-    def __init__(self):
+    def __init__(self, filter_column='_21'):
         super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time exist')
+        self.__filter_column = filter_column
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
         # find them
-        remove_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping['_21'][0],
+        remove_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping[self.__filter_column][0],
                                                          lambda val: (val is None or val == ''))
         # remove them
         remove_rows_by_index_list(work_sheet, remove_list, self.id, sys._getframe().f_code.co_name, trace_mode)
@@ -119,7 +122,7 @@ class RuleRinseNcOptionValues(CleanseRule):
                 if cell.value in NC_OPTION_FILTER_LIST:
                     if cell.value is not None:
                         if trace_mode:
-                            add_tracing_comment(cell, '5', sys._getframe().f_code.co_name)
+                            add_tracing_comment(cell, self.id, sys._getframe().f_code.co_name)
                         else:
                             cell.value = None
                         i += 1
@@ -132,31 +135,33 @@ class RuleRinseNcOptionValues(CleanseRule):
 
 
 class RuleRinseInvalidAnswers(CleanseRule):
-    def __init__(self):
+    def __init__(self, filter_column='G1'):
         super().__init__('5', 'replace invalid answers(cell) with NaN')
+        self.__filter_column = filter_column
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
         # find them
-        rinse_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping['G1'][0],
+        rinse_list = query_row_indexes_by_column_filter(work_sheet, question_to_column_mapping[self.__filter_column][0],
                                                         lambda val: val in G1_OPTION_FILTER_LIST)
         # remove them
-        rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping['G1'][0], rinse_list,
+        rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping[self.__filter_column][0], rinse_list,
                                         self.id, sys._getframe().f_code.co_name, trace_mode)
-        rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping['G1'][1], rinse_list,
+        rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping[self.__filter_column][1], rinse_list,
                                         self.id, sys._getframe().f_code.co_name, trace_mode)
 
 
 class RuleRinseUnusualSalaryValues(CleanseRule):
-    def __init__(self):
-        super().__init__('6', 'rinse < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
+    def __init__(self, filter_column='B6'):
+        super().__init__('6', 'rinse salary < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
+        self.__filter_column = filter_column
 
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
-        salary_cell_range = '{}{}:{}{}'.format(question_to_column_mapping['B6'][0], HEADER_ROW_INDEX + 1,
-                                               question_to_column_mapping['B6'][0], work_sheet.max_row);
+        salary_cell_range = '{}{}:{}{}'.format(question_to_column_mapping[self.__filter_column][0], HEADER_ROW_INDEX + 1,
+                                               question_to_column_mapping[self.__filter_column][0], work_sheet.max_row);
         sorted_salary_list = []
         for row in work_sheet[salary_cell_range]:
             if row[0].value is not None and row[0].value != '':

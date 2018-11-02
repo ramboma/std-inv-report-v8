@@ -5,6 +5,8 @@
 
 __author__ = 'Gary.Z'
 
+import sys
+
 from data_cleansing.utils import *
 from data_cleansing.clock import *
 
@@ -25,6 +27,9 @@ class DataCleanser:
     @trace_mode.setter
     def trace_mode(self, enabled):
         self.__trace_mode = enabled
+
+    def set_sheet_name(self, name):
+        self.__work_sheet.title = name
 
     @clocking
     def validate_data_dimensions(self):
@@ -87,9 +92,6 @@ class DataCleanser:
 
         self.__question_to_column_mapping = build_question_to_column_mapping(self.__work_sheet, self.__excel_column_indexes)
 
-    def set_sheet_name(self, name):
-        self.__work_sheet.title = name
-
     @clocking
     def reset_emplty_values_with_na(self):
         """rule 0: replace empty values with NaN """
@@ -110,6 +112,18 @@ class DataCleanser:
     #         for cell in row:
     #             cell.fill = xl.styles.PatternFill(None)
 
+    @clocking
+    def filter_records_with_degree(self, degree):
+        """rule 0: filter records with degree"""
+        logger.info('rule 0: filter records with degree: {}'.format(degree))
+        # find them
+        remove_list = query_row_indexes_by_column_filter(self.__work_sheet, self.__question_to_column_mapping['_11'][0],
+                                                         lambda val: (val != degree))
+        # remove them
+        remove_rows_by_index_list(self.__work_sheet, remove_list, "0", sys._getframe().f_code.co_name, self.__trace_mode)
+        logger.debug('>> current total rows: {}'.format(self.__work_sheet.max_row))
+
+    @clocking
     def apply_rule_set(self, rules):
         for rule in rules:
             rule.apply(self.__work_sheet, self.__question_to_column_mapping)

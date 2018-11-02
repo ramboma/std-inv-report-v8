@@ -17,11 +17,12 @@ logger = get_logger(__name__)
 # @click.argument('file', nargs=1)
 @click.option('--input-file', '-i', required=True, help='Input file path')
 @click.option('--output-folder', '-o', help='Output folder path')
-@click.option('--analysis', '-s', is_flag=True, type=bool, help='for analysis, if no: for customer')
-@click.option('--internal', '-l', is_flag=True, type=bool, help='for internal, if no: for public')
+@click.option('--analysis', '-s', is_flag=True, type=bool, help='For analysis, if no: for customer')
+@click.option('--internal', '-l', is_flag=True, type=bool, help='For internal, if no: for public')
 @click.option('--all', '-a', is_flag=True, type=bool, help='To batch generate 3 cleaned data files, include for customer public/private & analysis public/private')
+@click.option('--degree', '-d', help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-def main(input_file, output_folder, analysis, internal, all, trace_mode):
+def main(input_file, output_folder, analysis, internal, all, degree, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_file):
@@ -55,21 +56,21 @@ def main(input_file, output_folder, analysis, internal, all, trace_mode):
     tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
 
     if not all:
-        output_file = get_output_filename(dirpath, name, ext, internal, analysis, tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=internal, with_rule_7=analysis, trace_mode=trace_mode)
+        output_file = get_output_filename(dirpath, name, ext, internal, analysis, tag, degree)
+        run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=internal, with_rule_7=analysis, trace_mode=trace_mode)
     else:
         # internal, analysis
-        output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_7=True, trace_mode=trace_mode)
+        output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag, degree=degree)
+        run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=True, with_rule_7=True, trace_mode=trace_mode)
         # internal, customer
-        output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=False, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_7=False, trace_mode=trace_mode)
+        output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=False, tag=tag, degree=degree)
+        run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=True, with_rule_7=False, trace_mode=trace_mode)
         # public, analysis
-        output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=True, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_7=True, trace_mode=trace_mode)
+        output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=True, tag=tag, degree=degree)
+        run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=False, with_rule_7=True, trace_mode=trace_mode)
         # public, customer
-        output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=False, tag=tag)
-        run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_7=False, trace_mode=trace_mode)
+        output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=False, tag=tag, degree=degree)
+        run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=False, with_rule_7=False, trace_mode=trace_mode)
 
 
 if __name__ == '__main__':
