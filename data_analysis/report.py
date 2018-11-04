@@ -39,12 +39,12 @@ def employee_indurstry(data, filePath):
 
     single_value = formulas.answer_five_rate_single_grp(data_a2, 'B9-1', subject, CONFIG.ANSWER_TYPE_RELATIVE)
     relativeName = formulas.parse_measure_name(CONFIG.ANSWER_TYPE_RELATIVE)
-    df_t = formulas.college_rate_pivot(single_value, [relativeName, CONFIG.MEAN_COLUMN[2]], hasCollege=False)
+    df_t = formulas.college_rate_pivot(single_value, [relativeName], hasCollege=False)
     excelUtil.writeExcel(df_t, filePath, '各就业行业专业相关度差异分析')
 
     single_value = formulas.answer_five_rate_single_grp(data_a2, 'B7-A', subject, CONFIG.ANSWER_TYPE_SATISFY)
     relativeName = formulas.parse_measure_name(CONFIG.ANSWER_TYPE_SATISFY)
-    df_t = formulas.college_rate_pivot(single_value, [relativeName, CONFIG.MEAN_COLUMN[2]], hasCollege=False)
+    df_t = formulas.college_rate_pivot(single_value, [relativeName], hasCollege=False)
     excelUtil.writeExcel(df_t, filePath, '各就业行业就业满意度差异分析')
 
     return
@@ -74,14 +74,14 @@ def employee_job(data, filePath):
     pd_single_grp_mean = formulas.single_grp_mean(data_a2, 'B6', subject)
     excelUtil.writeExcel(pd_single_grp_mean, filePath, '主要就业职业月均收入')
 
-    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B9-1', subject,CONFIG.ANSWER_TYPE_RELATIVE)
+    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B9-1', subject, CONFIG.ANSWER_TYPE_RELATIVE)
     relativeName = formulas.parse_measure_name(CONFIG.ANSWER_TYPE_RELATIVE)
-    df_t = formulas.college_rate_pivot(single_value, [relativeName, CONFIG.MEAN_COLUMN[2]], hasCollege=False)
+    df_t = formulas.college_rate_pivot(single_value, [relativeName], hasCollege=False)
     excelUtil.writeExcel(df_t, filePath, '各就业职业专业相关度差异分析')
 
-    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B7-A', subject,CONFIG.ANSWER_TYPE_SATISFY)
+    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B7-A', subject, CONFIG.ANSWER_TYPE_SATISFY)
     relativeName = formulas.parse_measure_name(CONFIG.ANSWER_TYPE_SATISFY)
-    df_t = formulas.college_rate_pivot(single_value, [relativeName, CONFIG.MEAN_COLUMN[2]], hasCollege=False)
+    df_t = formulas.college_rate_pivot(single_value, [relativeName], hasCollege=False)
     excelUtil.writeExcel(df_t, filePath, '各就业职业就业满意度差异分析')
 
     return
@@ -175,18 +175,19 @@ def employee_industry_type(data, filePath):
 def employee_industry_size(data, filePath):
     '''就业单位规模'''
     df_value_count = formulas.answer_value_rate(data, 'B2')
-    df_t=formulas.rate_T(df_value_count)
+    df_t = formulas.rate_T(df_value_count)
     excelUtil.writeExcel(df_t, filePath, '总体就业单位规模分布')
 
     college_value = formulas.answer_college_value_rate(data, 'B2')
-    df_t=formulas.college_rate_pivot(college_value)
+    df_t = formulas.college_rate_pivot(college_value)
     excelUtil.writeExcel(df_t, filePath, '各学院就业单位规模分布')
 
     major_value = formulas.answer_major_value_rate(data, 'B2')
-    df_t=formulas.major_rate_pivot(major_value)
+    df_t = formulas.major_rate_pivot(major_value)
     excelUtil.writeExcel(df_t, filePath, '各单位就业单位规模分布')
 
     return
+
 
 def employee_industry_mertrics(data, filePath):
     '''主要就业单位 收入、工作满意度、专业相关度报告'''
@@ -195,16 +196,15 @@ def employee_industry_mertrics(data, filePath):
     pd_single_grp_mean = formulas.single_grp_mean(data_a2, 'B6', subject)
     excelUtil.writeExcel(pd_single_grp_mean, filePath, '主要就业单位月均收入差异')
 
-    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B9-1', subject,CONFIG.ANSWER_TYPE_RELATIVE)
+    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B9-1', subject, CONFIG.ANSWER_TYPE_RELATIVE)
     relativeName = formulas.parse_measure_name(CONFIG.ANSWER_TYPE_RELATIVE)
     df_t = formulas.college_rate_pivot(single_value, [relativeName, CONFIG.MEAN_COLUMN[2]], hasCollege=False)
     excelUtil.writeExcel(df_t, filePath, '各就业单位专业相关度差异分析')
 
-    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B7-A', subject,CONFIG.ANSWER_TYPE_SATISFY)
+    single_value = formulas.answer_five_rate_single_grp(data_a2, 'B7-A', subject, CONFIG.ANSWER_TYPE_SATISFY)
     relativeName = formulas.parse_measure_name(CONFIG.ANSWER_TYPE_SATISFY)
     df_t = formulas.college_rate_pivot(single_value, [relativeName, CONFIG.MEAN_COLUMN[2]], hasCollege=False)
     excelUtil.writeExcel(df_t, filePath, '各就业职业单位满意度差异分析')
-
 
 
 def study_abroad_report(data, filePath):
@@ -216,10 +216,12 @@ def study_abroad_report(data, filePath):
             study_value[CONFIG.RATE_COLUMN[1]] / study_value['答A2题总人数'] * 100).round(decimals=2)
     excelUtil.writeExcel(study_value, filePath, '留学比列')
 
-    study_satisfy = formulas.answer_five_rate(data, 'F2', CONFIG.ANSWER_TYPE_SATISFY)
+    #study_satisfy = formulas.answer_five_rate(data, 'F2', CONFIG.ANSWER_TYPE_SATISFY)
+    study_satisfy=five_rate_t(data,'F2', CONFIG.ANSWER_TYPE_SATISFY)
     excelUtil.writeExcel(study_satisfy, filePath, '留学录取结果满意度')
 
-    study_relative = formulas.answer_five_rate(data, 'F3', CONFIG.ANSWER_TYPE_RELATIVE)
+    #study_relative = formulas.answer_five_rate(data, 'F3', CONFIG.ANSWER_TYPE_RELATIVE)
+    study_relative = five_rate_t(data, 'F3', CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(study_relative, filePath, '留学专业一致性')
 
     change_study_reason = formulas.answer_value_rate(data, 'F4')
@@ -233,10 +235,12 @@ def further_report(data, filePath):
     further_reason = formulas.answer_value_rate(data, 'E2')
     excelUtil.writeExcel(further_reason, filePath, '升学原因')
 
-    further_satisfy = formulas.answer_five_rate(data, 'E1', CONFIG.ANSWER_TYPE_SATISFY)
+    #further_satisfy = formulas.answer_five_rate(data, 'E1', CONFIG.ANSWER_TYPE_SATISFY)
+    further_satisfy=five_rate_t(data,'E1',CONFIG.ANSWER_TYPE_SATISFY)
     excelUtil.writeExcel(further_satisfy, filePath, '升学录取结果满意度')
 
-    further_relative = formulas.answer_five_rate(data, 'E3', CONFIG.ANSWER_TYPE_RELATIVE)
+    #further_relative = formulas.answer_five_rate(data, 'E3', CONFIG.ANSWER_TYPE_RELATIVE)
+    further_relative=five_rate_t(data,'E3',CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(further_relative, filePath, '升学专业相关度')
 
     change_reason = formulas.answer_value_rate(data, 'E4')
@@ -351,13 +355,13 @@ def work_option_report(data, filePath):
     excelUtil.writeExcel(rate_t, filePath, '总体就业机会')
 
     college_changes = formulas.answer_college_value_rate(df_metrics, subject,
-                                                [CONFIG.EXCEPTED_ANSWER], [CONFIG.RATE_COLUMN[2]], [0])
+                                                         [CONFIG.EXCEPTED_ANSWER], [CONFIG.RATE_COLUMN[2]], [0])
     college_t = formulas.college_rate_pivot(college_changes)
     college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
     excelUtil.writeExcel(college_t, filePath, '各学院就业机会')
 
     major_changes = formulas.answer_major_value_rate(df_metrics, subject,
-                                            [CONFIG.EXCEPTED_ANSWER], [CONFIG.RATE_COLUMN[2]], [0])
+                                                     [CONFIG.EXCEPTED_ANSWER], [CONFIG.RATE_COLUMN[2]], [0])
     major_t = formulas.major_rate_pivot(major_changes)
     major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
     excelUtil.writeExcel(major_t, filePath, '各专业就业机会')
@@ -380,7 +384,7 @@ def income_report(data, filePath):
     pd_mean = formulas.answer_mean(data, subject)
     excelUtil.writeExcel(pd_mean, filePath, '总体月均收入')
 
-    pd_college_mean = formulas.single_grp_mean(data, subject,CONFIG.BASE_COLUMN[0],True)
+    pd_college_mean = formulas.single_grp_mean(data, subject, CONFIG.BASE_COLUMN[0], True)
     excelUtil.writeExcel(pd_college_mean, filePath, '各学院月均收入')
 
     pd_major_mean = formulas.major_mean(data, subject)
@@ -391,22 +395,22 @@ def income_report(data, filePath):
     period_n = 4
     step = 500
     pd_500 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t=formulas.rate_T(pd_500,[CONFIG.MEAN_COLUMN[-1]])
+    data_t = formulas.rate_T(pd_500, [CONFIG.MEAN_COLUMN[-1]])
     excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
 
     step = 1000
     pd_1000 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t=formulas.rate_T(pd_1000)
+    data_t = formulas.rate_T(pd_1000)
     excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
 
     step = 2000
     pd_2000 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t=formulas.rate_T(pd_2000)
+    data_t = formulas.rate_T(pd_2000)
     excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
 
     step = 1500
     pd_1500 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t=formulas.rate_T(pd_1500)
+    data_t = formulas.rate_T(pd_1500)
     excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
     return
 
@@ -414,26 +418,46 @@ def income_report(data, filePath):
 def school_satisfy_report(data, filePath):
     '''母校满意度报告'''
     subject = 'H7'
-    sheet_name='母校满意度'
-    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,filePath)
+    sheet_name = '母校满意度'
+    report_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY, sheet_name, filePath)
 
     return
 
 
 def school_recommed_report(data, filePath):
     '''母校推荐报告'''
+    subject = 'H8'
+    sheet_name = '母校推荐度'
 
-    df_value_rate = formulas.answer_value_rate(data, 'H8')
+    # 排序列 '愿意', '不确定', '不愿意'
+    order_column = CONFIG.ANSWER_RECOMMED.copy()
+    order_column.append(CONFIG.RATE_COLUMN[2])
+
+    df_value_rate = formulas.answer_value_rate(data, subject)
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
-    excelUtil.writeExcel(df_value_rate, filePath, '母校推荐度')
+    df_t = formulas.rate_T(df_value_rate)
+    df_t = df_t[order_column]
+    df_combine = pd.concat([df_t, df_t])
+    df_combine.insert(0, '总体', '总体')
+    excelUtil.writeExcel(df_combine, filePath, '总体' + sheet_name)
 
-    df_college_rate = formulas.answer_college_value_rate(data, 'H8')
+    df_college_rate = formulas.answer_college_value_rate(data, subject)
     df_college_rate.sort_values(['答题总人数', '比例'], ascending=[0, 0], inplace=True)
-    excelUtil.writeExcel(df_college_rate, filePath, '各学院母校推荐度')
+    df_college_t = formulas.college_rate_pivot(df_college_rate, hasCollege=True)
+    order_column.insert(0,CONFIG.GROUP_COLUMN[0])
+    df_college_t = df_college_t[order_column]
+    df_combine = pd.concat([df_college_t, df_t],sort=False)
+    df_combine.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(df_combine, filePath, '各学院' + sheet_name)
 
-    df_major_rate = formulas.answer_major_value_rate(data, 'H8')
+    df_major_rate = formulas.answer_major_value_rate(data, subject)
     df_major_rate.sort_values(['答题总人数', '比例'], ascending=[0, 0], inplace=True)
-    excelUtil.writeExcel(df_major_rate, filePath, '各专业母校推荐度')
+    df_major_t = formulas.major_rate_pivot(df_major_rate)
+    order_column.insert(1,CONFIG.GROUP_COLUMN[1])
+    df_major_t = df_major_t[order_column]
+    df_combine = pd.concat([df_major_t, df_t],sort=False)
+    df_combine.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(df_combine, filePath, '各专业' + sheet_name)
 
     return
 
@@ -499,11 +523,10 @@ def basic_quality_report(data, file):
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
     excelUtil.writeExcel(df_distribution, file, '重要度')
 
-    subject='I2-2'
-    df_ability=answerUtil.ability_distribution(data,subject)
-    df_ability.sort_values(CONFIG.RATE_COLUMN[1],ascending=0,inplace=True)
+    subject = 'I2-2'
+    df_ability = answerUtil.ability_distribution(data, subject)
+    df_ability.sort_values(CONFIG.RATE_COLUMN[1], ascending=0, inplace=True)
     excelUtil.writeExcel(df_ability, file, '满足度')
-
 
 
 def major_quality_report(data, file):
@@ -652,33 +675,17 @@ def evelution_H4_ALL_report(data, file):
 def evelution_H4_E_report(data, file):
     '''母校任课教师总体报告'''
     subject = 'H4-E'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    excelUtil.writeExcel(df_mean, file, '母校任课教师总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对母校任课教师总体评价')
-    excelUtil.writeExcel(df_major, file, '各专业对母校任课教师总体评价')
+    sheet_name = '对任课教师的满意情况'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,file)
 
     return
 
 
 def evelution_academic_report(data, file):
-    '''母校的学风报告'''
+    '''母校的'''
     subject = '附5-5'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_FEEL)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_FEEL)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_FEEL)
-
-    excelUtil.writeExcel(df_mean, file, '母校的学风总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对母校的学风评价')
-    excelUtil.writeExcel(df_major, file, '各专业对母校的学风评价')
+    sheet_name = '母校的学风认可度评价'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_FEEL,sheet_name,file)
 
     return
 
@@ -686,16 +693,8 @@ def evelution_academic_report(data, file):
 def evelution_H4_T_report(data, file):
     '''教育教学报告'''
     subject = 'H4-T'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    excelUtil.writeExcel(df_mean, file, '教育教学总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对教育教学评价')
-    excelUtil.writeExcel(df_major, file, '各专业对教育教学评价')
+    sheet_name = '教育教学总体评价'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,file)
 
     return
 
@@ -703,16 +702,8 @@ def evelution_H4_T_report(data, file):
 def evelution_H4_S_report(data, file):
     '''实践教学报告'''
     subject = 'H4-S'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    excelUtil.writeExcel(df_mean, file, '实践教学总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对实践教学评价')
-    excelUtil.writeExcel(df_major, file, '各专业对实践教学评价')
+    sheet_name = '实践教学总体评价'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,file)
 
     return
 
@@ -720,16 +711,8 @@ def evelution_H4_S_report(data, file):
 def evelution_H4_R_report(data, file):
     '''社团活动报告'''
     subject = 'H4-R'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    excelUtil.writeExcel(df_mean, file, '社团活动总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对社团活动评价')
-    excelUtil.writeExcel(df_major, file, '各专业对社团活动评价')
+    sheet_name='社团活动总体评价'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,file)
 
     return
 
@@ -737,20 +720,13 @@ def evelution_H4_R_report(data, file):
 def evelution_H4_P_report(data, file):
     '''母校学生管理报告'''
     subject = 'H4-P'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
+    sheet_name='管理工作满意度'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,file)
 
     subject = 'H5'
     df_distribution = answerUtil.multi_answer_distribution(data, subject)
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
 
-    excelUtil.writeExcel(df_mean, file, '母校学生管理总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对母校学生管理评价')
-    excelUtil.writeExcel(df_major, file, '各专业对母校学生管理评价')
     excelUtil.writeExcel(df_distribution, file, '学生管理工作改进')
 
     return
@@ -759,198 +735,141 @@ def evelution_H4_P_report(data, file):
 def evelution_H4_Q_report(data, file):
     '''母校生活服务报告'''
     subject = 'H4-Q'
-
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
+    sheet_name='生活服务满意度'
+    report_five_rate(data,subject,CONFIG.ANSWER_TYPE_SATISFY,sheet_name,file)
 
     subject = 'H6'
     df_distribution = answerUtil.multi_answer_distribution(data, subject)
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-
-    excelUtil.writeExcel(df_mean, file, '母校生活服务总体评价')
-    excelUtil.writeExcel(df_grp, file, '各学院对母校生活服务评价')
-    excelUtil.writeExcel(df_major, file, '各专业对母校生活服务评价')
-    excelUtil.writeExcel(df_distribution, file, '生活服务改进')
+    excelUtil.writeExcel(df_distribution, file, '生活服务需要提高的方面')
 
     return
-
-
-def evelution_H4_L_O_report(data, file):
-    '''创业教育报告'''
-    ls_column = list(CONFIG.MEAN_COLUMN)
-    ls_column = ls_column.append('题目')
-    df_init1 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init2 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-
-    df_init4 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init5 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init6 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-
-    subject = 'H4-L'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = '创业课程和讲座'
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = '创业课程和讲座'
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = '创业课程和讲座'
-    df_init3 = pd.concat([df_init3, df_major])
-
-    subject = 'H4-M'
-    title = '创新创业大赛'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
-
-    subject = 'H4-N'
-    title = '创业模拟与实训'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
-
-    subject = 'H4-O'
-    title = '创业指导服务'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
-
-    subject = 'H3-E'
-    title = '创业场地支持'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_HELP)
-    df_mean['题目'] = title
-    df_init4 = pd.concat([df_init4, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_HELP)
-    df_grp['题目'] = title
-    df_init5 = pd.concat([df_init5, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_HELP)
-    df_major['题目'] = title
-    df_init6 = pd.concat([df_init6, df_major])
-
-    subject = 'H3-F'
-    title = '创业资金支持'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_HELP)
-    df_mean['题目'] = title
-    df_init4 = pd.concat([df_init4, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_HELP)
-    df_grp['题目'] = title
-    df_init5 = pd.concat([df_init5, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_HELP)
-    df_major['题目'] = title
-    df_init6 = pd.concat([df_init6, df_major])
-
-    excelUtil.writeExcel(df_init1, file, '创业教育总体评价')
-    excelUtil.writeExcel(df_init2, file, '各学院对创业教育评价')
-    excelUtil.writeExcel(df_init3, file, '各专业对创业教育评价')
-    excelUtil.writeExcel(df_init4, file, '创业总体支持')
-    excelUtil.writeExcel(df_init5, file, '各学院对创业支持')
-    excelUtil.writeExcel(df_init6, file, '各专业对创业支持')
-
-    return
-
 
 def evelution_H4_F_K_report(data, file):
-    '''就业教育服务报告'''
-    ls_column = list(CONFIG.MEAN_COLUMN)
-    ls_column = ls_column.append('题目')
-    df_init1 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init2 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
+    # H4-F~H4-K
+    focus = ['H4-' + chr(i) for i in range(70,76)]
+    df_summary=report_combine_value_five_rate(data,focus,CONFIG.ANSWER_TYPE_SATISFY,
+                                              '对母校就业教育的满意度评价',CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcel(df_summary, file, '对母校就业教育的满意度评价')
 
-    subject = 'H4-F'
-    title = '生涯规划和就业指导'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
+    df_college=report_combine_value_five_rate_single(data,focus,
+                                             CONFIG.ANSWER_TYPE_SATISFY,
+                                             '各学院对母校就业教育的满意度评价',
+                                             CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcelWithIndex(df_college, file, '各学院对母校就业教育的满意度评价')
 
-    subject = 'H4-G'
-    title = '职业咨询与辅导'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
+    df_major=report_combine_value_five_rate_major(data,focus,
+                                             CONFIG.ANSWER_TYPE_SATISFY,
+                                             '各专业对母校就业教育的满意度评价',
+                                             CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcelWithIndex(df_major, file, '各专业对母校就业教育的满意度评价')
+    return
 
-    subject = 'H4-H'
-    title = '校园招聘会'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
+def evelution_H4_L_O_report(data, file):
+    # H4-L~H4-O
+    focus = ['H4-' + chr(i) for i in range(76,80)]
+    df_summary=report_combine_value_five_rate(data,focus,CONFIG.ANSWER_TYPE_SATISFY,
+                                              '对母校创业教育的满意度评价',CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcel(df_summary, file, '对母校创业教育的满意度评价')
 
-    subject = 'H4-I'
-    title = '学校招聘信息发布'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
-    subject = 'H4-J'
-    title = '就业帮助与推荐'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
-    subject = 'H4-K'
-    title = '就业手续办理'
-    df_mean = formulas.answer_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_mean['题目'] = title
-    df_init1 = pd.concat([df_init1, df_mean])
-    df_grp = formulas.answer_five_rate_single_grp(data, subject, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-    df_grp['题目'] = title
-    df_init2 = pd.concat([df_init2, df_grp])
-    df_major = formulas.answer_five_rate_major_grp(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_major['题目'] = title
-    df_init3 = pd.concat([df_init3, df_major])
-    excelUtil.writeExcel(df_init1, file, '就业教育服务总体评价')
-    excelUtil.writeExcel(df_init2, file, '各学院对就业教育服务评价')
-    excelUtil.writeExcel(df_init3, file, '各专业对就业教育服务评价')
+    df_college=report_combine_value_five_rate_single(data,focus,
+                                             CONFIG.ANSWER_TYPE_SATISFY,
+                                             '各学院对母校创业教育的满意度评价',
+                                             CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcelWithIndex(df_college, file, '各学院对母校创业教育的满意度评价')
+
+    df_major=report_combine_value_five_rate_major(data,focus,
+                                             CONFIG.ANSWER_TYPE_SATISFY,
+                                             '各专业对母校创业教育的满意度评价',
+                                             CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcelWithIndex(df_major, file, '各专业对母校创业教育的满意度评价')
+
+    #H3-E~H3-F
+    focus = ['H3-' + chr(i) for i in range(69,71)]
+
+    df_summary=report_combine_value_five_rate(data,focus,CONFIG.ANSWER_TYPE_HELP,
+                                              '对母校创业教育的帮助度评价',CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcel(df_summary, file, '对母校创业教育的帮助度评价')
+
+    df_college=report_combine_value_five_rate_single(data,focus,
+                                             CONFIG.ANSWER_TYPE_HELP,
+                                             '各学院对母校创业教育的帮助度评价',
+                                             CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcelWithIndex(df_college, file, '各学院对母校创业教育的帮助度评价')
+
+    df_major=report_combine_value_five_rate_major(data,focus,
+                                             CONFIG.ANSWER_TYPE_HELP,
+                                             '各专业对母校创业教育的帮助度评价',
+                                             CONFIG.DICT_SUBJECT)
+    excelUtil.writeExcelWithIndex(df_major, file, '各专业对母校创业教育的帮助度评价')
+    return
+
+
+
+def report_combine_value_five_rate(data,array_subject,metric_type,metric_name,dict_subject):
+    '''组合题的五维占比 总体'''
+    if data.empty:
+        return  data
+    if not array_subject:
+        return data
+
+    focus_column=rebuild_five_columns(metric_type,0)
+    focus_column.insert(0,metric_name)
+
+    df_init = pd.DataFrame(columns=focus_column)  # 创建一个空的dataframe
+
+    for subject in array_subject:
+        df_t=five_rate_t(data,subject,metric_type)
+        df_t.loc[:,metric_name]=subject
+        df_init=pd.concat([df_init,df_t],sort=False)
+    df_init.loc[:,metric_name]=df_init.loc[:,metric_name].map(dict_subject)
+    return df_init
+
+def report_combine_value_five_rate_single(data,array_subject,metric_type,metric_name,dict_subject):
+    if data.empty:
+        return  data
+    if not array_subject:
+        return data
+
+    five_column=rebuild_five_columns(metric_type,1)
+    focus_column=[five_column[0],five_column[-3],five_column[-2],five_column[-1]]
+    focus_column.insert(0,metric_name)
+    print(focus_column)
+
+    df_init = pd.DataFrame(columns=focus_column)  # 创建一个空的dataframe
+    for subject in array_subject:
+        df_t=five_rate_single_t_sub(data,subject,metric_type)
+        df_t.loc[:,metric_name]=subject
+        df_init=pd.concat([df_init,df_t],sort=False)
+    df_init.loc[:,metric_name]=df_init.loc[:,metric_name].map(dict_subject)
+
+    df_init.set_index([metric_name,CONFIG.GROUP_COLUMN[0]],inplace=True)
+    df_t_again=df_init.unstack(level=0)
+    #df_no_index=df_t_again.reset_index()
+    return df_t_again
+
+def report_combine_value_five_rate_major(data,array_subject,metric_type,metric_name,dict_subject):
+    if data.empty:
+        return  data
+    if not array_subject:
+        return data
+
+    five_column=rebuild_five_columns(metric_type,2)
+    focus_column=[five_column[0],five_column[1],five_column[-3],five_column[-2],five_column[-1]]
+    focus_column.insert(0,metric_name)
+
+    df_init = pd.DataFrame(columns=focus_column)  # 创建一个空的dataframe
+    for subject in array_subject:
+        df_t=five_rate_major_t_sub(data,subject, metric_type)
+        df_t.loc[:,metric_name]=subject
+        df_init=pd.concat([df_init,df_t],sort=False)
+    df_init.loc[:,metric_name]=df_init.loc[:,metric_name].map(dict_subject)
+
+    df_init.set_index([metric_name,CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]],inplace=True)
+    df_t_again=df_init.unstack(level=0)
+    #df_t_again.reset_index(inplace=True)
+    return df_t_again
+
 
 
 ####################   就业竞争力
@@ -962,23 +881,8 @@ def major_relative_report(data, filePath):
     ls_metrics_cols.append(subject)
     df_metrics = data[ls_metrics_cols]
 
-    pd_summary = formulas.answer_five_rate(df_metrics, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    summary_t = formulas.rate_T(pd_summary, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    excelUtil.writeExcel(summary_t, filePath, '总体专业相关情况')
+    report_five_rate(df_metrics,subject,CONFIG.ANSWER_TYPE_RELATIVE,'专业相关情况',filePath)
 
-    pd_college = formulas.answer_five_rate_single_grp(df_metrics, subject,
-                                             CONFIG.BASE_COLUMN[0],
-                                             CONFIG.ANSWER_TYPE_RELATIVE,
-                                             is_college=True)
-    college_t = formulas.college_rate_pivot(pd_college, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]],
-                                            False)
-    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(college_t, filePath, '各学院专业相关情况')
-
-    pd_major = formulas.answer_five_rate_major_grp(df_metrics, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    major_t = formulas.major_rate_pivot(pd_major, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(major_t, filePath, '各专业专业相关情况')
 
     subject = 'B9-2'
     ls_metrics_cols1 = list(CONFIG.BASE_COLUMN)
@@ -989,35 +893,6 @@ def major_relative_report(data, filePath):
     excelUtil.writeExcel(pd_unrelative, filePath, '从事低专业相关工作的原因分布')
 
 
-def common_five_report(df_data, subject, filePath, sheetName, measureType):
-    measure_name = formulas.parse_measure_name(measureType)
-    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
-    ls_metrics_cols.append(subject)
-    df_metrics = df_data[ls_metrics_cols]
-
-    pd_summary = formulas.answer_five_rate(df_metrics, subject, measureType)
-    summary_t = formulas.rate_T(pd_summary, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    excelUtil.writeExcel(summary_t, filePath, '总体' + sheetName)
-
-    pd_college = formulas.answer_five_rate_single_grp(df_metrics, subject,
-                                             CONFIG.BASE_COLUMN[0],
-                                             measureType)
-    college_t = formulas.college_rate_pivot(pd_college,
-                                            [measure_name,
-                                             CONFIG.MEAN_COLUMN[-1],
-                                             CONFIG.MEAN_COLUMN[2]],
-                                            False)
-    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(college_t, filePath, '各学院' + sheetName)
-
-    pd_major = formulas.answer_five_rate_major_grp(df_metrics, subject, measureType)
-    major_t = formulas.major_rate_pivot(pd_major,
-                                        [measure_name, CONFIG.MEAN_COLUMN[-1],
-                                         CONFIG.MEAN_COLUMN[2]])
-    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(major_t, filePath, '各专业' + sheetName)
-
-
 def job_meet_report(data, filePath):
     '''职业期待吻合度'''
     subject = 'B8'
@@ -1025,24 +900,8 @@ def job_meet_report(data, filePath):
     ls_metrics_cols = list(CONFIG.BASE_COLUMN)
     ls_metrics_cols.append(subject)
     df_metrics = data[ls_metrics_cols]
-
-    pd_summary = formulas.answer_five_rate(df_metrics, subject, CONFIG.ANSWER_TYPE_MEET)
-    summary_t = formulas.rate_T(pd_summary, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    excelUtil.writeExcel(summary_t, filePath, '总体职业期待吻合情况')
-
-    pd_college = formulas.answer_five_rate_single_grp(df_metrics, subject,
-                                             CONFIG.BASE_COLUMN[0],
-                                             CONFIG.ANSWER_TYPE_MEET)
-    college_t = formulas.college_rate_pivot(pd_college, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]],
-                                            False)
-    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(college_t, filePath, '学院职业期待吻合情况')
-
-    pd_major = formulas.answer_five_rate_major_grp(df_metrics, subject, CONFIG.ANSWER_TYPE_MEET)
-    major_t = formulas.major_rate_pivot(pd_major, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(major_t, filePath, '各专业职业期待吻合情况')
-
+    report_five_rate(df_metrics,subject,CONFIG.ANSWER_TYPE_MEET,'职业期待吻合情况',filePath)
+    return
 
 def job_satisfy_report(data, filePath):
     '''职业满意度'''
@@ -1050,19 +909,19 @@ def job_satisfy_report(data, filePath):
     subject = 'B7-A'
     measureType = CONFIG.ANSWER_TYPE_SATISFY
     sheetName = "对工作总体的满意情况"
-    common_five_report(data, subject, filePath, sheetName, measureType)
+    report_five_rate(data, subject,measureType,sheetName, filePath)
 
     subject = 'B7-B'
     sheetName = "对工作薪酬的满意情况"
-    common_five_report(data, subject, filePath, sheetName, measureType)
+    report_five_rate(data, subject, measureType,sheetName, filePath)
 
     subject = 'B7-C'
     sheetName = "对职业发展前景的满意情况"
-    common_five_report(data, subject, filePath, sheetName, measureType)
+    report_five_rate(data, subject, measureType,sheetName, filePath)
 
     subject = 'B7-D'
     sheetName = "对工作内容意的满意情况"
-    common_five_report(data, subject, filePath, sheetName, measureType)
+    report_five_rate(data, subject, measureType,sheetName, filePath)
 
 
 def special_employee_featured(data, dict_where={}):
@@ -1448,11 +1307,11 @@ def rebuild_five_columns(measure_type, level=0):
     five_metric = five_metric[0:-1]
 
     # 学院、专业、五纬排序、度量值、均值、答题总人数
-    metric_name=formulas.parse_measure_name(measure_type)
-    order_column =five_metric.copy()
-    if level==1:
+    metric_name = formulas.parse_measure_name(measure_type)
+    order_column = five_metric.copy()
+    if level == 1:
         order_column.insert(0, CONFIG.GROUP_COLUMN[0])
-    elif level==2:
+    elif level == 2:
         order_column.insert(0, CONFIG.GROUP_COLUMN[0])
         order_column.insert(1, CONFIG.GROUP_COLUMN[1])
     order_column.append(metric_name)
@@ -1460,7 +1319,8 @@ def rebuild_five_columns(measure_type, level=0):
     order_column.append(CONFIG.MEAN_COLUMN[2])
     return order_column
 
-def report_five_rate(data,subject,measure_type,measure_name,file_path):
+def five_rate_t(data,subject, measure_type):
+    '''五维占比总体行专列'''
     if data.empty:
         return data
     if not subject or not measure_type:
@@ -1468,34 +1328,139 @@ def report_five_rate(data,subject,measure_type,measure_name,file_path):
 
     ls_metrics_cols = list(CONFIG.BASE_COLUMN)
     ls_metrics_cols.append(subject)
-    df_metrics = data.loc[:,ls_metrics_cols]
+    df_metrics = data.loc[:, ls_metrics_cols]
 
-    focus_name=formulas.parse_measure_name(measure_type)
-    array_focus=[focus_name,CONFIG.MEAN_COLUMN[-1]]
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [focus_name, CONFIG.MEAN_COLUMN[-1]]
 
     value_rate = formulas.answer_five_rate(df_metrics, subject, measure_type)
     rate_t = formulas.rate_T(value_rate, array_focus)
-    rate_t=rate_t.loc[:,rebuild_five_columns(measure_type,0)]
-    rate_combin=pd.concat([rate_t,rate_t])
-    excelUtil.writeExcel(rate_combin, file_path, '总体'+measure_name)
+    rate_t = rate_t.loc[:, rebuild_five_columns(measure_type, 0)]
+    return rate_t
 
-    college_changes = formulas.answer_five_rate_single_grp(df_metrics, subject,
-                                                CONFIG.BASE_COLUMN[0], measure_type, is_college=True)
-    college_t = formulas.college_rate_pivot(college_changes,
-                                            array_focus)
+def five_rate_single_t(data,subject, measure_type):
+    if data.empty:
+        return data
+    if not subject or not measure_type:
+        return data
+
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = data.loc[:, ls_metrics_cols]
+
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [focus_name, CONFIG.MEAN_COLUMN[-1]]
+
+    five_rate = formulas.answer_five_rate_single_grp(df_metrics, subject,
+                                                           CONFIG.BASE_COLUMN[0],
+                                                     measure_type, is_college=True)
+    college_t = formulas.college_rate_pivot(five_rate,array_focus)
     college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    college_t=college_t.loc[:,rebuild_five_columns(measure_type,1)]
-    college_combine=pd.concat([college_t,rate_t],sort=False)
-    excelUtil.writeExcel(college_combine, file_path, '各学院'+measure_name)
+    college_t = college_t.loc[:, rebuild_five_columns(measure_type, 1)]
+    return college_t
 
-    major_changes = formulas.answer_five_rate_major_grp(df_metrics, subject,measure_type)
+def five_rate_major_t(data,subject, measure_type):
+    if data.empty:
+        return data
+    if not subject or not measure_type:
+        return data
+
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = data.loc[:, ls_metrics_cols]
+
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [focus_name, CONFIG.MEAN_COLUMN[-1]]
+
+    major_changes = formulas.answer_five_rate_major_grp(df_metrics, subject, measure_type)
     major_t = formulas.major_rate_pivot(major_changes,
                                         array_focus)
     major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    major_t=major_t.loc[:,rebuild_five_columns(measure_type,2)]
-    major_conbine=pd.concat([major_t,rate_t],sort=False)
-    excelUtil.writeExcel(major_conbine, file_path, '各专业'+measure_name)
+    major_t = major_t.loc[:, rebuild_five_columns(measure_type, 2)]
+    return major_t
+
+def five_rate_major_t_sub(data,subject, measure_type):
+    if data.empty:
+        return data
+    if not subject or not measure_type:
+        return data
+
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = data.loc[:, ls_metrics_cols]
+
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1],
+                   focus_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
+
+    major_changes = formulas.answer_five_rate_major_grp(df_metrics, subject, measure_type)
+    five_rate = major_changes.loc[:, array_focus]
+    five_rate = five_rate.drop_duplicates()
+    return five_rate
+
+
+def five_rate_single_t_sub(data, subject, measure_type):
+    '''只关注 度量和均值、答题总人数'''
+    if data.empty:
+        return data
+    if not subject or not measure_type:
+        return data
+
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = data.loc[:, ls_metrics_cols]
+
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [CONFIG.GROUP_COLUMN[0],focus_name, CONFIG.MEAN_COLUMN[-1],CONFIG.MEAN_COLUMN[2]]
+
+    five_rate = formulas.answer_five_rate_single_grp(df_metrics, subject,
+                                                     CONFIG.BASE_COLUMN[0],
+                                                     measure_type, is_college=True)
+    five_rate=five_rate.loc[:,array_focus]
+    five_rate = five_rate.drop_duplicates()
+    return five_rate
+
+def report_five_rate(data, subject, measure_type, measure_name, file_path):
+    '''五维占比共用方法'''
+    if data.empty:
+        return data
+    if not subject or not measure_type:
+        return data
+
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = data.loc[:, ls_metrics_cols]
+
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [focus_name, CONFIG.MEAN_COLUMN[-1]]
+
+    value_rate = formulas.answer_five_rate(df_metrics, subject, measure_type)
+    rate_t = formulas.rate_T(value_rate, array_focus)
+    rate_t = rate_t.loc[:, rebuild_five_columns(measure_type, 0)]
+    rate_combin = pd.concat([rate_t, rate_t])
+    rate_combin.insert(0,CONFIG.TOTAL_COLUMN,CONFIG.TOTAL_COLUMN)
+    excelUtil.writeExcel(rate_combin, file_path, '总体' + measure_name)
+
+    college_changes = formulas.answer_five_rate_single_grp(df_metrics, subject,
+                                                           CONFIG.BASE_COLUMN[0], measure_type, is_college=True)
+    college_t = formulas.college_rate_pivot(college_changes,
+                                            array_focus)
+    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    college_t = college_t.loc[:, rebuild_five_columns(measure_type, 1)]
+    college_combine = pd.concat([college_t, rate_t], sort=False)
+    college_combine.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(college_combine, file_path, '各学院' + measure_name)
+
+    major_changes = formulas.answer_five_rate_major_grp(df_metrics, subject, measure_type)
+    major_t = formulas.major_rate_pivot(major_changes,
+                                        array_focus)
+    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    major_t = major_t.loc[:, rebuild_five_columns(measure_type, 2)]
+    major_conbine = pd.concat([major_t, rate_t], sort=False)
+    major_conbine.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(major_conbine, file_path, '各专业' + measure_name)
     return
+
 
 def demission_reason(data, subject):
     '''

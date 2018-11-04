@@ -689,7 +689,6 @@ def answer_five_rate_single_grp(data, subject, grp, measure_type, is_college=Fal
     pd_distribution.columns = [grp_name, '答案', '回答此答案人数']
     # 合并答案、回答此答案人数、答题总人数
     pd_left_rate = pd.merge(pd_distribution, pd_total, how='left', on=grp_name, validate='many_to_one')
-    print(pd_left_rate)
     pd_left_rate['比例'] = (pd_left_rate['回答此答案人数'] / pd_left_rate['答题总人数'] * 100).round(2)
 
     # step3: 相关度/满意度/符合度
