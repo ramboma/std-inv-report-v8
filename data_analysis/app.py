@@ -13,11 +13,8 @@ import pandas as pd
 
 def main(file):
     data = excelUtil.read_excel(file)
-    further.employee_indurstry(data, CONFIG.REPORT_FOLDER + '就业行业分布.xlsx')
-    further.employee_job(data, CONFIG.REPORT_FOLDER + '就业职业分布.xlsx')
-    further.employee_industry_type(data, CONFIG.REPORT_FOLDER + '就业单位分布.xlsx')
-    further.employee_industry_size(data, CONFIG.REPORT_FOLDER + '就业单位分布.xlsx')
-    further.employee_region_report(data, CONFIG.REPORT_FOLDER + '就业地区分布.xlsx')
+    further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
+
     # 就业竞争力
     #further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
 
@@ -32,8 +29,7 @@ def main(file):
     # 国内升学
     #further.further_report(data, CONFIG.REPORT_FOLDER + '国内升学.xlsx')
 
-    # 出国境留学
-    #further.study_abroad_report(data, CONFIG.REPORT_FOLDER + '出国境留学.xlsx')
+
     #further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
 
 
