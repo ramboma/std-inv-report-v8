@@ -18,11 +18,12 @@ logger = get_logger(__name__)
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
 
-    def __init__(self, batch_cleansing_handler, output_folder, trace_mode):
+    def __init__(self, batch_cleansing_handler, output_folder, degree, trace_mode):
         super().__init__()
 
         self.__batch_cleansing_handler = batch_cleansing_handler;
         self.__output_folder = output_folder
+        self.__degree = degree
         self.__trace_mode = trace_mode
 
     def on_moved(self, event):
@@ -42,7 +43,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
             logger.info('input file {} detected'.format(event.src_path))
-            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__trace_mode)
+            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__degree, self.__trace_mode)
         pass
 
     def on_deleted(self, event):
@@ -60,37 +61,39 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         pass
 
 
-def batch_cleansing(input_file, output_folder, trace_mode):
+def batch_cleansing(input_file, output_folder, degree, trace_mode):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
     backup_file = os.path.join(output_folder, filename)
     shutil.move(input_file, backup_file)
+    input_file = backup_file
 
     dirpath = output_folder
 
     tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
 
     # internal, analysis
-    output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag)
-    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_7=True, trace_mode=trace_mode)
+    output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag, degree=degree)
+    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=True, with_rule_7=True, trace_mode=trace_mode)
     # internal, customer
-    output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=False, tag=tag)
-    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=True, with_rule_7=False, trace_mode=trace_mode)
+    output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=False, tag=tag, degree=degree)
+    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=True, with_rule_7=False, trace_mode=trace_mode)
     # public, analysis
-    output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=True, tag=tag)
-    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_7=True, trace_mode=trace_mode)
+    output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=True, tag=tag, degree=degree)
+    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=False, with_rule_7=True, trace_mode=trace_mode)
     # public, customer
-    output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=False, tag=tag)
-    run_cleansing(input_file, output_file, sheet_tag=tag, with_rule_2_2=False, with_rule_7=False, trace_mode=trace_mode)
+    output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=False, tag=tag, degree=degree)
+    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=False, with_rule_7=False, trace_mode=trace_mode)
 
 
 @click.command()
 # @click.argument('file', nargs=1)
 @click.option('--input-folder', '-i', required=True, help='Input file path')
 @click.option('--output-folder', '-o', required=False, help='Output folder path')
+@click.option('--degree', '-d', help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-def main(input_folder, output_folder, trace_mode):
+def main(input_folder, output_folder, degree, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_folder):
@@ -121,7 +124,7 @@ def main(input_folder, output_folder, trace_mode):
         logger.info('** TRACING MODE ENABLED **')
 
     logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
-    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, trace_mode)
+    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, trace_mode)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
     observer.start()
