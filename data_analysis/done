@@ -64,26 +64,3 @@
     # 出国境留学
     further.study_abroad_report(data, CONFIG.REPORT_FOLDER + '出国境留学.xlsx')
     further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
-
-    df_privot = pd.pivot_table(data=df_init,
-                               index=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]],
-                               columns=metric_name,
-                               values=[focus_column[-3], focus_column[-2], focus_column[-1]])
-
-                               pd_summary = formulas.answer_five_rate(df_metrics, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    summary_t = formulas.rate_T(pd_summary, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    excelUtil.writeExcel(summary_t, filePath, '总体专业相关情况')
-
-    pd_college = formulas.answer_five_rate_single_grp(df_metrics, subject,
-                                                      CONFIG.BASE_COLUMN[0],
-                                                      CONFIG.ANSWER_TYPE_RELATIVE,
-                                                      is_college=True)
-    college_t = formulas.college_rate_pivot(pd_college, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]],
-                                            False)
-    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(college_t, filePath, '各学院专业相关情况')
-
-    pd_major = formulas.answer_five_rate_major_grp(df_metrics, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    major_t = formulas.major_rate_pivot(pd_major, [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(major_t, filePath, '各专业专业相关情况')

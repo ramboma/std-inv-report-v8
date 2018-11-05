@@ -225,13 +225,13 @@ def rate_T(df_data, array_focus=[]):
     return df_t
 
 
-def college_rate_pivot(df_data, array_focus=[], hasCollege=True):
+def college_rate_pivot(df_data, array_focus=[], grp_subject=CONFIG.BASE_COLUMN[0]):
     '''学院 比率转置'''
     if df_data.empty:
         return df_data
 
     # 默认为按学院分组 列名为学院，由于五维占比有按其他分组条件分组，则列名为分组
-    if hasCollege:
+    if grp_subject==CONFIG.BASE_COLUMN[0]:
         grp_name = CONFIG.GROUP_COLUMN[0]
     else:
         grp_name = CONFIG.GROUP_COLUMN[-1]
@@ -673,10 +673,10 @@ def answer_five_rate(data, subject, measure_type):
     return pd_five_rate
 
 
-def answer_five_rate_single_grp(data, subject, grp, measure_type, is_college=False):
+def answer_five_rate_single_grp(data, subject, grp, measure_type):
     '''某题单维分组的五维占比'''
 
-    if is_college:
+    if grp==CONFIG.BASE_COLUMN[0]:
         grp_name = CONFIG.GROUP_COLUMN[0]
     else:
         grp_name = CONFIG.GROUP_COLUMN[-1]
