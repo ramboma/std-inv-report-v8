@@ -38,7 +38,7 @@ def run_cleansing(input_file, output_file, sheet_tag, degree=False, with_rule_2_
     cleanser.reset_column_names()
     cleanser.reset_emplty_values_with_na()
 
-    if degree is not None:
+    if degree is not None and isinstance(degree, str):
         cleanser.filter_records_with_degree(degree)
 
     rule_set_assembler = RuleSetAssembler()
