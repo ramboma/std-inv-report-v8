@@ -175,7 +175,7 @@ def employee_region_report(data, filePath):
     not_birth_birth_rate = (not_birth_birth_count / not_birth_count * 100).round(2)
 
     pd_not_birth_rate = pd.DataFrame({'回生源所在地就业': [not_birth_birth_rate],
-                                      '外地生源外地比': [100 - not_birth_local_rate - not_birth_birth_rate],
+                                      '其他省份就业': [100 - not_birth_local_rate - not_birth_birth_rate],
                                       '省内就业': [not_birth_local_rate],
                                       CONFIG.RATE_COLUMN[2]: not_birth_count})
 

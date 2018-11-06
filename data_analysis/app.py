@@ -13,8 +13,8 @@ import pandas as pd
 
 def main(file):
     data = excelUtil.read_excel(file)
-    further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
 
+    further.employee_region_report(data, CONFIG.REPORT_FOLDER + '就业地区分布.xlsx')
     # 就业竞争力
     #further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
 
