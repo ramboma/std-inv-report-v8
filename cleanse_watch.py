@@ -73,18 +73,19 @@ def batch_cleansing(input_file, output_folder, degree, trace_mode):
 
     tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
 
-    # internal, analysis
-    output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=True, tag=tag, degree=degree)
-    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=True, with_rule_7=True, trace_mode=trace_mode)
-    # internal, customer
-    output_file = get_output_filename(dirpath, name, ext, internal=True, analysis=False, tag=tag, degree=degree)
-    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=True, with_rule_7=False, trace_mode=trace_mode)
-    # public, analysis
-    output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=True, tag=tag, degree=degree)
-    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=False, with_rule_7=True, trace_mode=trace_mode)
-    # public, customer
-    output_file = get_output_filename(dirpath, name, ext, internal=False, analysis=False, tag=tag, degree=degree)
-    run_cleansing(input_file, output_file, sheet_tag=tag, degree=degree, with_rule_2_2=False, with_rule_7=False, trace_mode=trace_mode)
+    setting_groups = []
+    setting_groups.extend([
+        # internal, analysis
+        {'internal': True, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree)},
+        # internal, customer
+        {'internal': True, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree)},
+        # public, analysis
+        {'internal': False, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree)},
+        # public, customer
+        {'internal': False, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree)},
+    ])
+
+    run(input_file, degree, tag, setting_groups, trace_mode)
 
 
 @click.command()
