@@ -48,7 +48,7 @@ class RuleRemoveRecordsWithoutA2Answer(CleanseRule):
 
 class RuleRemoveRecordsWithoutSubmitTime(CleanseRule):
     def __init__(self, filter_column='_22'):
-        super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time exist')
+        super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time (column {}) exist'.format(filter_column))
         self.__filter_column = filter_column
 
     @clocking

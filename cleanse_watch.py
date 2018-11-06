@@ -141,7 +141,8 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        logger.error(e, exc_info=True)
+        # logger.error(e, exc_info=True)
+        logger.error(e)
     finally:
         pass
 

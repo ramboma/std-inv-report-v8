@@ -68,6 +68,8 @@ class DataCleanser:
 
                 if not answer_column and header_name == 'A1':
                     answer_column = True
+                    if i < BASE_INFO_COLS_MIN:
+                        raise Exception("base info columns must >= 23, current: {}".format(i))
 
             next_header_name = header_cells[i + 1].value
 
