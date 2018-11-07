@@ -195,7 +195,7 @@ def run(input_file, degree, tag, setting_groups, trace_mode):
 #     return
 
 
-def get_output_filename(dirpath, name, ext,  internal, analysis, tag, degree=None):
+def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None):
     if internal:
         target = 'internal'
     else:
@@ -209,6 +209,10 @@ def get_output_filename(dirpath, name, ext,  internal, analysis, tag, degree=Non
         return os.path.join(dirpath, '{}_cleaned_{}_{}_{}{}'.format(name, target, scope, tag, ext))
     else:
         return os.path.join(dirpath, '{}_cleaned_{}_{}_{}_{}{}'.format(name, degree, target, scope, tag, ext))
+
+
+def get_error_filename(dirpath, name):
+        return os.path.join(dirpath, '{}_error.txt'.format(name))
 
 
 def get_thread_name(internal, analysis):

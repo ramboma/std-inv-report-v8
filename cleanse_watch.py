@@ -62,30 +62,36 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
 
 
 def batch_cleansing(input_file, output_folder, degree, trace_mode):
-    filename = os.path.basename(input_file)
-    name, ext = os.path.splitext(filename)
+    try:
+        filename = os.path.basename(input_file)
+        name, ext = os.path.splitext(filename)
 
-    backup_file = os.path.join(output_folder, filename)
-    shutil.move(input_file, backup_file)
-    input_file = backup_file
+        backup_file = os.path.join(output_folder, filename)
+        shutil.move(input_file, backup_file)
+        input_file = backup_file
 
-    dirpath = output_folder
+        dirpath = output_folder
 
-    tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
+        tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
 
-    setting_groups = []
-    setting_groups.extend([
-        # internal, analysis
-        {'internal': True, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree)},
-        # internal, customer
-        {'internal': True, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree)},
-        # public, analysis
-        {'internal': False, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree)},
-        # public, customer
-        {'internal': False, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree)},
-    ])
-
-    run(input_file, degree, tag, setting_groups, trace_mode)
+        setting_groups = []
+        setting_groups.extend([
+            # internal, analysis
+            {'internal': True, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree)},
+            # internal, customer
+            {'internal': True, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree)},
+            # public, analysis
+            {'internal': False, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree)},
+            # public, customer
+            {'internal': False, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree)},
+        ])
+        run(input_file, degree, tag, setting_groups, trace_mode)
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        with open(get_error_filename(dirpath, name), 'w') as f:
+            f.write(e.__str__())
+    finally:
+        pass
 
 
 @click.command()
