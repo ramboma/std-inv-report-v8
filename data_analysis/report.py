@@ -19,7 +19,7 @@ def employee_indurstry(data, filePath):
 
     subject = 'B5-B'
     measure_name = '就业行业分布'
-    df_value_rate = formulas.answer_value_rate(data_a2, subject)
+    df_value_rate = formulas.answer_rate(data_a2, subject)
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
     excelUtil.writeExcel(df_value_rate, filePath, CONFIG.TOTAL_COLUMN + measure_name)
 
@@ -53,7 +53,7 @@ def employee_job(data, filePath):
     data_a2 = data[data['A2'] == CONFIG.A2_ANSWER[0]]
     subject = 'B4-B'
     measure_name = '就业职业分布'
-    df_value_rate = formulas.answer_value_rate(data_a2, subject)
+    df_value_rate = formulas.answer_rate(data_a2, subject)
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
     excelUtil.writeExcel(df_value_rate, filePath, CONFIG.TOTAL_COLUMN + measure_name)
 
@@ -85,7 +85,7 @@ def employee_industry_type(data, filePath):
     '''就业单位类型分布'''
     subject = 'B1'
     measure_name = '就业单位类型分布'
-    df_value_count = formulas.answer_value_rate(data, subject)
+    df_value_count = formulas.answer_rate(data, subject)
     excelUtil.writeExcel(df_value_count, filePath, CONFIG.TOTAL_COLUMN + measure_name)
 
     college_value = formulas.answer_college_value_rate(data, subject)
@@ -115,7 +115,7 @@ def employee_industry_size(data, filePath):
     '''就业单位规模'''
     subject = 'B2'
     measure_name = '就业单位规模分布'
-    df_value_count = formulas.answer_value_rate(data, subject)
+    df_value_count = formulas.answer_rate(data, subject)
     df_t = formulas.rate_T(df_value_count)
     excelUtil.writeExcel(df_t, filePath, CONFIG.TOTAL_COLUMN + measure_name)
 
@@ -132,12 +132,12 @@ def employee_industry_size(data, filePath):
 
 def employee_region_report(data, filePath):
     '''就业地区分布'''
-    df_value_count = formulas.answer_value_rate(data, 'B3-A')
+    df_value_count = formulas.answer_rate(data, 'B3-A')
     excelUtil.writeExcel(df_value_count, filePath, '总体就业省')
 
     province = '福建省'
     pd_province = data[data['B3-A'] == province]
-    college_value = formulas.answer_value_rate(pd_province, 'B3-B')
+    college_value = formulas.answer_rate(pd_province, 'B3-B')
     excelUtil.writeExcel(college_value, filePath, '省内就业城市')
 
     college_value = formulas.answer_college_value_rate(data, 'B3-A')
@@ -195,7 +195,7 @@ def employee_region_report(data, filePath):
 def study_abroad_report(data, filePath):
     '''出国境留学'''
     count = answerUtil.answer_count(data, 'A2')
-    study_value = formulas.answer_value_rate(data, 'F1')
+    study_value = formulas.answer_rate(data, 'F1')
     study_value.loc[:, CONFIG.RATE_COLUMN[2]] = count
     study_value.loc[:, CONFIG.RATE_COLUMN[-1]] = (
             study_value.loc[:, CONFIG.RATE_COLUMN[1]] / study_value.loc[:, CONFIG.RATE_COLUMN[2]] * 100).round(
@@ -209,31 +209,32 @@ def study_abroad_report(data, filePath):
     study_relative = five_rate_t(data, 'F3', CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(study_relative, filePath, '留学专业一致性')
 
-    change_study_reason = formulas.answer_value_rate(data, 'F4')
+    change_study_reason = formulas.answer_rate(data, 'F4')
     excelUtil.writeExcel(change_study_reason, filePath, '跨专业升学原因')
 
 
 def further_report(data, filePath):
-    further_rate = formulas.answer_rate(data, 'A2', CONFIG.A2_ANSWER[3])
+    #总体情况
+    further_rate = formulas.answer_rate(data, 'A2')
+    # 只统计求学比例
+    further_rate=further_rate[further_rate[CONFIG.RATE_COLUMN[0]]==CONFIG.A2_ANSWER[3]]
     excelUtil.writeExcel(further_rate, filePath, '总体国内升学比例')
 
-    further_reason = formulas.answer_value_rate(data, 'E2')
+    further_reason = formulas.answer_rate(data, 'E2')
     excelUtil.writeExcel(further_reason, filePath, '升学原因')
 
-    # further_satisfy = formulas.answer_five_rate(data, 'E1', CONFIG.ANSWER_TYPE_SATISFY)
     further_satisfy = five_rate_t(data, 'E1', CONFIG.ANSWER_TYPE_SATISFY)
     excelUtil.writeExcel(further_satisfy, filePath, '升学录取结果满意度')
 
-    # further_relative = formulas.answer_five_rate(data, 'E3', CONFIG.ANSWER_TYPE_RELATIVE)
     further_relative = five_rate_t(data, 'E3', CONFIG.ANSWER_TYPE_RELATIVE)
     excelUtil.writeExcel(further_relative, filePath, '升学专业相关度')
 
-    change_reason = formulas.answer_value_rate(data, 'E4')
+    change_reason = formulas.answer_rate(data, 'E4')
     excelUtil.writeExcel(change_reason, filePath, '跨专业升学原因')
 
 
 def work_stability_report(data, filePath):
-    change_times = formulas.answer_value_rate(data, 'B10-1')
+    change_times = formulas.answer_rate(data, 'B10-1')
     no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])][
         [CONFIG.RATE_COLUMN[-1]]]
     no_changes.fillna(0, inplace=True)
@@ -258,7 +259,7 @@ def work_stability_report(data, filePath):
                                   on=['学院', '专业'])
     excelUtil.writeExcel(major_changes_left, filePath, '各专业离职情况')
 
-    change_reason = formulas.answer_value_rate(data, 'B10-2')
+    change_reason = formulas.answer_rate(data, 'B10-2')
     excelUtil.writeExcel(change_reason, filePath, '更换工作原因')
 
 
@@ -283,7 +284,7 @@ def employee_report(data, filePath):
     excelUtil.writeExcel(df_major_value, filePath, '各专业就业率')
 
     # 总体就业去向
-    df_value_rate = formulas.answer_value_rate(df_metrics, subject)
+    df_value_rate = formulas.answer_rate(df_metrics, subject)
     # 灵活就业率
     flexible = df_value_rate[df_value_rate[CONFIG.RATE_COLUMN[0]] \
         .isin(CONFIG.A2_ANSWER[1:3])][CONFIG.RATE_COLUMN[-1]].sum()
@@ -334,7 +335,7 @@ def work_option_report(data, filePath):
     ls_metrics_cols.append(subject)
     df_metrics = data[ls_metrics_cols]
 
-    option = formulas.answer_value_rate(df_metrics, subject, [CONFIG.EXCEPTED_ANSWER])
+    option = formulas.answer_rate(df_metrics, subject)
 
     rate_t = formulas.rate_T(option)
     excelUtil.writeExcel(rate_t, filePath, '总体就业机会')
@@ -355,10 +356,10 @@ def work_option_report(data, filePath):
 def non_employee_report(data, filePath):
     '''未就业报告'''
     # 各选项占比
-    df_value_count = formulas.answer_value_rate(data, 'C1')
+    df_value_count = formulas.answer_rate(data, 'C1')
     excelUtil.writeExcel(df_value_count, filePath, '一直未就业分布')
 
-    df_value_count1 = formulas.answer_value_rate(data, 'C2')
+    df_value_count1 = formulas.answer_rate(data, 'C2')
     excelUtil.writeExcel(df_value_count1, filePath, '未就业毕业生目前去向分布')
     return
 
@@ -418,7 +419,7 @@ def school_recommed_report(data, filePath):
     order_column = CONFIG.ANSWER_RECOMMED.copy()
     order_column.append(CONFIG.RATE_COLUMN[2])
 
-    df_value_rate = formulas.answer_value_rate(data, subject)
+    df_value_rate = formulas.answer_rate(data, subject)
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
     df_t = formulas.rate_T(df_value_rate)
     df_t = df_t[order_column]
@@ -428,7 +429,7 @@ def school_recommed_report(data, filePath):
 
     df_college_rate = formulas.answer_college_value_rate(data, subject)
     df_college_rate.sort_values(['答题总人数', '比例'], ascending=[0, 0], inplace=True)
-    df_college_t = formulas.college_rate_pivot(df_college_rate, hasCollege=True)
+    df_college_t = formulas.college_rate_pivot(df_college_rate)
     order_column.insert(0, CONFIG.GROUP_COLUMN[0])
     df_college_t = df_college_t[order_column]
     df_combine = pd.concat([df_college_t, df_t], sort=False)
@@ -451,7 +452,7 @@ def employee_difficult_report(data, filePath):
     '''求职过程报告'''
     data_a2 = data[data['A2'].isin([CONFIG.A2_ANSWER[0], CONFIG.A2_ANSWER[2]])]
 
-    df_value_rate = formulas.answer_value_rate(data_a2, 'D2')
+    df_value_rate = formulas.answer_rate(data_a2, 'D2')
     df_value_rate.sort_values('比例', ascending=0, inplace=True)
     excelUtil.writeExcel(df_value_rate, filePath, '求职困难')
 
@@ -462,7 +463,7 @@ def employee_difficult_report(data, filePath):
     df_concat.sort_values(CONFIG.MEAN_COLUMN[2], 0, inplace=True)
     excelUtil.writeExcel(df_concat, filePath, '各专业求职困难')
 
-    df_value_rate1 = formulas.answer_value_rate(data_a2, 'D1')
+    df_value_rate1 = formulas.answer_rate(data_a2, 'D1')
     df_value_rate1.sort_values('比例', ascending=1, inplace=True)
     excelUtil.writeExcel(df_value_rate1, filePath, '求职成功途径')
 
@@ -471,7 +472,9 @@ def employee_difficult_report(data, filePath):
 
 def self_employed_report(data, filePath):
     '''自主创业报告'''
-    business_rate = formulas.answer_rate(data, 'A2', CONFIG.A2_ANSWER[1])
+    business_rate = formulas.answer_rate(data, 'A2')
+    # 只统计自主创业的
+    business_rate=business_rate[business_rate[CONFIG.RATE_COLUMN[0]]==CONFIG.A2_ANSWER[1]]
     excelUtil.writeExcel(business_rate, filePath, '自主创业比例')
 
     subject = 'G3'
@@ -490,7 +493,7 @@ def self_employed_report(data, filePath):
     excelUtil.writeExcel(df_distribution, filePath, '创业困难')
 
     subject = 'G1-B'
-    df_distribution = formulas.answer_value_rate(data, subject)
+    df_distribution = formulas.answer_rate(data, subject)
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
     excelUtil.writeExcel(df_distribution, filePath, '创业行业')
 
@@ -545,12 +548,10 @@ def evelution_lesson_report(data, file):
     excelUtil.writeExcel(df_summary, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
-                                      CONFIG.GROUP_COLUMN[0] + measure_name,
-                                      CONFIG.DICT_SUBJECT, 1)
+                                     CONFIG.DICT_SUBJECT, 1)
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
-                                    CONFIG.GROUP_COLUMN[1] + measure_name,
                                     CONFIG.DICT_SUBJECT, 2)
     excelUtil.writeExcelWithIndex(df_major, file, CONFIG.GROUP_COLUMN[1] + measure_name)
 
@@ -566,12 +567,10 @@ def evelution_practice_report(data, file):
     excelUtil.writeExcel(df_summary, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
-                                      CONFIG.GROUP_COLUMN[0] + measure_name,
                                       CONFIG.DICT_SUBJECT, 1)
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
-                                    CONFIG.GROUP_COLUMN[1] + measure_name,
                                     CONFIG.DICT_SUBJECT, 2)
     excelUtil.writeExcelWithIndex(df_major, file, CONFIG.GROUP_COLUMN[1] + measure_name)
 
@@ -589,13 +588,11 @@ def evelution_teach_report(data, file):
     excelUtil.writeExcel(df_summary, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                      CONFIG.GROUP_COLUMN[0] + measure_name,
-                                      CONFIG.DICT_SUBJECT, 1)
+                                    CONFIG.DICT_SUBJECT, 1)
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                    CONFIG.GROUP_COLUMN[1] + measure_name,
-                                    CONFIG.DICT_SUBJECT, 2)
+                                   CONFIG.DICT_SUBJECT, 2)
     excelUtil.writeExcelWithIndex(df_major, file, CONFIG.GROUP_COLUMN[1] + measure_name)
 
     return
@@ -612,7 +609,7 @@ def evelution_H4_E_report(data, file):
 
 def evelution_academic_report(data, file):
     '''母校的'''
-    subject = '附5-5'
+    subject = 'J5-5'
     sheet_name = '母校的学风认可度评价'
     report_five_rate(data, subject, CONFIG.ANSWER_TYPE_FEEL, sheet_name, file)
 
@@ -683,12 +680,10 @@ def evelution_H4_F_K_report(data, file):
     excelUtil.writeExcel(df_summary, file, '对母校就业教育的满意度评价')
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                      '各学院对母校就业教育的满意度评价',
                                       CONFIG.DICT_SUBJECT, 1)
     excelUtil.writeExcelWithIndex(df_college, file, '各学院对母校就业教育的满意度评价')
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                    '各专业对母校就业教育的满意度评价',
                                     CONFIG.DICT_SUBJECT, 2)
     excelUtil.writeExcelWithIndex(df_major, file, '各专业对母校就业教育的满意度评价')
     return
@@ -702,12 +697,10 @@ def evelution_H4_L_O_report(data, file):
     excelUtil.writeExcel(df_summary, file, '对母校创业教育的满意度评价')
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                      '各学院对母校创业教育的满意度评价',
                                       CONFIG.DICT_SUBJECT, 1)
     excelUtil.writeExcelWithIndex(df_college, file, '各学院对母校创业教育的满意度评价')
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                    '各专业对母校创业教育的满意度评价',
                                     CONFIG.DICT_SUBJECT, 2)
     excelUtil.writeExcelWithIndex(df_major, file, '各专业对母校创业教育的满意度评价')
 
@@ -719,12 +712,10 @@ def evelution_H4_L_O_report(data, file):
     excelUtil.writeExcel(df_summary, file, '对母校创业教育的帮助度评价')
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
-                                      '各学院对母校创业教育的帮助度评价',
                                       CONFIG.DICT_SUBJECT, 1)
     excelUtil.writeExcelWithIndex(df_college, file, '各学院对母校创业教育的帮助度评价')
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
-                                    '各专业对母校创业教育的帮助度评价',
                                     CONFIG.DICT_SUBJECT, 2)
     excelUtil.writeExcelWithIndex(df_major, file, '各专业对母校创业教育的帮助度评价')
     return

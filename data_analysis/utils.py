@@ -139,12 +139,13 @@ def multi_columns(data, subject, max_times=0):
 def multi_answer_count(data, subject):
     '''多选题 答题人数统计'''
     multi_column = multi_columns(data, subject)
-    df_answer = data[multi_column]
+    df_answer = data.loc[:,multi_column]
     # resolve SettingWithCopyWarning problem
-    df_copy = df_answer.copy()
-    df_copy.dropna(how='all', inplace=True)
-    df_copy.fillna(0, inplace=True)
-    answer_count = df_copy[multi_column[0]].count()
+    #df_copy = df_answer.copy()
+    df_answer.dropna(how='all', inplace=True)
+    df_answer.fillna(0, inplace=True)
+    answer_count = df_answer.loc[:,multi_column[0]].count()
+    print(answer_count)
     return answer_count
 
 

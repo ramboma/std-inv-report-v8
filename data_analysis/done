@@ -1,5 +1,3 @@
-
-
     # == == =已完成行转列
     # 就业率和就业状态
     further.work_option_report(data, CONFIG.REPORT_FOLDER + '就业机会.xlsx')
@@ -64,3 +62,4 @@
 
     # 学习效果
     further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')
+    further.basic_quality_report(data, CONFIG.REPORT_FOLDER + '基础素质.xlsx')
