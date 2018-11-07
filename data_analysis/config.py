@@ -78,8 +78,8 @@ OPER_NOT='非'
 
 # 条件过滤的key值
 DICT_KEY = ('column', 'cond','oper')
-OPER=('eq','noteq')
 
+SPECIAL_COLUMN=('性别','民族','类别')
 DICT_SUBJECT={'H4-A':'专业课教师教学态度','H4-B':'专业课教师教学水平','H4-C':'公共课教师教学态度',
               'H4-D':'公共课教师教学水平','H4-E':'教学总评价',
               'H4-F':'生涯规划/就业指导课','H4-G':'职业咨询与辅导','H4-H':'校园招聘会/宣讲会',
@@ -94,7 +94,20 @@ DICT_SUBJECT={'H4-A':'专业课教师教学态度','H4-B':'专业课教师教学
               'B5-B': '行业', 'B1': '单位类型','B3-A': '就业省',
               'B4-B': '就业职业'
               }
-DICT_REP={'非男':'女','非汉族':'少数民族','非省内生源':'省外生源','非省内就业':'省外就业'}
+SPECIAL_SUBJECT={'B9-1':'专业','B7-1':'工作满意度','B7-2':'薪酬',
+              'B7-3':'职业发展前景','B7-4':'工作内容',
+              'B8':'职业期待'}
+
+JOB_SATISFY_SUBJECT={'B7-1':'对工作总体的满意情况','B7-2':'对工作薪酬的满意情况',
+              'B7-3':'对职业发展前景的满意情况','B7-4':'对工作内容意的满意情况'}
+
+DICT_REP={'非男':'女','非汉族':'少数民族','非福建省':'省外'}
+SPECIAL_COLUMN=('性别','民族','类别')
+PROVINCE = '福建省'
+# 条件过滤的key值
+DICT_KEY = ('column', 'cond','oper')
+OPER=('eq','noteq')
+
 GENDER = ('男', '女')
 NATIONAL_COLUMN = ('汉族', '少数民族')
 ORIGIN_COLUMN = ('省内生源', '省外生源')
@@ -102,6 +115,8 @@ INDUSTRY_COLUMN = ('省内就业', '省外就业')
 EDUCATION_COLUMN = ('教育', '非教育')
 MEDICAL_COLUMN = ('医药卫生', '非医疗卫生')
 HEALTH_COLUMN = ('卫生', '非卫生')
+TEACHER_COLUMN = ('师范', '非师范')
+
 
 REPORT_FOLDER = "../test-data/san-ming/report/"
 

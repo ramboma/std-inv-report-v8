@@ -382,6 +382,26 @@ def single_row_combine(df_data, grp_column, array_focus=[CONFIG.MEAN_COLUMN[2]],
     df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
     return df_result
 
+def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
+    if df_data.empty:
+        return df_data
+
+    # 非合并列、答题总人数
+    df_summary = df_data.loc[:, array_focus]
+    df_duplicate = df_summary.drop_duplicates()
+
+    # 多列合并单列
+    df_combine = df_data.loc[:,
+                 [CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + df_combine[
+        CONFIG.RATE_COLUMN[-1]].astype(float).astype(str) + '%)'
+    df_combined = df_combine.loc[:, ['answer_rate']]
+    df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
+    row_combine  =';'.join(list(df_combined.loc[:,combin_name]))
+    df_duplicate.insert(0,combin_name,row_combine)
+    return df_duplicate
+
+
 
 ##################公式部分
 
