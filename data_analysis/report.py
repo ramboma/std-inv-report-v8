@@ -517,20 +517,21 @@ def basic_quality_report(data, file):
 def major_quality_report(data, file):
     '''专业素质报告'''
     subject = 'I1-1'
-    df_mean_1 = formulas.answer_five_rate(data, subject + '-A', CONFIG.ANSWER_TYPE_IMPORTANT)
-    df_mean_1['题目'] = 'I1-1-A'
-    df_mean_2 = formulas.answer_five_rate(data, subject + '-B', CONFIG.ANSWER_TYPE_IMPORTANT)
-    df_mean_2['题目'] = 'I1-1-B'
-    pd_concat = pd.concat([df_mean_1, df_mean_2])
-    excelUtil.writeExcel(pd_concat, file, '专业素质重要性')
+    title='专业素质重要性'
+    #I1-1-A I1-1-B
+    array_subject=[subject+'-'+chr(i) for i in range(65,67)]
+    df_five=report_combine_value_five_rate(data,array_subject,
+                                   CONFIG.ANSWER_TYPE_IMPORTANT,title,CONFIG.MAJOR_QUALITY_SUBJECT)
+    excelUtil.writeExcel(df_five, file, title)
 
     subject = 'I1-2'
-    df_mean_1 = formulas.answer_five_rate(data, subject + '-A', CONFIG.ANSWER_TYPE_PLEASED)
-    df_mean_1['题目'] = 'I1-2-A'
-    df_mean_2 = formulas.answer_five_rate(data, subject + '-B', CONFIG.ANSWER_TYPE_PLEASED)
-    df_mean_2['题目'] = 'I1-2-B'
-    pd_concat = pd.concat([df_mean_1, df_mean_2])
-    excelUtil.writeExcel(pd_concat, file, '专业素质满意度')
+    title = '专业素质满意度'
+    # I1-2-A I1-2-B
+    array_subject = [subject + '-' + chr(i) for i in range(65, 67)]
+    df_five = report_combine_value_five_rate(data, array_subject,
+                                             CONFIG.ANSWER_TYPE_PLEASED, title, CONFIG.MAJOR_QUALITY_SUBJECT)
+
+    excelUtil.writeExcel(df_five, file, title)
 
     return
 
@@ -798,7 +799,7 @@ def major_relative_report(data, filePath):
     ls_metrics_cols1 = list(CONFIG.BASE_COLUMN)
     ls_metrics_cols1.append(subject)
     df_metrics = data[ls_metrics_cols1]
-    pd_unrelative = formulas.answer_value_rate(df_metrics, subject)
+    pd_unrelative = formulas.answer_rate(df_metrics, subject)
     pd_unrelative.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
     excelUtil.writeExcel(pd_unrelative, filePath, '从事低专业相关工作的原因分布')
 

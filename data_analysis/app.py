@@ -15,21 +15,7 @@ def main(file):
     data = excelUtil.read_excel(file)
 
     # 就业竞争力
-    further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
-
-    #further.income_report(data, CONFIG.REPORT_FOLDER + '月均收入.xlsx')
-
-
-    #further.evelution_academic_report(data, CONFIG.REPORT_FOLDER + '母校学风认可度.xlsx')
-    #further.evelution_H4_T_report(data, CONFIG.REPORT_FOLDER + '教育教学总体评价.xlsx')
-    #further.evelution_H4_S_report(data, CONFIG.REPORT_FOLDER + '实践教学的评价.xlsx')
-    #further.evelution_H4_E_report(data, CONFIG.REPORT_FOLDER + '任课教师.xlsx')
-
-    # 国内升学
-    #further.further_report(data, CONFIG.REPORT_FOLDER + '国内升学.xlsx')
-
-
-    #further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
+    further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')
 
 
 def test():
