@@ -39,11 +39,22 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         #
         # what = 'directory' if event.is_directory else 'file'
         # logging.info("Created %s: %s", what, event.src_path)
-        filename = os.path.basename(event.src_path)
-        name, ext = os.path.splitext(filename)
-        if ext == '.xlsx':
-            logger.info('input file {} detected'.format(event.src_path))
-            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__degree, self.__trace_mode)
+        # file_locked = True
+        # wait_second = 1
+        # count_down_max_times = 60
+        # count_down = count_down_max_times
+        # while file_locked and count_down > 0:
+        #     try:
+        #         with open(event.src_path, 'w'):
+        #             file_locked = False
+        #     except Exception as e:
+        #         logger.debug(e)
+        #         logger.info("waiting for file writing complete")
+        #         time.sleep(wait_second)
+        #     finally:
+        #         count_down -= 1
+        # if file_locked:
+        #     raise Exception('file is locked and exceeded waiting time limit: {} secs'.format(wait_second * count_down_max_times))
         pass
 
     def on_deleted(self, event):
@@ -58,6 +69,11 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         #
         # what = 'directory' if event.is_directory else 'file'
         # logging.info("Modified %s: %s", what, event.src_path)
+        filename = os.path.basename(event.src_path)
+        name, ext = os.path.splitext(filename)
+        if ext == '.xlsx':
+            logger.info('input file {} detected'.format(event.src_path))
+            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__degree, self.__trace_mode)
         pass
 
 
