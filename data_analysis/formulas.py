@@ -28,6 +28,7 @@ def answer_rate(data, subject):
     pd_result[CONFIG.RATE_COLUMN[3]] = (
             pd_result[CONFIG.RATE_COLUMN[1]] / pd_result[CONFIG.RATE_COLUMN[2]] * 100).round(decimals=2)
 
+    pd_result[CONFIG.RATE_COLUMN[-1]] = pd_result.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
     return pd_result
 
 
@@ -405,18 +406,6 @@ def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG
 
 ##################公式部分
 
-def answer_rate_one(data, subject, answer):
-    '''某一题某个答案总体占比'''
-    count = Util.answer_count(data, subject);
-    answer_count = Util.answer_of_subject_count(data, subject, answer)
-    rate = (answer_count / count * 100).round(decimals=2)
-    title = "回答'{}'人数".format(answer)
-    df = pd.DataFrame({title: [answer_count],
-                       '答题总人数': [count],
-                       '比例': [rate]})
-    return df
-
-
 def answer_college_value_rate(data, subject, eliminate_unknown=[], array_order=[], array_asc=[]):
     '''
     根据学院分组计算比例
@@ -457,6 +446,9 @@ def answer_college_value_rate(data, subject, eliminate_unknown=[], array_order=[
 
     if array_order:
         pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
+
+    pd_left[CONFIG.RATE_COLUMN[-1]] = pd_left.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
+
     return pd_left
 
 
@@ -500,6 +492,9 @@ def answer_single_value_rate(data, subject, single_grp, eliminate_unknown=[], ar
 
     if array_order:
         pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
+
+    pd_left[CONFIG.RATE_COLUMN[-1]] = pd_left.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
+
     return pd_left
 
 
@@ -546,6 +541,9 @@ def answer_major_value_rate(data, subject, eliminate_unknown=[], array_order=[],
 
     if array_order:
         pd_left.sort_values(array_order, ascending=array_asc, inplace=True)
+
+    pd_left[CONFIG.RATE_COLUMN[-1]] = pd_left.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
+
     return pd_left
 
 
@@ -616,6 +614,8 @@ def answer_period(data, subject, start, end, step):
                               CONFIG.RATE_COLUMN[1]: period_counts.values})
     pd_period[CONFIG.RATE_COLUMN[-1]] = (pd_period[CONFIG.RATE_COLUMN[1]] / counts * 100).round(2)
     pd_period[CONFIG.RATE_COLUMN[2]] = counts
+
+    pd_period[CONFIG.RATE_COLUMN[-1]] = pd_period.loc[:,CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
 
     return pd_period
 
@@ -701,8 +701,10 @@ def answer_five_rate(data, subject, measure_type):
 
     pd_five_rate['均值'] = (alpha_x / pd_five_rate['答题总人数']).round(decimals=2)
 
-    # pd_five_rate['均值'] = pd_five_rate['均值'].map(lambda x: '%.2f' % x)
     pd_five_rate.drop('measure_score', axis='columns', inplace=True)
+
+    pd_five_rate[CONFIG.RATE_COLUMN[-1]] = pd_five_rate.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
+    pd_five_rate[measure_name] = pd_five_rate.loc[:,measure_name].map(lambda x: '%.2f%%' % x)
 
     return pd_five_rate
 
@@ -749,7 +751,8 @@ def answer_five_rate_single_grp(data, subject, grp, measure_type):
     pd_left_mean.rename(columns={'mean': '均值'}, inplace=True)
     pd_left_mean.drop('measure_score', axis='columns', inplace=True)
     pd_left_mean.drop('measure_score_y', axis='columns', inplace=True)
-
+    pd_left_mean[CONFIG.RATE_COLUMN[-1]] = pd_left_mean.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
+    pd_left_mean[measure_name] = pd_left_mean.loc[:, measure_name].map(lambda x: '%.2f%%' % x)
     return pd_left_mean
 
 
@@ -796,5 +799,6 @@ def answer_five_rate_major_grp(data, subject, measure_type):
     pd_left_mean.rename(columns={'mean': '均值'}, inplace=True)
     pd_left_mean.drop('measure_score', axis='columns', inplace=True)
     pd_left_mean.drop('measure_score_y', axis='columns', inplace=True)
-
+    pd_left_mean[CONFIG.RATE_COLUMN[-1]] = pd_left_mean.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
+    pd_left_mean[measure_name] = pd_left_mean.loc[:, measure_name].map(lambda x: '%.2f%%' % x)
     return pd_left_mean
