@@ -64,3 +64,106 @@
     further.evelution_practice_report(data, CONFIG.REPORT_FOLDER + '对实践教学的评价.xlsx')
     further.evelution_lesson_report(data, CONFIG.REPORT_FOLDER + '对课堂教学的评价.xlsx')
     further.evelution_teach_report(data, CONFIG.REPORT_FOLDER + '对任课教师的评价.xlsx')
+
+        demension = 'B5-B'
+
+    df_indurstry = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
+    df_indurstry.loc[:,col_name]=dict_where.get(CONFIG.DICT_KEY[1])
+    df_indurstry = df_indurstry.groupby(col_name, as_index=False).head(5)
+    df_combine = formulas.single_row_combine(df_indurstry,col_name, combin_name='行业')
+
+    # 单位类型
+    demension = 'B1'
+    df_male_indurstry_type = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
+    df_indurstry.loc[:, col_name] = dict_where.get(CONFIG.DICT_KEY[1])
+    df_indurstry = df_indurstry.groupby(col_name, as_index=False).head(5)
+    df_combine = formulas.single_row_combine(df_indurstry, col_name, combin_name='行业')
+    # 就业省
+    demension = 'B3-A'
+    df_male_region = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
+
+    # 就业职业
+    demension = 'B4-B'
+    df_male_job = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
+
+    df_concat = pd.concat([df_male_indurstry, df_male_indurstry_type,
+                           df_male_region, df_male_job], axis=1)
+    dict_where1 = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: CONFIG.GENDER[0]}
+    dict_where2 = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: CONFIG.GENDER[1]}
+
+    df_emp_feature1 = special_employee_featured(data, dict_where1)
+    df_emp_feature1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_emp_feature2 = special_employee_featured(data, dict_where2)
+    df_emp_feature2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_emp_feature = special_employee_featured(data)
+    df_emp_feature['条件'] = CONFIG.TOTAL_COLUMN
+
+    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
+
+    df_emp_competitive1 = special_employee_competitive(data, dict_where1)
+    df_emp_competitive1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_emp_competitive2 = special_employee_competitive(data, dict_where2)
+    df_emp_competitive2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_emp_competitive = special_employee_competitive(data)
+    df_emp_competitive['条件'] = CONFIG.TOTAL_COLUMN
+
+    df_concat = pd.concat([df_emp_competitive1, df_emp_competitive2, df_emp_competitive])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '就业竞争力')
+
+    df_lesson1 = special_lesson(data, dict_where1)
+    df_lesson1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_lesson2 = special_lesson(data, dict_where2)
+    df_lesson2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_lesson = special_lesson(data)
+    df_lesson['条件'] = CONFIG.TOTAL_COLUMN
+    df_concat = pd.concat([df_lesson1, df_lesson2, df_lesson])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '就业课堂教学')
+
+    df_practice1 = special_practice(data, dict_where1)
+    df_practice1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_practice2 = special_practice(data, dict_where2)
+    df_practice2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_practice = special_practice(data)
+    df_practice['条件'] = CONFIG.TOTAL_COLUMN
+    df_concat = pd.concat([df_practice1, df_practice2, df_practice])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '实践教学')
+
+    df_teacher1 = special_teacher(data, dict_where1)
+    df_teacher1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_teacher2 = special_teacher(data, dict_where2)
+    df_teacher2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_teacher = special_teacher(data)
+    df_teacher['条件'] = CONFIG.TOTAL_COLUMN
+    df_concat = pd.concat([df_teacher1, df_teacher2, df_teacher])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '教师评价')
+
+    df_school1 = special_school(data, dict_where1)
+    df_school1['条件'] = dict_where1[CONFIG.DICT_KEY[1]]
+    df_school2 = special_school(data, dict_where2)
+    df_school2['条件'] = dict_where2[CONFIG.DICT_KEY[1]]
+    df_school = special_school(data)
+    df_school['条件'] = CONFIG.TOTAL_COLUMN
+    df_concat = pd.concat([df_school1, df_school2, df_school])
+    excelUtil.writeExcel(df_concat, filePath, suffix + '母校总和评价')
+
+    return
+
+
+# 被formulas answer_rate替代
+def answer_value_rate(data, subject, eliminate_unknown=[]):
+    '''各答案占比'''
+    count = Util.answer_count(data, subject);
+    pd_value_count = Util.answer_val_count(data, subject)
+    pd_result = pd.DataFrame({'答案': pd_value_count.index,
+                              '回答此答案人数': pd_value_count.values})
+
+    if not eliminate_unknown:
+        # 为空无需剔除
+        pd_result['答题总人数'] = count
+    else:
+        unknown_num = Util.answer_of_subject_count(data, subject, eliminate_unknown[0])
+        pd_result['答题总人数'] = count - unknown_num
+    pd_result['比例'] = (pd_result['回答此答案人数'] / pd_result['答题总人数'] * 100).round(decimals=2)
+
+    return pd_result

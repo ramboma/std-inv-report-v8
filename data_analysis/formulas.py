@@ -38,7 +38,7 @@ def answer_rate_condition(data, subject, dict_cond={}, array_order=[],
     AnswerRate 答案占比 支持条件、排序、top
     ****此公式包含默认的前提：A2=在国内工作
     :param data: 数据
-    :param dict_cond: 条件 {'column':'column_name','cond':'cond_val'}
+    :param dict_cond: 条件 {'column':'column_name','cond':'cond_val','oper':'..'}
     :param array_order: 排序
     :param array_asc: 排序方式，长度必须和排序长度相同
     :param top: top值
@@ -56,7 +56,12 @@ def answer_rate_condition(data, subject, dict_cond={}, array_order=[],
         df_data = df_primise
     else:
         col_cond = str(dict_cond[CONFIG.DICT_KEY[0]])
-        df_data = df_primise[df_primise[col_cond] == dict_cond[CONFIG.DICT_KEY[1]]]
+        val = str(dict_cond[CONFIG.DICT_KEY[1]])
+        oper = dict_cond[CONFIG.DICT_KEY[2]]
+        if oper == CONFIG.OPER[0]:
+            df_data = df_primise[df_primise[col_cond] == val]
+        elif oper == CONFIG.OPER[1]:
+            df_data = df_primise[df_primise[col_cond] != val]
 
     df_result = answer_rate(df_data, subject)
 
@@ -231,7 +236,7 @@ def college_rate_pivot(df_data, array_focus=[], grp_subject=CONFIG.BASE_COLUMN[0
         return df_data
 
     # 默认为按学院分组 列名为学院，由于五维占比有按其他分组条件分组，则列名为分组
-    if grp_subject==CONFIG.BASE_COLUMN[0]:
+    if grp_subject == CONFIG.BASE_COLUMN[0]:
         grp_name = CONFIG.GROUP_COLUMN[0]
     else:
         grp_name = CONFIG.GROUP_COLUMN[-1]
@@ -295,6 +300,7 @@ def major_rate_pivot(df_data, array_focus=[]):
 
     return df_t
 
+
 def major_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
     if df_data.empty:
         return df_data
@@ -350,9 +356,36 @@ def college_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_nam
     return df_result
 
 
+def single_row_combine(df_data, grp_column, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
+    if df_data.empty:
+        return df_data
+
+    # 非合并列 学院、答题总人数
+    ls_focus = array_focus.copy()
+    ls_focus.append(grp_column)
+    df_summary = df_data.loc[:, ls_focus]
+    df_duplicate = df_summary.drop_duplicates()
+
+    # 多列合并单列
+    df_combine = df_data.loc[:,
+                 [grp_column, CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + df_combine[
+        CONFIG.RATE_COLUMN[-1]].astype(float).astype(str) + '%)'
+    df_combined = df_combine.loc[:, [grp_column, 'answer_rate']]
+    df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
+    df_row_combine = df_combined.groupby(grp_column,
+                                         as_index=False).aggregate(
+        lambda x: list(x))
+    print(df_row_combine)
+    # 转置合并
+    df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=grp_column)
+    df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
+    return df_result
+
+
 ##################公式部分
 
-def answer_rate(data, subject, answer):
+def answer_rate_one(data, subject, answer):
     '''某一题某个答案总体占比'''
     count = Util.answer_count(data, subject);
     answer_count = Util.answer_of_subject_count(data, subject, answer)
@@ -362,25 +395,6 @@ def answer_rate(data, subject, answer):
                        '答题总人数': [count],
                        '比例': [rate]})
     return df
-
-
-# 被formulas answer_rate替代
-def answer_value_rate(data, subject, eliminate_unknown=[]):
-    '''各答案占比'''
-    count = Util.answer_count(data, subject);
-    pd_value_count = Util.answer_val_count(data, subject)
-    pd_result = pd.DataFrame({'答案': pd_value_count.index,
-                              '回答此答案人数': pd_value_count.values})
-
-    if not eliminate_unknown:
-        # 为空无需剔除
-        pd_result['答题总人数'] = count
-    else:
-        unknown_num = Util.answer_of_subject_count(data, subject, eliminate_unknown[0])
-        pd_result['答题总人数'] = count - unknown_num
-    pd_result['比例'] = (pd_result['回答此答案人数'] / pd_result['答题总人数'] * 100).round(decimals=2)
-
-    return pd_result
 
 
 def answer_college_value_rate(data, subject, eliminate_unknown=[], array_order=[], array_asc=[]):
@@ -393,7 +407,7 @@ def answer_college_value_rate(data, subject, eliminate_unknown=[], array_order=[
     '''
     pd_count = Util.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject], [CONFIG.BASE_COLUMN[0]])
     pd_value_count = Util.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject],
-                                                 [CONFIG.BASE_COLUMN[0], subject])
+                                           [CONFIG.BASE_COLUMN[0], subject])
 
     pd_left = pd.merge(pd_value_count, pd_count, on=CONFIG.BASE_COLUMN[0], how='left')
     # 结构重命名：'学院','答案', '回答此答案人数', '答题总人数'
@@ -437,7 +451,7 @@ def answer_single_value_rate(data, subject, single_grp, eliminate_unknown=[], ar
     '''
     pd_count = Util.answer_grp_count(data, [single_grp, subject], [single_grp])
     pd_value_count = Util.answer_grp_count(data, [single_grp, subject],
-                                                 [single_grp, subject])
+                                           [single_grp, subject])
 
     pd_left = pd.merge(pd_value_count, pd_count, on=single_grp, how='left')
     # 结构重命名：'分组','答案', '回答此答案人数', '答题总人数'
@@ -478,11 +492,11 @@ def answer_major_value_rate(data, subject, eliminate_unknown=[], array_order=[],
     :return:
     '''
     pd_count = Util.answer_grp_count(data,
-                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
-                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]])
+                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
+                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]])
     pd_value_count = Util.answer_grp_count(data,
-                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
-                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject])
+                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
+                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject])
     pd_left = pd.merge(pd_value_count, pd_count,
                        on=[CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                        how='left')
@@ -581,7 +595,7 @@ def answer_period(data, subject, start, end, step):
     pd_period = pd.DataFrame({CONFIG.RATE_COLUMN[0]: period_counts.index,
                               CONFIG.RATE_COLUMN[1]: period_counts.values})
     pd_period[CONFIG.RATE_COLUMN[-1]] = (pd_period[CONFIG.RATE_COLUMN[1]] / counts * 100).round(2)
-    pd_period[CONFIG.RATE_COLUMN[2]]=counts
+    pd_period[CONFIG.RATE_COLUMN[2]] = counts
 
     return pd_period
 
@@ -646,7 +660,7 @@ def parse_measure_score(measure_type):
 def answer_five_rate(data, subject, measure_type):
     '''某题五维占比'''
     # step1：各个答案占比(无法评价已被清理)
-    pd_five_rate = answer_value_rate(data, subject)
+    pd_five_rate = answer_rate(data, subject)
 
     pd_five_rate['比例'] = (pd_five_rate['回答此答案人数'] / pd_five_rate['答题总人数'] * 100).round(2)
 
@@ -676,7 +690,7 @@ def answer_five_rate(data, subject, measure_type):
 def answer_five_rate_single_grp(data, subject, grp, measure_type):
     '''某题单维分组的五维占比'''
 
-    if grp==CONFIG.BASE_COLUMN[0]:
+    if grp == CONFIG.BASE_COLUMN[0]:
         grp_name = CONFIG.GROUP_COLUMN[0]
     else:
         grp_name = CONFIG.GROUP_COLUMN[-1]

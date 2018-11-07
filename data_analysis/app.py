@@ -14,7 +14,12 @@ import pandas as pd
 def main(file):
     data = excelUtil.read_excel(file)
 
-    further.employee_region_report(data, CONFIG.REPORT_FOLDER + '就业地区分布.xlsx')
+    #further.special_gender_report(data, CONFIG.REPORT_FOLDER + '不同性别.xlsx')
+    further.special_national_report(data, CONFIG.REPORT_FOLDER + '汉族少数名族.xlsx')
+    further.special_education_report(data, CONFIG.REPORT_FOLDER + '教育行业和非教育行业.xlsx')
+    further.special_origin_province_report(data, CONFIG.REPORT_FOLDER + '省内省外生源.xlsx')
+    further.special_indurstry_province_report(data, CONFIG.REPORT_FOLDER + '省内省外就业.xlsx')
+    #further.special_national_report(data, CONFIG.REPORT_FOLDER + '汉族少数名族.xlsx')
     # 就业竞争力
     #further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
 
