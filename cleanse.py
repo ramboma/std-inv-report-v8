@@ -8,7 +8,7 @@ __author__ = 'Gary.Z'
 import time
 import click
 
-from data_cleansing.runner import *
+from data_cleansing.cleanser_runner import *
 
 logger = get_logger(__name__)
 
