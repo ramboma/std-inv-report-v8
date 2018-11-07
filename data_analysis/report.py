@@ -600,37 +600,6 @@ def evelution_teach_report(data, file):
     return
 
 
-def evelution_H4_ALL_report(data, file):
-    '''H4组合'''
-    subject = 'H4'
-    sub_column = answerUtil.multi_columns(data, subject)
-
-    ls_column = list(CONFIG.MEAN_COLUMN)
-    ls_column = ls_column.append('题目')
-    df_init1 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init2 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-    df_init3 = pd.DataFrame(columns=ls_column)  # 创建一个空的dataframe
-
-    for col in sub_column:
-        df_mean = formulas.answer_five_rate(data, col, CONFIG.ANSWER_TYPE_SATISFY)
-        df_mean['题目'] = col
-        df_init1 = pd.concat([df_init1, df_mean])
-
-        df_grp = formulas.answer_five_rate_single_grp(data, col, '_10', CONFIG.ANSWER_TYPE_SATISFY)
-        df_grp['题目'] = col
-        df_init2 = pd.concat([df_init2, df_grp])
-
-        df_major = formulas.answer_five_rate_major_grp(data, col, CONFIG.ANSWER_TYPE_SATISFY)
-        df_major['题目'] = col
-        df_init3 = pd.concat([df_init3, df_major])
-
-    excelUtil.writeExcel(df_init1, file, 'H4组合评价')
-    excelUtil.writeExcel(df_init2, file, '学院H4组合评价')
-    excelUtil.writeExcel(df_init3, file, '专业H4组合评价')
-
-    return
-
-
 def evelution_H4_E_report(data, file):
     '''母校任课教师总体报告'''
     subject = 'H4-E'
@@ -780,7 +749,7 @@ def report_combine_value_five_rate(data, array_subject, metric_type, metric_name
     return df_init
 
 
-def report_combine_level(data, array_subject, metric_type, metric_name, dict_subject, grp_level):
+def report_combine_level(data, array_subject, metric_type, dict_subject, grp_level):
     '''组合题 三维 拼接'''
     if data.empty:
         return data
@@ -847,14 +816,31 @@ def job_meet_report(data, filePath):
 
 def job_satisfy_report(data, filePath):
     '''职业满意度'''
-
     subject = 'B7'
-    measureType = CONFIG.ANSWER_TYPE_SATISFY
-
+    measure_type = CONFIG.ANSWER_TYPE_SATISFY
+    measure_name=formulas.parse_measure_name(measure_type)
     array_subjects=[subject+'-'+str(sub) for sub in range(1,5)]
+
+    # 单独产生总体职业满意度、包含学院、专业
+    report_five_rate(data,array_subjects[0],measure_type,CONFIG.JOB_SATISFY_SUBJECT[array_subjects[0]],filePath)
+
+    # 行拼接所以选项的满意度，报表格式不同
+    df_init=pd.DataFrame()
     for sub in array_subjects:
         sheetName=CONFIG.JOB_SATISFY_SUBJECT[sub]
-        report_five_rate(data, sub, measureType, sheetName, filePath)
+        df_five=formulas.answer_five_rate(data, sub, measure_type)
+        # 关注后三项
+        df_three=df_five.loc[:,[measure_name,CONFIG.MEAN_COLUMN[-1],CONFIG.MEAN_COLUMN[2]]]
+        df_three.insert(0,'毕业生对工作各方面的满意情况',sheetName)
+        df_three.drop_duplicates(inplace=True)
+        df_init=pd.concat([df_init,df_three], sort=False)
+
+    excelUtil.writeExcel(df_init, filePath, '毕业生对工作各方面的满意情况')
+    df_college=report_combine_level(data,array_subjects,measure_type,CONFIG.JOB_SATISFY_SUBJECT,1)
+    excelUtil.writeExcelWithIndex(df_college, filePath, '各学院对工作各方面的满意情况')
+    df_major=report_combine_level(data,array_subjects,measure_type,CONFIG.JOB_SATISFY_SUBJECT,2)
+    excelUtil.writeExcelWithIndex(df_major, filePath, '各专业对工作各方面的满意情况')
+
 
 # ====特殊人群
 

@@ -13,7 +13,7 @@
     further.job_meet_report(data, CONFIG.REPORT_FOLDER + '职业期待吻合度.xlsx')
 
     # 完成部分行专列
-    # further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
+    further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
     further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
 
     further.income_report(data, CONFIG.REPORT_FOLDER + '月均收入.xlsx')
@@ -56,27 +56,6 @@
     further.evelution_practice_report(data, CONFIG.REPORT_FOLDER + '对实践教学的评价.xlsx')
     further.evelution_lesson_report(data, CONFIG.REPORT_FOLDER + '对课堂教学的评价.xlsx')
     further.evelution_teach_report(data, CONFIG.REPORT_FOLDER + '对任课教师的评价.xlsx')
-
-        demension = 'B5-B'
-
-    df_indurstry = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
-    df_indurstry.loc[:,col_name]=dict_where.get(CONFIG.DICT_KEY[1])
-    df_indurstry = df_indurstry.groupby(col_name, as_index=False).head(5)
-    df_combine = formulas.single_row_combine(df_indurstry,col_name, combin_name='行业')
-
-    # 单位类型
-    demension = 'B1'
-    df_male_indurstry_type = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
-    df_indurstry.loc[:, col_name] = dict_where.get(CONFIG.DICT_KEY[1])
-    df_indurstry = df_indurstry.groupby(col_name, as_index=False).head(5)
-    df_combine = formulas.single_row_combine(df_indurstry, col_name, combin_name='行业')
-    # 就业省
-    demension = 'B3-A'
-    df_male_region = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
-
-    # 就业职业
-    demension = 'B4-B'
-    df_male_job = formulas.answer_rate_condition(data, demension, dict_where, ['比例'], [0], 5)
 
     # 特殊人群
     further.special_gender_report(data, CONFIG.REPORT_FOLDER + '不同性别.xlsx')
