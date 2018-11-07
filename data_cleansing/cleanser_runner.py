@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""runner.py"""
+"""cleanser_runner.py"""
 
 __author__ = 'Gary.Z'
 
@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 #         self.setDaemon(True)
 #         if thread_name is not None:
 #             self.setName(thread_name)
-class CleansingBackgroundExecutor:
+class DataCleanserRunner:
     def __init__(self, input_file, output_file):
         self.__input_file = input_file
         self.__output_file = output_file
@@ -130,7 +130,7 @@ class CleansingBackgroundExecutor:
 def run(input_file, degree, tag, setting_groups, trace_mode):
     for setting in setting_groups:
         # thread_name = get_thread_name(setting['internal'], setting['analysis'])
-        executor = CleansingBackgroundExecutor(input_file, setting['output_file'])
+        executor = DataCleanserRunner(input_file, setting['output_file'])
         if degree is not None:
             executor.degree_filter = degree
         executor.with_rule_2_2 = setting['internal']

@@ -11,7 +11,7 @@ import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from data_cleansing.runner import *
+from data_cleansing.cleanser_runner import *
 
 logger = get_logger(__name__)
 
