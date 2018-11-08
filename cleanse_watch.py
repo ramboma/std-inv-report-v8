@@ -8,6 +8,7 @@ __author__ = 'Gary.Z'
 import click
 import time
 import shutil
+import portalocker
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -39,22 +40,24 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         #
         # what = 'directory' if event.is_directory else 'file'
         # logging.info("Created %s: %s", what, event.src_path)
-        file_locked = True
-        wait_second = 1
-        count_down_max_times = 60
-        count_down = count_down_max_times
-        while file_locked and count_down > 0:
-            try:
-                with open(event.src_path, 'w'):
-                    file_locked = False
-            except Exception as e:
-                logger.debug(e)
-                logger.info("waiting for file writing complete")
-                time.sleep(wait_second)
-            finally:
-                count_down -= 1
-        if file_locked:
-            raise Exception('file is locked and exceeded waiting time limit: {} secs'.format(wait_second * count_down_max_times))
+        # file_locked = True
+        # wait_second = 1
+        # count_down_max_times = 60
+        # count_down = count_down_max_times
+        # while file_locked and count_down > 0:
+        #     try:
+        #         with open(event.src_path, 'r') as f:
+        #             portalocker.lock(f, portalocker.LOCK_EX)
+        #             portalocker.unlock(f)
+        #             file_locked = False
+        #     except Exception as e:
+        #         logger.debug(e)
+        #         logger.info("waiting for file writing complete")
+        #         time.sleep(wait_second)
+        #     finally:
+        #         count_down -= 1
+        # if file_locked:
+        #     raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(wait_second * count_down_max_times))
         filename = os.path.basename(event.src_path)
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
@@ -77,17 +80,34 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         pass
 
 
+def try_move_file(src, dst, max_retry=20, retry_interval=3):
+        success = False
+        retry_count = max_retry
+        while (not success) and retry_count > 0:
+            try:
+                shutil.move(src, dst)
+                success = True
+            except Exception as e:
+                logger.debug(e)
+                logger.info("waiting for file lock release")
+                time.sleep(retry_interval)
+            finally:
+                retry_count -= 1
+        if not success:
+            raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(retry_interval * max_retry))
+
+
 def batch_cleansing(input_file, output_folder, degree, trace_mode):
+    filename = os.path.basename(input_file)
+    name, ext = os.path.splitext(filename)
+
+    backup_file = os.path.join(output_folder, filename)
+    try_move_file(input_file, backup_file)
+    input_file = backup_file
+
+    dirpath = output_folder
+
     try:
-        filename = os.path.basename(input_file)
-        name, ext = os.path.splitext(filename)
-
-        backup_file = os.path.join(output_folder, filename)
-        shutil.move(input_file, backup_file)
-        input_file = backup_file
-
-        dirpath = output_folder
-
         tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
 
         setting_groups = []
