@@ -7,6 +7,7 @@ __author__ = 'Gary.Z'
 
 import os
 import threading
+import time
 import shutil
 from tempfile import NamedTemporaryFile
 
@@ -134,6 +135,7 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
 
         logger.info('writing output file {}'.format(self._output_file))
         wb.save(self._output_file)
+        wb.close()
 
         self._log_tailer()
 
@@ -144,11 +146,13 @@ class DataCleanserStreamRunner(DataCleanserRunner):
     def __init__(self, input_file, output_file):
         super().__init__(input_file, output_file)
         self.__q2c_mapping = {}
+        self.__max_column = 0
 
     def run_part_1(self, tmp_file, salary_value_collector):
         logger.info('loading input file \'{}\''.format(self._input_file))
         in_wb = xl.load_workbook(self._input_file, read_only=True)
         in_ws = in_wb.worksheets[0]
+        self.__max_column = in_ws.max_column
 
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
@@ -173,7 +177,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         for row in in_ws.rows:
             idx += 1
 
-            value_list = self._copy_readonly_cells_to_value_list(row)
+            value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
 
             filter_chain.reset_state()
             filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
@@ -187,10 +191,15 @@ class DataCleanserStreamRunner(DataCleanserRunner):
 
             if idx % 100 == 0:
                 logger.info('>> {} rows processed'.format(idx))
+
+            # if idx > 100:
+            #     break
+
         logger.info('>> {} rows processed in total'.format(idx))
 
         logger.info('writing to temp file {}'.format(tmp_file))
         out_wb.save(tmp_file)
+        out_wb.close()
         in_wb.close()
 
     def run_part_2(self, tmp_file, salary_value_collector):
@@ -202,26 +211,32 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         out_ws = out_wb.create_sheet()
 
         filter_chain = FilterChain()
-        filter_chain.add_filter(FilterRinseUnusualSalaryValues(salary_value_collector))
+        salary_filter = FilterRinseUnusualSalaryValues(salary_value_collector)
+        filter_chain.add_filter(salary_filter)
+        logger.info(salary_filter.__str__())
+        logger.info(salary_value_collector.__str__())
 
         idx = 0
         for row in in_ws.rows:
             idx += 1
 
-            if idx <= HEADER_ROW_INDEX:
-                continue
+            value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
 
-            value_list = self._copy_readonly_cells_to_value_list(row)
+            if idx > HEADER_ROW_INDEX:
+                filter_chain.reset_state()
+                filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
 
             if value_list.__len__() > 0:
                 out_ws.append(value_list)
 
             if idx % 100 == 0:
                 logger.info('>> {} rows processed'.format(idx))
+
         logger.info('>> {} rows processed in total'.format(idx))
 
         logger.info('writing output file {}'.format(self._output_file))
         out_wb.save(self._output_file)
+        out_wb.close()
         in_wb.close()
 
     @clocking
@@ -233,12 +248,9 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         temp_file = self._output_file + '.tmp'
         with NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
             temp_file = tmp.name
-            pass
 
         self.run_part_1(temp_file, salary_value_collector)
-
         salary_value_collector.lock_down()
-
         self.run_part_2(temp_file, salary_value_collector)
 
         os.remove(temp_file)
@@ -248,16 +260,18 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         return
 
     @staticmethod
-    def _copy_readonly_cells_to_value_list(row):
-        list = []
-        for cell in row:
-            if cell.value == '':
-                value = None
+    def _copy_readonly_cells_to_value_list(row, expected_columns=231):
+        value_list = []
+        for i in range(0, expected_columns):
+            if i < row.__len__():
+                if row[i].value == '':
+                    value = None
+                else:
+                    value = row[i].value
             else:
-                value = cell.value
-            # list.append(cell.value)
-            list.append(value)
-        return list
+                value = None
+            value_list.append(value)
+        return value_list
 
 
 @clocking
@@ -277,6 +291,7 @@ def run_single_thread(input_file, degree, tag, setting_groups, trace_mode):
 @clocking
 def run_multi_thread(input_file, degree, tag, setting_groups, trace_mode):
 
+    runners = []
     for setting in setting_groups:
 
         runner = DataCleanserStreamRunner(input_file, setting['output_file'])
@@ -291,7 +306,13 @@ def run_multi_thread(input_file, degree, tag, setting_groups, trace_mode):
         runner.sheet_tag = tag
         runner.trace_mode = trace_mode
 
+        runner.setDaemon(True)
+        runners.append(runner)
+
+    for runner in runners:
         runner.start()
+    for runner in runners:
+        runner.join()
 
 
 def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None):

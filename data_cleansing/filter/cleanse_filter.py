@@ -192,25 +192,29 @@ class FilterRinseUnusualSalaryValues(Filter):
         self.__salary_value_collector = salary_value_collector
         self.__filter_column = filter_column
 
-    @clocking
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         # logger.info(self.__str__())
 
         lower_limit = self.__salary_value_collector.get_lower_limit()
         higher_limit = self.__salary_value_collector.get_higher_limit()
         mean = self.__salary_value_collector.get_mean()
-        stdev = self.__salary_value_collector.get_stdev()
-        stdev_4 = stdev * 4
+        # stdev = self.__salary_value_collector.get_stdev()
+        stdev_4 = self.__salary_value_collector.get_stdev_4()
 
         column_index = q2c_mapping[self.__filter_column][0]
-        cell_value = incoming['row'][column_index].value
+        cell_value = outgoing[column_index]
         if cell_value is not None and cell_value != '':
             salary_value = int(cell_value)
             if salary_value < lower_limit:
+                logger.debug('>> salary {} rinsed by lower limit: {}'.format(outgoing[column_index], lower_limit))
                 outgoing[column_index] = None
             if salary_value >= higher_limit:
+                logger.debug('>> salary {} rinsed by higher limit: {}, top_n = {}'
+                             .format(outgoing[column_index], higher_limit, self.__salary_value_collector.get_top_n()))
                 outgoing[column_index] = None
             if abs(salary_value - mean) > stdev_4:
+                logger.debug('>> salary {} rinsed by ABS(diff of MEAN) = {} > 4 * STDEV = {}'
+                             .format(outgoing[column_index], abs(salary_value - mean), stdev_4))
                 outgoing[column_index] = None
 
         chain.do_filter(incoming, outgoing, q2c_mapping)
