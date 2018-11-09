@@ -6,193 +6,292 @@
 __author__ = 'Gary.Z'
 
 import os
-# import threading
+import threading
+import shutil
+from tempfile import NamedTemporaryFile
 
 from data_cleansing.data_cleanser import *
 from data_cleansing.rule.rules_assembler import *
+from data_cleansing.filter.filter_chain import *
+from data_cleansing.filter.cleanse_filter import *
+from data_cleansing.salary_cleanser import *
 
 logger = get_logger(__name__)
 
 
-# class CleansingBackgroundExecutor(threading.Thread):
-#     def __init__(self, input_file, output_file, thread_name=None):
-#         threading.Thread.__init__(self)
-#         self.setDaemon(True)
-#         if thread_name is not None:
-#             self.setName(thread_name)
-class DataCleanserRunner:
+class DataCleanserRunner(threading.Thread):
     def __init__(self, input_file, output_file):
-        self.__input_file = input_file
-        self.__output_file = output_file
-        self.__degree_filter = None
-        self.__with_rule_2_2 = False
-        self.__with_rule_7 = False
-        self.__sheet_tag = None
-        self.__trace_mode = False
+        threading.Thread.__init__(self)
+        self._input_file = input_file
+        self._output_file = output_file
+        self._degree_filter = None
+        self._with_rule_2_2 = False
+        self._with_rule_7 = False
+        self._sheet_tag = None
+        self._trace_mode = False
 
     @property
     def with_rule_2_2(self):
-        return self.__with_rule_2_2
+        return self._with_rule_2_2
 
     @with_rule_2_2.setter
     def with_rule_2_2(self, with_rule_2_2):
-        self.__with_rule_2_2 = with_rule_2_2
+        self._with_rule_2_2 = with_rule_2_2
 
     @property
     def with_rule_7(self):
-        return self.__with_rule_7
+        return self._with_rule_7
 
     @with_rule_7.setter
     def with_rule_7(self, with_rule_7):
-        self.__with_rule_7 = with_rule_7
+        self._with_rule_7 = with_rule_7
 
     @property
     def trace_mode(self):
-        return self.__trace_mode
+        return self._trace_mode
 
     @trace_mode.setter
     def trace_mode(self, trace_mode):
-        self.__trace_mode = trace_mode
+        self._trace_mode = trace_mode
 
     @property
     def degree_filter(self):
-        return self.__degree_filter
+        return self._degree_filter
 
     @degree_filter.setter
     def degree_filter(self, degree_filter):
-        self.__degree_filter = degree_filter
+        self._degree_filter = degree_filter
 
     @property
     def sheet_tag(self):
-        return self.__sheet_tag
+        return self._sheet_tag
 
     @sheet_tag.setter
     def sheet_tag(self, sheet_tag):
-        self.__sheet_tag = sheet_tag
+        self._sheet_tag = sheet_tag
 
-    @clocking
     def run(self):
+        raise Exception('not implement')
+
+    def _log_header(self):
         logger.info('')
         logger.info('############################## Cleansing start ##################################')
-        logger.info('input file: \'{}\''.format(self.__input_file))
-        logger.info('output file: \'{}\''.format(self.__output_file))
-        if self.__degree_filter is not None:
+        logger.info('input file: \'{}\''.format(self._input_file))
+        logger.info('output file: \'{}\''.format(self._output_file))
+        if self._degree_filter is not None:
             logger.info('with degree filter: {}'.format(self.degree_filter))
-        logger.info('with rule 2.2: {}'.format(self.__with_rule_2_2))
-        logger.info('with rule 8: {}'.format(self.__with_rule_7))
-        logger.info('trace mode: {}'.format(self.__trace_mode))
+        logger.info('with rule 2.2: {}'.format(self._with_rule_2_2))
+        logger.info('with rule 8: {}'.format(self._with_rule_7))
+        logger.info('trace mode: {}'.format(self._trace_mode))
         logger.info('#################################################################################')
         logger.info('')
 
-        logger.info('loading input file \'{}\''.format(self.__input_file))
-        wb = xl.load_workbook(self.__input_file)
+    def _log_tailer(self):
+        logger.info('')
+        logger.info('############################## Cleansing end ##################################')
+        logger.info('')
+
+
+class DataCleanserMemoryRunner(DataCleanserRunner):
+    def __init__(self, input_file, output_file):
+        super().__init__(input_file, output_file)
+
+    @clocking
+    def run(self):
+        self._log_header()
+
+        logger.info('loading input file \'{}\''.format(self._input_file))
+        wb = xl.load_workbook(self._input_file)
         st = wb.worksheets[0]
 
         cleanser = DataCleanser(st)
-        cleanser.trace_mode = self.__trace_mode
+        cleanser.trace_mode = self._trace_mode
 
         cleanser.validate_data_dimensions()
         cleanser.remove_unnecessary_headers()
         cleanser.reset_column_names()
         cleanser.reset_emplty_values_with_na()
 
-        if self.__degree_filter is not None:
-            cleanser.filter_records_with_degree(self.__degree_filter)
+        if self._degree_filter is not None:
+            cleanser.filter_records_with_degree(self._degree_filter)
 
         rule_set_assembler = RuleSetAssembler()
         rule_ids = ['1', '2.1']
-        if self.__with_rule_2_2:
+        if self._with_rule_2_2:
             rule_ids.append('2.2')
         rule_ids.extend(['3', '4', '5', '6'])
-        if self.__with_rule_7:
+        if self._with_rule_7:
             rule_ids.append('7')
         rule_set = rule_set_assembler.assemble(rule_ids)
 
         cleanser.apply_rule_set(rule_set)
         cleanser.validate_data_dimensions()
 
-        if self.__sheet_tag is not None:
-            cleanser.set_sheet_name('cleaned_{}'.format(self.__sheet_tag))
+        if self._sheet_tag is not None:
+            cleanser.set_sheet_name('cleaned_{}'.format(self._sheet_tag))
         else:
             cleanser.set_sheet_name('cleaned')
 
-        logger.info('writing output file {}'.format(self.__output_file))
-        wb.save(self.__output_file)
+        logger.info('writing output file {}'.format(self._output_file))
+        wb.save(self._output_file)
 
-        logger.info('')
-        logger.info('############################## Cleansing end ##################################')
-        logger.info('')
+        self._log_tailer()
 
         return
 
 
+class DataCleanserStreamRunner(DataCleanserRunner):
+    def __init__(self, input_file, output_file):
+        super().__init__(input_file, output_file)
+        self.__q2c_mapping = {}
+
+    def run_part_1(self, tmp_file, salary_value_collector):
+        logger.info('loading input file \'{}\''.format(self._input_file))
+        in_wb = xl.load_workbook(self._input_file, read_only=True)
+        in_ws = in_wb.worksheets[0]
+
+        out_wb = xl.Workbook(write_only=True)
+        out_ws = out_wb.create_sheet()
+
+        filter_chain = FilterChain()
+        filter_chain.add_filter(FilterResetColumnNames())
+        filter_chain.add_filter(FilterExcludeUnnecessaryHeaders())
+        filter_chain.add_filter(FilterOnlyIncludeDegree(self.degree_filter))
+
+        filter_chain.add_filter(FilterExcludeTestRecords())
+        filter_chain.add_filter(FilterExcludeRecordWithoutA2Answer())
+        if self.with_rule_2_2:
+            filter_chain.add_filter(FilterExcludeRecordWithoutSubmitTime())
+        filter_chain.add_filter(FilterRinseIrrelevantAnswers(3, RINSE_RULE_IRRELEVANT_QUESTIONS))
+        filter_chain.add_filter(FilterRinseNcOptionValues())
+        filter_chain.add_filter(FilterRinseInvalidAnswers())
+        # missing rule 6 - salary rinse
+        if self.with_rule_7:
+            filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
+
+        idx = 0
+        for row in in_ws.rows:
+            idx += 1
+
+            value_list = self._copy_readonly_cells_to_value_list(row)
+
+            filter_chain.reset_state()
+            filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
+
+            if value_list.__len__() > 0:
+                out_ws.append(value_list)
+                if idx > HEADER_ROW_INDEX:
+                    salary_value = value_list[self.__q2c_mapping['B6'][0]]
+                    if salary_value is not None and salary_value != '':
+                        salary_value_collector.collect(int(salary_value))
+
+            if idx % 100 == 0:
+                logger.info('>> {} rows processed'.format(idx))
+        logger.info('>> {} rows processed in total'.format(idx))
+
+        logger.info('writing to temp file {}'.format(tmp_file))
+        out_wb.save(tmp_file)
+        in_wb.close()
+
+    def run_part_2(self, tmp_file, salary_value_collector):
+        logger.info('loading temp file \'{}\''.format(tmp_file))
+        in_wb = xl.load_workbook(tmp_file, read_only=True)
+        in_ws = in_wb.worksheets[0]
+
+        out_wb = xl.Workbook(write_only=True)
+        out_ws = out_wb.create_sheet()
+
+        filter_chain = FilterChain()
+        filter_chain.add_filter(FilterRinseUnusualSalaryValues(salary_value_collector))
+
+        idx = 0
+        for row in in_ws.rows:
+            idx += 1
+
+            if idx <= HEADER_ROW_INDEX:
+                continue
+
+            value_list = self._copy_readonly_cells_to_value_list(row)
+
+            if value_list.__len__() > 0:
+                out_ws.append(value_list)
+
+            if idx % 100 == 0:
+                logger.info('>> {} rows processed'.format(idx))
+        logger.info('>> {} rows processed in total'.format(idx))
+
+        logger.info('writing output file {}'.format(self._output_file))
+        out_wb.save(self._output_file)
+        in_wb.close()
+
+    @clocking
+    def run(self):
+        self._log_header()
+
+        salary_value_collector = SalaryValueCollector()
+
+        temp_file = self._output_file + '.tmp'
+        with NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
+            temp_file = tmp.name
+            pass
+
+        self.run_part_1(temp_file, salary_value_collector)
+
+        salary_value_collector.lock_down()
+
+        self.run_part_2(temp_file, salary_value_collector)
+
+        os.remove(temp_file)
+
+        self._log_tailer()
+
+        return
+
+    @staticmethod
+    def _copy_readonly_cells_to_value_list(row):
+        list = []
+        for cell in row:
+            if cell.value == '':
+                value = None
+            else:
+                value = cell.value
+            # list.append(cell.value)
+            list.append(value)
+        return list
+
+
 @clocking
-def run(input_file, degree, tag, setting_groups, trace_mode):
+def run_single_thread(input_file, degree, tag, setting_groups, trace_mode):
     for setting in setting_groups:
-        # thread_name = get_thread_name(setting['internal'], setting['analysis'])
-        executor = DataCleanserRunner(input_file, setting['output_file'])
+        runner = DataCleanserMemoryRunner(input_file, setting['output_file'])
+
         if degree is not None:
-            executor.degree_filter = degree
-        executor.with_rule_2_2 = setting['internal']
-        executor.with_rule_7 = setting['analysis']
-        executor.sheet_tag = tag
-        executor.trace_mode = trace_mode
-        executor.run()
+            runner.degree_filter = degree
+        runner.with_rule_2_2 = setting['internal']
+        runner.with_rule_7 = setting['analysis']
+        runner.sheet_tag = tag
+        runner.trace_mode = trace_mode
+        runner.run()
 
 
-# @clocking
-# def run_cleansing(input_file, output_file, degree=False, with_rule_2_2=False, with_rule_7=False, sheet_tag=None, trace_mode=False):
-#
-#     logger.info('')
-#     logger.info('############################## Cleansing start ##################################')
-#     logger.info('input file: \'{}\''.format(input_file))
-#     logger.info('output file: \'{}\''.format(output_file))
-#     logger.info('with rule 2.2: {}'.format(with_rule_2_2))
-#     logger.info('with rule 8: {}'.format(with_rule_7))
-#     logger.info('trace mode: {}'.format(trace_mode))
-#     logger.info('#################################################################################')
-#     logger.info('')
-#
-#     logger.info('loading input file \'{}\''.format(input_file))
-#     wb = xl.load_workbook(input_file)
-#     st = wb.worksheets[0]
-#
-#     cleanser = DataCleanser(st)
-#     cleanser.trace_mode = trace_mode
-#
-#     cleanser.validate_data_dimensions()
-#     cleanser.remove_unnecessary_headers()
-#     cleanser.reset_column_names()
-#     cleanser.reset_emplty_values_with_na()
-#
-#     if degree is not None and isinstance(degree, str):
-#         cleanser.filter_records_with_degree(degree)
-#
-#     rule_set_assembler = RuleSetAssembler()
-#     rule_ids = ['1', '2.1']
-#     if with_rule_2_2:
-#         rule_ids.append('2.2')
-#     rule_ids.extend(['3', '4', '5', '6'])
-#     if with_rule_7:
-#         rule_ids.append('7')
-#     rule_set = rule_set_assembler.assemble(rule_ids)
-#
-#     cleanser.apply_rule_set(rule_set)
-#     cleanser.validate_data_dimensions()
-#
-#     if sheet_tag is not None:
-#         cleanser.set_sheet_name('cleaned_{}'.format(sheet_tag))
-#     else:
-#         cleanser.set_sheet_name('cleaned')
-#
-#     logger.info('writing output file {}'.format(output_file))
-#     wb.save(output_file)
-#
-#     logger.info('')
-#     logger.info('############################## Cleansing end ##################################')
-#     logger.info('')
-#
-#     return
+@clocking
+def run_multi_thread(input_file, degree, tag, setting_groups, trace_mode):
+
+    for setting in setting_groups:
+
+        runner = DataCleanserStreamRunner(input_file, setting['output_file'])
+
+        thread_name = get_thread_name(setting['internal'], setting['analysis'])
+        runner.setName(thread_name)
+
+        if degree is not None:
+            runner.degree_filter = degree
+        runner.with_rule_2_2 = setting['internal']
+        runner.with_rule_7 = setting['analysis']
+        runner.sheet_tag = tag
+        runner.trace_mode = trace_mode
+
+        runner.start()
 
 
 def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None):

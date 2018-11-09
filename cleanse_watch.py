@@ -19,13 +19,14 @@ logger = get_logger(__name__)
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
 
-    def __init__(self, batch_cleansing_handler, output_folder, degree, trace_mode):
+    def __init__(self, batch_cleansing_handler, output_folder, degree, trace_mode, multi_thread):
         super().__init__()
 
         self.__batch_cleansing_handler = batch_cleansing_handler;
         self.__output_folder = output_folder
         self.__degree = degree
         self.__trace_mode = trace_mode
+        self.__multi_thread = multi_thread
 
     def on_moved(self, event):
         # super(LoggingEventHandler, self).on_moved(event)
@@ -62,7 +63,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
             logger.info('input file {} detected'.format(event.src_path))
-            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__degree, self.__trace_mode)
+            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__degree, self.__trace_mode, self.__multi_thread)
         pass
 
     def on_deleted(self, event):
@@ -97,7 +98,7 @@ def try_move_file(src, dst, max_retry=20, retry_interval=3):
             raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(retry_interval * max_retry))
 
 
-def batch_cleansing(input_file, output_folder, degree, trace_mode):
+def batch_cleansing(input_file, output_folder, degree, trace_mode, multi_thread):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
@@ -121,7 +122,11 @@ def batch_cleansing(input_file, output_folder, degree, trace_mode):
             # public, customer
             {'internal': False, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree)},
         ])
-        run(input_file, degree, tag, setting_groups, trace_mode)
+        if multi_thread:
+            run_multi_thread(input_file, degree, tag, setting_groups, trace_mode)
+        else:
+            run_single_thread(input_file, degree, tag, setting_groups, trace_mode)
+
     except Exception as e:
         logger.error(e, exc_info=True)
         with open(get_error_filename(dirpath, name), 'w') as f:
@@ -136,7 +141,8 @@ def batch_cleansing(input_file, output_folder, degree, trace_mode):
 @click.option('--output-folder', '-o', required=False, help='Output folder path')
 @click.option('--degree', '-d', help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-def main(input_folder, output_folder, degree, trace_mode):
+@click.option('--multi-thread', '-m', is_flag=True, type=bool, help='multi-thread mode, only make effect with -a')
+def main(input_folder, output_folder, degree, trace_mode, multi_thread):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_folder):
@@ -163,11 +169,14 @@ def main(input_folder, output_folder, degree, trace_mode):
     if trace_mode is None:
         trace_mode = False
 
+    if multi_thread is None:
+        multi_thread = False
+
     if trace_mode:
         logger.info('** TRACING MODE ENABLED **')
 
     logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
-    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, trace_mode)
+    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, trace_mode, multi_thread)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
     observer.start()
@@ -184,8 +193,8 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        # logger.error(e, exc_info=True)
-        logger.error(e)
+        logger.error(e, exc_info=True)
+        # logger.error(e)
     finally:
         pass
 

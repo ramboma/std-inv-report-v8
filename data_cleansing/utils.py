@@ -40,6 +40,62 @@ def extract_question_id_prefix(title):
         return matches.group('prefix')
 
 
+def reset_column_names(header_cells, excel_column_indexes):
+
+    # Set question-answers column headers
+    answer_column = False
+    flag1 = False
+    flag2 = False
+    for i in range(0, header_cells.__len__() - 1):
+        header_name = header_cells[i]
+
+        if not answer_column:
+            if header_name is None or header_name == '':
+                header_name = '_' + str(i + 1)
+                header_cells[i] = header_name
+                continue
+
+            if not answer_column and header_name == 'A1':
+                answer_column = True
+                if i < BASE_INFO_COLS_MIN:
+                    raise Exception("base info columns must >= 23, current: {}".format(i))
+
+        next_header_name = header_cells[i + 1]
+
+        if header_name is not None and next_header_name is None:
+            flag2 = True
+            prefix = header_name
+            option = 0
+
+        if header_name is None and next_header_name is not None:
+            flag1 = True
+
+        if flag2:
+            new_header_name = '{}-{}'.format(prefix, excel_column_indexes[option])
+            option += 1
+            header_cells[i] = new_header_name
+
+        if flag1:
+            flag1 = False
+            flag2 = False
+            prefix = ''
+            option = 1
+
+
+def build_question_to_column_mapping_v2(column_names, mapping):
+    mapping.clear()
+    idx = 0
+    for column_name in column_names:
+        prefix_name = extract_question_id_prefix(column_name)
+
+        add_item_to_list_dict(mapping, prefix_name, idx)
+        add_item_to_list_dict(mapping, column_name, idx)
+
+        idx += 1
+
+    return mapping
+
+
 def build_question_to_column_mapping(work_sheet, excel_column_indexes):
     mapping = {}
     header_cells = work_sheet[1]
