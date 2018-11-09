@@ -8,7 +8,7 @@ __author__ = 'Gary.Z'
 import click
 import time
 import shutil
-import portalocker
+# import portalocker
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
