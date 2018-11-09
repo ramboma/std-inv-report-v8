@@ -15,16 +15,7 @@ class FilterChain:
     def __init__(self):
         self.__filters = []
         self.__index = 0
-        # self.__interrupt = False
 
-    # @property
-    # def interrupt(self):
-    #     return self.__interrupt
-    #
-    # @interrupt.setter
-    # def interrupt(self, is_interrupt):
-    #     self.__interrupt = is_interrupt
-    #
     def add_filter(self, filter):
         logger.info('Add filter: {}'.format(filter.__str__()))
         self.__filters.append(filter)
@@ -41,3 +32,7 @@ class FilterChain:
     def reset_state(self):
         self.__index = 0
         # self.__interrupt = False
+
+    def counter_report(self):
+        for filter in self.__filters:
+            filter.counter_report()

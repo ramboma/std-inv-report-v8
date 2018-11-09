@@ -32,15 +32,6 @@ class DataCleanser:
         self._work_sheet.title = name
 
     @clocking
-    def validate_data_dimensions(self):
-        """rule 0: data dimension checking: row >=3 and col >= 231 """
-        logger.info('rule 0: validating data dimensions, cols: {}, rows: {}'.format(self._work_sheet.max_column, self._work_sheet.max_row))
-        if self._work_sheet.max_column < 231:
-            raise Exception("column count must >= 231")
-        if self._work_sheet.max_row < 3:
-            raise Exception("row count must >= 3")
-
-    @clocking
     def remove_unnecessary_headers(self, start_row=1, row_count=2):
         """rule 0: remove row 1~2: include question description and option description"""
         logger.info('rule 0: removing unnecessary header rows start at {}, count 2'.format(HEADER_ROW_INDEX + 1))

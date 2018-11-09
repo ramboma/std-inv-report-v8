@@ -32,6 +32,15 @@ def add_item_to_list_dict(dict, key, value):
         dict[key].append(value)
 
 
+def validate_data_dimensions(work_sheet, expect_cols=231, expect_rows=3):
+    """ata dimension checking: row >=3 and col >= 231 """
+    logger.info('validating data dimensions, cols: {}, rows: {}'.format(work_sheet.max_column, work_sheet.max_row))
+    if work_sheet.max_column < expect_cols:
+        raise Exception("column count must >= {}".format(expect_cols))
+    if work_sheet.max_row < 3:
+        raise Exception("row count must >= {}".format(expect_rows))
+
+
 def extract_question_id_prefix(title):
     matches = re.match(r'(?P<prefix>([A-Z0-9]+)(-[0-9]+)*)(-[A-Z]+)?', title)
     if matches is None:
@@ -125,11 +134,12 @@ def remove_rows_by_index_list(work_sheet, index_list, rule, func, trace_mode=Fal
         else:
             work_sheet.delete_rows(index_list[i])
     logger.info('>> {} rows removed'.format(index_list.__len__()))
-    logger.debug('>> {}'.format(index_list))
+    # logger.debug('>> {}'.format(index_list))
 
 
 def rinse_values_by_column_rowindex(work_sheet, col, index_list, rule, func, debug=False, trace_mode=False):
     _debug_info_ = []
+    counter = 0
     for i in index_list:
         coordinate = '{}{}'.format(col, i)
         if work_sheet[coordinate].value is not None:
@@ -139,8 +149,8 @@ def rinse_values_by_column_rowindex(work_sheet, col, index_list, rule, func, deb
                 add_tracing_comment(work_sheet[coordinate], rule, func)
             else:
                 work_sheet[coordinate].value = None
-            i += 1
-    logger.info('>> {} cells rinsed'.format(index_list.__len__()))
+            counter += 1
+    logger.info('>> {} cells rinsed'.format(counter))
     if debug:
         logger.debug('>> {}'.format(_debug_info_))
 

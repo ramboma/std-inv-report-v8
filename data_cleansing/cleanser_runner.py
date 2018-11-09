@@ -82,7 +82,7 @@ class DataCleanserRunner(threading.Thread):
         if self._degree_filter is not None:
             logger.info('with degree filter: {}'.format(self.degree_filter))
         logger.info('with rule 2.2: {}'.format(self._with_rule_2_2))
-        logger.info('with rule 8: {}'.format(self._with_rule_7))
+        logger.info('with rule 7: {}'.format(self._with_rule_7))
         logger.info('trace mode: {}'.format(self._trace_mode))
         logger.info('#################################################################################')
         logger.info('')
@@ -104,11 +104,11 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
         logger.info('loading input file \'{}\''.format(self._input_file))
         wb = xl.load_workbook(self._input_file)
         st = wb.worksheets[0]
+        validate_data_dimensions(st)
 
         cleanser = DataCleanser(st)
         cleanser.trace_mode = self._trace_mode
 
-        cleanser.validate_data_dimensions()
         cleanser.remove_unnecessary_headers()
         cleanser.reset_column_names()
         cleanser.reset_emplty_values_with_na()
@@ -126,7 +126,8 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
         rule_set = rule_set_assembler.assemble(rule_ids)
 
         cleanser.apply_rule_set(rule_set)
-        cleanser.validate_data_dimensions()
+
+        validate_data_dimensions(st)
 
         if self._sheet_tag is not None:
             cleanser.set_sheet_name('cleaned_{}'.format(self._sheet_tag))
@@ -152,6 +153,8 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         logger.info('loading input file \'{}\''.format(self._input_file))
         in_wb = xl.load_workbook(self._input_file, read_only=True)
         in_ws = in_wb.worksheets[0]
+        validate_data_dimensions(in_ws)
+
         self.__max_column = in_ws.max_column
 
         out_wb = xl.Workbook(write_only=True)
@@ -169,9 +172,6 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         filter_chain.add_filter(FilterRinseIrrelevantAnswers(3, RINSE_RULE_IRRELEVANT_QUESTIONS))
         filter_chain.add_filter(FilterRinseNcOptionValues())
         filter_chain.add_filter(FilterRinseInvalidAnswers())
-        # missing rule 6 - salary rinse
-        if self.with_rule_7:
-            filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
 
         idx = 0
         for row in in_ws.rows:
@@ -185,17 +185,20 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             if value_list.__len__() > 0:
                 out_ws.append(value_list)
                 if idx > HEADER_ROW_INDEX:
-                    salary_value = value_list[self.__q2c_mapping['B6'][0]]
-                    if salary_value is not None and salary_value != '':
+                    salary_index = self.__q2c_mapping['B6'][0]
+                    salary_value = value_list[salary_index]
+                    if salary_value is not None:
                         salary_value_collector.collect(int(salary_value))
 
-            if idx % 100 == 0:
+            if idx % 500 == 0:
                 logger.info('>> {} rows processed'.format(idx))
 
-            # if idx > 100:
+            # if idx > 300:
             #     break
 
         logger.info('>> {} rows processed in total'.format(idx))
+
+        filter_chain.counter_report()
 
         logger.info('writing to temp file {}'.format(tmp_file))
         out_wb.save(tmp_file)
@@ -206,6 +209,8 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         logger.info('loading temp file \'{}\''.format(tmp_file))
         in_wb = xl.load_workbook(tmp_file, read_only=True)
         in_ws = in_wb.worksheets[0]
+        in_ws.calculate_dimension(force=True)
+        validate_data_dimensions(in_ws)
 
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
@@ -213,8 +218,11 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         filter_chain = FilterChain()
         salary_filter = FilterRinseUnusualSalaryValues(salary_value_collector)
         filter_chain.add_filter(salary_filter)
+        if self.with_rule_7:
+            filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
+
         logger.info(salary_filter.__str__())
-        logger.info(salary_value_collector.__str__())
+        salary_value_collector.report()
 
         idx = 0
         for row in in_ws.rows:
@@ -229,10 +237,17 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             if value_list.__len__() > 0:
                 out_ws.append(value_list)
 
-            if idx % 100 == 0:
+            if idx % 500 == 0:
                 logger.info('>> {} rows processed'.format(idx))
 
         logger.info('>> {} rows processed in total'.format(idx))
+
+        filter_chain.counter_report()
+
+        if self._sheet_tag is not None:
+            out_ws.title = 'cleaned_{}'.format(self._sheet_tag)
+        else:
+            out_ws.title = 'cleaned'
 
         logger.info('writing output file {}'.format(self._output_file))
         out_wb.save(self._output_file)
@@ -264,10 +279,9 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         value_list = []
         for i in range(0, expected_columns):
             if i < row.__len__():
-                if row[i].value == '':
+                value = row[i].value
+                if value == '':
                     value = None
-                else:
-                    value = row[i].value
             else:
                 value = None
             value_list.append(value)

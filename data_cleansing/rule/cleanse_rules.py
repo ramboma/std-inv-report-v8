@@ -70,8 +70,9 @@ class RuleRinseIrrelevantAnswers(CleanseRule):
     @clocking
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
+        k = 0
         for rule in self.__irrelevant_question_rules:
-            logger.info('apply rule: {}'.format(rule))
+            # logger.info('apply rule: {}'.format(rule))
             question_index = question_to_column_mapping[rule[RINSE_RULE_KEY_QUESTION]][0]
             j = 0
             for q_cell in work_sheet[question_index]:
@@ -106,7 +107,9 @@ class RuleRinseIrrelevantAnswers(CleanseRule):
                                 i += 1
                             # break
                     j += i
-            logger.info('>> {} cells rinsed'.format(j))
+            # logger.info('>> {} cells rinsed'.format(j))
+            k += j
+        logger.info('>> {} cells rinsed'.format(k))
 
 
 class RuleRinseNcOptionValues(CleanseRule):
@@ -129,9 +132,9 @@ class RuleRinseNcOptionValues(CleanseRule):
         logger.info('>> {} cells rinsed'.format(i))
 
         rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping['H5-L'][0], range(HEADER_ROW_INDEX + 1, work_sheet.max_row + 1),
-                                        self.id, sys._getframe().f_code.co_name, trace_mode)
+                                        self.id, sys._getframe().f_code.co_name, False, trace_mode)
         rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping['H6-H'][0], range(HEADER_ROW_INDEX + 1, work_sheet.max_row + 1),
-                                        self.id, sys._getframe().f_code.co_name, trace_mode)
+                                        self.id, sys._getframe().f_code.co_name, False, trace_mode)
 
 
 class RuleRinseInvalidAnswers(CleanseRule):
@@ -147,9 +150,9 @@ class RuleRinseInvalidAnswers(CleanseRule):
                                                         lambda val: val in G1_OPTION_FILTER_LIST)
         # remove them
         rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping[self.__filter_column][0], rinse_list,
-                                        self.id, sys._getframe().f_code.co_name, trace_mode)
+                                        self.id, sys._getframe().f_code.co_name, False, trace_mode)
         rinse_values_by_column_rowindex(work_sheet, question_to_column_mapping[self.__filter_column][1], rinse_list,
-                                        self.id, sys._getframe().f_code.co_name, trace_mode)
+                                        self.id, sys._getframe().f_code.co_name, False, trace_mode)
 
 
 class RuleRinseUnusualSalaryValues(CleanseRule):
@@ -161,7 +164,7 @@ class RuleRinseUnusualSalaryValues(CleanseRule):
     def apply(self, work_sheet, question_to_column_mapping, trace_mode=False):
         logger.info(self.__str__())
         salary_cell_range = '{}{}:{}{}'.format(question_to_column_mapping[self.__filter_column][0], HEADER_ROW_INDEX + 1,
-                                               question_to_column_mapping[self.__filter_column][0], work_sheet.max_row);
+                                               question_to_column_mapping[self.__filter_column][0], work_sheet.max_row)
         sorted_salary_list = []
         for row in work_sheet[salary_cell_range]:
             if row[0].value is not None and row[0].value != '':

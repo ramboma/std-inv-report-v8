@@ -8,6 +8,8 @@ import numpy as np
 
 from data_cleansing.config import *
 
+logger = get_logger(__name__)
+
 
 class SalaryValueCollector:
     def __init__(self):
@@ -22,8 +24,11 @@ class SalaryValueCollector:
     def collect(self, value):
         if self.__lock_down:
             raise Exception('cannot operate on a lock-down instance')
-        if value is not None and isinstance(value, int):
-            self.__value_list.append(value)
+        if value is not None:
+            if isinstance(value, int):
+                self.__value_list.append(value)
+            else:
+                raise Exception("{} is not number".format(value))
 
     def get_lower_limit(self):
         return SALARY_FILTER_LOWER_LIMIT
@@ -31,7 +36,7 @@ class SalaryValueCollector:
     def get_higher_limit(self):
         if not self.__lock_down:
             raise Exception('cannot operate on a non-lock-down instance')
-        return self.__value_list[self.__top_n]
+        return self.__value_list[self.__top_n - 1]
 
     def get_top_n(self):
         return self.__top_n
@@ -40,14 +45,16 @@ class SalaryValueCollector:
         self.__lock_down = True
         self.__top_n = round(self.__value_list.__len__() * SALARY_FILTER_TOP_RATIO)
 
+        if self.__top_n < 1:
+            raise Exception('Unexpected top n < 1')
+
         new_list = []
         self.__value_list.sort(reverse=True)
         for value in self.__value_list:
             if value < self.get_lower_limit() or value >= self.get_higher_limit():
                 continue
             new_list.append(value)
-        self.__value_list = new_list
-        np_value_list = np.array(self.__value_list, dtype=np.int64)
+        np_value_list = np.array(new_list, dtype=np.int64)
         self.__mean = np_value_list.mean()
         self.__stdev = np_value_list.std()
         self.__stdev_4 = self.__stdev * 4
@@ -67,8 +74,18 @@ class SalaryValueCollector:
             raise Exception('cannot operate on a non-lock-down instance')
         return self.__stdev_4
 
+    def report(self):
+        logger.info('salary collector result:')
+        logger.info('>> total: {}'.format(self.__value_list.__len__()))
+        logger.info('>> lower limit: {}'.format(self.get_lower_limit()))
+        logger.info('>> top N: {}'.format(self.get_top_n()))
+        logger.info('>> higher limit: {}'.format(self.get_higher_limit()))
+        logger.info('>> mean: {}'.format(self.get_mean()))
+        logger.info('>> stdev: {}'.format(self.get_stdev()))
+        logger.info('>> stdev*4: {}'.format(self.get_stdev_4()))
+
     def __str__(self):
-        return 'salary collector result => total: {}, lower limit: {}, top N: {}, higher limit: {}, mean: {}, stdev: {}'\
-            .format(self.__value_list.__len__(), self.get_lower_limit(), self.get_top_n(), self.get_higher_limit(), self.get_mean(), self.get_stdev())
+        return 'salary collector result: total: {}, lower limit: {}, top N: {}, higher limit: {}, mean: {}, stdev: {}, stdev*4: {}'\
+            .format(self.__value_list.__len__(), self.get_lower_limit(), self.get_top_n(), self.get_higher_limit(), self.get_mean(), self.get_stdev(), self.get_stdev_4())
 
     __repr__ = __str__

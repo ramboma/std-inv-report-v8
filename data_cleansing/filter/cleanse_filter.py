@@ -22,7 +22,8 @@ class FilterResetColumnNames(Filter):
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         if incoming['idx'] <= HEADER_ROW_INDEX:
-            logger.info(self.__str__())
+            self._counter += 1
+            # logger.info(self.__str__())
             reset_column_names(outgoing, generate_excel_column_indexes(iter_cnt=2))
             build_question_to_column_mapping_v2(outgoing, q2c_mapping)
         else:
@@ -39,7 +40,8 @@ class FilterExcludeUnnecessaryHeaders(Filter):
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         if (incoming['idx'] >= HEADER_ROW_INDEX + self.__start_row) and \
                 (incoming['idx'] <= HEADER_ROW_INDEX + self.__start_row + self.__row_count - 1):
-            logger.info('{}, current row: {}'.format(self.__str__(), incoming['idx']))
+            self._counter += 1
+            # logger.info('{}, current row: {}'.format(self.__str__(), incoming['idx']))
             outgoing.clear()
         else:
             chain.do_filter(incoming, outgoing, q2c_mapping)
@@ -54,7 +56,8 @@ class FilterOnlyIncludeDegree(Filter):
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         column_index = q2c_mapping[self.__filter_column][0]
         if self.__degree is not None and incoming['row'][column_index].value != self.__degree:
-            logger.debug(self.__str__())
+            self._counter += 1
+            # logger.debug(self.__str__())
             outgoing.clear()
         else:
             chain.do_filter(incoming, outgoing, q2c_mapping)
@@ -68,7 +71,8 @@ class FilterExcludeTestRecords(Filter):
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         column_index = q2c_mapping[self.__filter_column][0]
         if incoming['row'][column_index].value in MAJOR_FILTER_LIST:
-            logger.debug(self.__str__())
+            self._counter += 1
+            # logger.debug(self.__str__())
             outgoing.clear()
         else:
             chain.do_filter(incoming, outgoing, q2c_mapping)
@@ -82,7 +86,8 @@ class FilterExcludeRecordWithoutA2Answer(Filter):
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         column_index = q2c_mapping[self.__filter_column][0]
         if incoming['row'][column_index].value is None or incoming['row'][column_index].value == '':
-            logger.debug(self.__str__())
+            self._counter += 1
+            # logger.debug(self.__str__())
             outgoing.clear()
         else:
             chain.do_filter(incoming, outgoing, q2c_mapping)
@@ -96,7 +101,8 @@ class FilterExcludeRecordWithoutSubmitTime(Filter):
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         column_index = q2c_mapping[self.__filter_column][0]
         if incoming['row'][column_index].value is None or incoming['row'][column_index].value == '':
-            logger.debug(self.__str__())
+            self._counter += 1
+            # logger.debug(self.__str__())
             outgoing.clear()
         else:
             chain.do_filter(incoming, outgoing, q2c_mapping)
@@ -108,11 +114,7 @@ class FilterRinseIrrelevantAnswers(Filter):
         self.__irrelevant_question_rules = irrelevant_question_rules
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
-        # logger.debug(self.__str__())
-
         for rule in self.__irrelevant_question_rules:
-            # logger.debug('apply rule: {}'.format(rule))
-
             question_index = q2c_mapping[rule[RINSE_RULE_KEY_QUESTION]][0]
 
             answer = incoming['row'][question_index].value
@@ -128,15 +130,12 @@ class FilterRinseIrrelevantAnswers(Filter):
                 # logger.info(">> no applicable operator: {}".format(rule[KEY_OPERATOR]))
                 pass
 
-            i = 0
             if flag:
                 for action_id in rule[RINSE_RULE_KEY_ACTION]:
                     for action_index in q2c_mapping[action_id]:
-                        if outgoing[action_index] is None or outgoing[action_index] == '':
+                        if outgoing[action_index] is not None:
+                            self._counter += 1
                             outgoing[action_index] = None
-                            i += 1
-            # if i > 0:
-                # logger.debug('>> {} cells rinsed'.format(i))
 
             chain.do_filter(incoming, outgoing, q2c_mapping)
 
@@ -145,23 +144,23 @@ class FilterRinseNcOptionValues(Filter):
     def __init__(self, filter_columns=('H5-L', 'H6-H')):
         super().__init__('4', 'replace values like "无法评价", "以上均不需要改进" with NaN')
         self.__filter_columns = filter_columns
+        self._counter = [0, 0, 0]
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
-        # logger.debug(self.__str__())
 
-        i = 0
         for idx in range(0, outgoing.__len__()):
             if outgoing[idx] in NC_OPTION_FILTER_LIST:
                 outgoing[idx] = None
-                i += 1
+                self._counter[0] += 1
 
+        idx = 1
         for filter_column in self.__filter_columns:
             column_index = q2c_mapping[filter_column][0]
-            if outgoing[column_index] is not None or outgoing[column_index] == '':
+            if outgoing[column_index] is not None:
+                # self._debug_info.append(outgoing[column_index])
                 outgoing[column_index] = None
-                i += 1
-
-        # logger.debug('>> {} cells rinsed'.format(i))
+                self._counter[idx] += 1
+            idx += 1
 
         chain.do_filter(incoming, outgoing, q2c_mapping)
 
@@ -171,17 +170,11 @@ class FilterRinseInvalidAnswers(Filter):
         super().__init__('5', 'replace invalid answers(cell) with NaN')
         self.__filter_column = filter_column
 
-    # @clocking
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
-        # logger.debug(self.__str__())
-
-        i = 0
         for column_index in q2c_mapping[self.__filter_column]:
             if outgoing[column_index] in G1_OPTION_FILTER_LIST:
                 outgoing[column_index] = None
-                i += 1
-
-        # logger.debug('>> {} cells rinsed'.format(i))
+                self._counter += 1
 
         chain.do_filter(incoming, outgoing, q2c_mapping)
 
@@ -191,6 +184,8 @@ class FilterRinseUnusualSalaryValues(Filter):
         super().__init__('6', 'rinse salary < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
         self.__salary_value_collector = salary_value_collector
         self.__filter_column = filter_column
+        self._counter = [0, 0, 0]
+        self._debug_info = [[], [], []]
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         # logger.info(self.__str__())
@@ -203,18 +198,24 @@ class FilterRinseUnusualSalaryValues(Filter):
 
         column_index = q2c_mapping[self.__filter_column][0]
         cell_value = outgoing[column_index]
-        if cell_value is not None and cell_value != '':
+        if cell_value is not None:
             salary_value = int(cell_value)
             if salary_value < lower_limit:
-                logger.debug('>> salary {} rinsed by lower limit: {}'.format(outgoing[column_index], lower_limit))
+                self._counter[0] += 1
+                self._debug_info[0].append(salary_value)
+                # logger.debug('>> salary {} rinsed by lower limit: {}'.format(outgoing[column_index], lower_limit))
                 outgoing[column_index] = None
             if salary_value >= higher_limit:
-                logger.debug('>> salary {} rinsed by higher limit: {}, top_n = {}'
-                             .format(outgoing[column_index], higher_limit, self.__salary_value_collector.get_top_n()))
+                self._counter[1] += 1
+                self._debug_info[1].append(salary_value)
+                # logger.debug('>> salary {} rinsed by higher limit: {}, top_n = {}'
+                #              .format(outgoing[column_index], higher_limit, self.__salary_value_collector.get_top_n()))
                 outgoing[column_index] = None
-            if abs(salary_value - mean) > stdev_4:
-                logger.debug('>> salary {} rinsed by ABS(diff of MEAN) = {} > 4 * STDEV = {}'
-                             .format(outgoing[column_index], abs(salary_value - mean), stdev_4))
+            elif abs(salary_value - mean) > stdev_4:
+                self._counter[2] += 1
+                self._debug_info[2].append(salary_value)
+                # logger.debug('>> salary {} rinsed by ABS(diff of MEAN) = {} > 4 * STDEV = {}'
+                #              .format(outgoing[column_index], abs(salary_value - mean), stdev_4))
                 outgoing[column_index] = None
 
         chain.do_filter(incoming, outgoing, q2c_mapping)
