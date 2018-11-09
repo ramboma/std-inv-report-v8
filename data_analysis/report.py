@@ -275,13 +275,22 @@ def employee_report(data, filePath):
     df_metrics = data[ls_metrics_cols]
     # 总体就业率
     df_rate = formulas.formulas_employe_rate(df_metrics)
-    excelUtil.writeExcel(df_rate, filePath, '总体就业率')
+    df_concat=pd.concat([df_rate,df_rate],sort=False)
+    df_concat.insert(0,CONFIG.TOTAL_COLUMN,CONFIG.TOTAL_COLUMN)
+    df_formate=formulas.percent(df_concat)
+    excelUtil.writeExcel(df_formate, filePath, '总体就业率')
     # 各学院就业率
     df_college_value = formulas.formulas_college_employe_rate(df_metrics)
-    excelUtil.writeExcel(df_college_value, filePath, '各学院就业率')
+    df_concat=pd.concat([df_college_value,df_rate],sort=False)
+    df_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    df_formate=formulas.percent(df_concat)
+    excelUtil.writeExcel(df_formate, filePath, '各学院就业率')
     # 各专业就业率
     df_major_value = formulas.formulas_major_employe_rate(df_metrics)
-    excelUtil.writeExcel(df_major_value, filePath, '各专业就业率')
+    df_concat = pd.concat([df_major_value, df_rate],sort=False)
+    df_concat.iloc[-1, 0:1] = CONFIG.TOTAL_COLUMN
+    df_formate = formulas.percent(df_concat)
+    excelUtil.writeExcel(df_formate, filePath, '各专业就业率')
 
     # 总体就业去向
     df_value_rate = formulas.answer_rate(df_metrics, subject)
@@ -290,7 +299,11 @@ def employee_report(data, filePath):
         .isin(CONFIG.A2_ANSWER[1:3])][CONFIG.RATE_COLUMN[-1]].sum()
     df_t = formulas.rate_T(df_value_rate)
     df_t[CONFIG.EMP_FREE_RATE_COLUMN] = flexible
-    excelUtil.writeExcel(df_t, filePath, '总体毕业去向')
+
+    df_concat = pd.concat([df_t, df_t],sort=False)
+    df_concat.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
+    df_formate = formulas.percent(df_concat)
+    excelUtil.writeExcel(df_formate, filePath, '总体毕业去向')
 
     # 各学院就业去向
     college_changes = formulas.answer_college_value_rate(df_metrics, subject)
@@ -303,7 +316,10 @@ def employee_report(data, filePath):
                                              [CONFIG.GROUP_COLUMN[0]])
     df_flexiable.rename(columns={CONFIG.RATE_COLUMN[-1]: CONFIG.EMP_FREE_RATE_COLUMN}, inplace=True)
     df_result = pd.merge(college_t, df_flexiable, on=CONFIG.GROUP_COLUMN[0], how='left')
-    excelUtil.writeExcel(df_result, filePath, '各学院毕业去向')
+    df_concat = pd.concat([df_result, df_t],sort=False)
+    df_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    df_formate = formulas.percent(df_concat)
+    excelUtil.writeExcel(df_formate, filePath, '各学院毕业去向')
 
     # 各专业就业去向
     major_changes = formulas.answer_major_value_rate(df_metrics, subject)
@@ -318,8 +334,11 @@ def employee_report(data, filePath):
                                              [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
     df_flexiable.rename(columns={CONFIG.RATE_COLUMN[-1]: CONFIG.EMP_FREE_RATE_COLUMN}, inplace=True)
     df_result = pd.merge(major_t, df_flexiable, on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]], how='left')
-
-    excelUtil.writeExcel(df_result, filePath, '各专业毕业去向')
+    df_result.fillna(0,inplace=True)
+    df_concat = pd.concat([df_result, df_t],sort=False)
+    df_concat.iloc[-1, 0:1] = CONFIG.TOTAL_COLUMN
+    df_formate = formulas.percent(df_concat)
+    excelUtil.writeExcel(df_formate, filePath, '各专业毕业去向')
     return
 
 
@@ -331,36 +350,23 @@ def work_option_report(data, filePath):
     :return:
     '''
     subject = 'A3'
+    title='就业机会'
     ls_metrics_cols = list(CONFIG.BASE_COLUMN)
     ls_metrics_cols.append(subject)
     df_metrics = data[ls_metrics_cols]
 
-    option = formulas.answer_rate(df_metrics, subject)
-
-    rate_t = formulas.rate_T(option)
-    excelUtil.writeExcel(rate_t, filePath, '总体就业机会')
-
-    college_changes = formulas.answer_college_value_rate(df_metrics, subject,
-                                                         [CONFIG.EXCEPTED_ANSWER], [CONFIG.RATE_COLUMN[2]], [0])
-    college_t = formulas.college_rate_pivot(college_changes)
-    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(college_t, filePath, '各学院就业机会')
-
-    major_changes = formulas.answer_major_value_rate(df_metrics, subject,
-                                                     [CONFIG.EXCEPTED_ANSWER], [CONFIG.RATE_COLUMN[2]], [0])
-    major_t = formulas.major_rate_pivot(major_changes)
-    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(major_t, filePath, '各专业就业机会')
-
+    report_value_rate(df_metrics,subject,title,filePath)
 
 def non_employee_report(data, filePath):
     '''未就业报告'''
     # 各选项占比
     df_value_count = formulas.answer_rate(data, 'C1')
-    excelUtil.writeExcel(df_value_count, filePath, '一直未就业分布')
+    df_format=formulas.percent(df_value_count)
+    excelUtil.writeExcel(df_format, filePath, '一直未就业分布')
 
     df_value_count1 = formulas.answer_rate(data, 'C2')
-    excelUtil.writeExcel(df_value_count1, filePath, '未就业毕业生目前去向分布')
+    df_format=formulas.percent(df_value_count1)
+    excelUtil.writeExcel(df_format, filePath, '未就业毕业生目前去向分布')
     return
 
 
@@ -1316,3 +1322,34 @@ def report_five_rate(data, subject, measure_type, measure_name, file_path):
     major_conbine.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
     excelUtil.writeExcel(major_conbine, file_path, '各专业' + measure_name)
     return
+
+def report_value_rate(df_data,subject, title, filePath):
+    option = formulas.answer_rate(df_data, subject)
+    rate_t = formulas.rate_T(option)
+    df_concat=pd.concat([rate_t,rate_t],sort=False)
+    df_concat.insert(0,CONFIG.TOTAL_COLUMN,CONFIG.TOTAL_COLUMN)
+    df_format=formulas.percent(df_concat)
+    excelUtil.writeExcel(df_format, filePath, CONFIG.TOTAL_COLUMN+title)
+
+    college_changes = formulas.answer_college_value_rate(df_data, subject,
+                                                         array_order=[CONFIG.RATE_COLUMN[2]],
+                                                         array_asc=[0])
+    college_t = formulas.college_rate_pivot(college_changes)
+    college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    college_t=pd.concat([college_t,rate_t],sort=False)
+    college_t.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    df_format=formulas.percent(college_t)
+    excelUtil.writeExcel(df_format, filePath, CONFIG.GROUP_COLUMN[0]+title)
+
+    major_changes = formulas.answer_major_value_rate(df_data, subject,
+                                                     array_order=[CONFIG.RATE_COLUMN[2]],
+                                                     array_asc=[0])
+    major_t = formulas.major_rate_pivot(major_changes)
+    major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
+    major_t=pd.concat([major_t,rate_t],sort=False)
+    major_t.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
+    df_format=formulas.percent(major_t)
+    excelUtil.writeExcel(df_format, filePath, CONFIG.GROUP_COLUMN[1]+title)
+
+    return
+

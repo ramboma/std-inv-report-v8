@@ -63,3 +63,19 @@
     # 学习效果
     further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')
     further.basic_quality_report(data, CONFIG.REPORT_FOLDER + '基础素质.xlsx')
+
+
+# unstack方式转置，不限定类型为number但是会造成列名合并（'比例 一般'）
+df_will_t = df_data.loc[:,
+                [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1],
+                 CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
+    df_unstack=df_will_t.set_index([CONFIG.GROUP_COLUMN[0],
+                         CONFIG.GROUP_COLUMN[1],
+                         CONFIG.RATE_COLUMN[0]]).unstack(level=[CONFIG.RATE_COLUMN[0]])
+    df_unstack.fillna('0.00%', inplace=True)
+
+# privot_table方式转置，列名不变，但是限定必须是可计算类型
+df_metrics = pd.pivot_table(df_data,
+                                index=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]],
+                                columns=CONFIG.RATE_COLUMN[0],
+                                values=CONFIG.RATE_COLUMN[-1])
