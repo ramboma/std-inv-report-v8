@@ -9,6 +9,7 @@ import click
 import time
 import shutil
 # import portalocker
+import multiprocessing
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -19,14 +20,16 @@ logger = get_logger(__name__)
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
 
-    def __init__(self, batch_cleansing_handler, output_folder, degree, trace_mode, multi_thread):
+    def __init__(self, batch_cleansing_handler, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
         super().__init__()
 
-        self.__batch_cleansing_handler = batch_cleansing_handler;
-        self.__output_folder = output_folder
-        self.__degree = degree
-        self.__trace_mode = trace_mode
-        self.__multi_thread = multi_thread
+        self._batch_cleansing_handler = batch_cleansing_handler;
+        self._output_folder = output_folder
+        self._degree = degree
+        self._trace_mode = trace_mode
+        self._stream_mode = stream_mode
+        self._concurrent_mode = concurrent_mode
+        self._pool = pool
 
     def on_moved(self, event):
         # super(LoggingEventHandler, self).on_moved(event)
@@ -41,29 +44,12 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         #
         # what = 'directory' if event.is_directory else 'file'
         # logging.info("Created %s: %s", what, event.src_path)
-        # file_locked = True
-        # wait_second = 1
-        # count_down_max_times = 60
-        # count_down = count_down_max_times
-        # while file_locked and count_down > 0:
-        #     try:
-        #         with open(event.src_path, 'r') as f:
-        #             portalocker.lock(f, portalocker.LOCK_EX)
-        #             portalocker.unlock(f)
-        #             file_locked = False
-        #     except Exception as e:
-        #         logger.debug(e)
-        #         logger.info("waiting for file writing complete")
-        #         time.sleep(wait_second)
-        #     finally:
-        #         count_down -= 1
-        # if file_locked:
-        #     raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(wait_second * count_down_max_times))
         filename = os.path.basename(event.src_path)
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
             logger.info('input file {} detected'.format(event.src_path))
-            self.__batch_cleansing_handler(event.src_path, self.__output_folder, self.__degree, self.__trace_mode, self.__multi_thread)
+            self._batch_cleansing_handler(event.src_path, self._output_folder, self._degree,
+                                          self._stream_mode, self._concurrent_mode, self._pool, self._trace_mode)
         pass
 
     def on_deleted(self, event):
@@ -98,7 +84,7 @@ def try_move_file(src, dst, max_retry=20, retry_interval=3):
             raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(retry_interval * max_retry))
 
 
-def batch_cleansing(input_file, output_folder, degree, trace_mode, multi_thread):
+def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
@@ -114,18 +100,38 @@ def batch_cleansing(input_file, output_folder, degree, trace_mode, multi_thread)
         setting_groups = []
         setting_groups.extend([
             # internal, analysis
-            {'internal': True, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree)},
+            {
+                'input_file': input_file,
+                'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree),
+                'internal': True, 'analysis': True,
+                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
+            },
             # internal, customer
-            {'internal': True, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree)},
+            {
+                'input_file': input_file,
+                'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree),
+                'internal': True, 'analysis': False,
+                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
+            },
             # public, analysis
-            {'internal': False, 'analysis': True, 'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree)},
+            {
+                'input_file': input_file,
+                'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree),
+                'internal': False, 'analysis': True,
+                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
+            },
             # public, customer
-            {'internal': False, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree)},
+            {
+                'input_file': input_file,
+                'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree),
+                'internal': False, 'analysis': False,
+                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
+            },
         ])
-        if multi_thread:
-            run_concurrent(input_file, degree, tag, setting_groups, trace_mode)
+        if concurrent_mode:
+            run_concurrent(setting_groups, stream_mode, pool)
         else:
-            run_serial(input_file, degree, tag, setting_groups, trace_mode)
+            run_serial(setting_groups, stream_mode)
 
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -141,8 +147,9 @@ def batch_cleansing(input_file, output_folder, degree, trace_mode, multi_thread)
 @click.option('--output-folder', '-o', required=False, help='Output folder path')
 @click.option('--degree', '-d', help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-@click.option('--multi-thread', '-m', is_flag=True, type=bool, help='multi-thread mode, only make effect with -a')
-def main(input_folder, output_folder, degree, trace_mode, multi_thread):
+@click.option('--stream-mode', '-sm', is_flag=True, type=bool, help='Use stream mode to process data, or by default in memory')
+@click.option('--concurrent-mode', '-cm', is_flag=True, type=bool, help='Use multi-process to process data, or by default in serial')
+def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_folder):
@@ -169,14 +176,22 @@ def main(input_folder, output_folder, degree, trace_mode, multi_thread):
     if trace_mode is None:
         trace_mode = False
 
-    if multi_thread is None:
-        multi_thread = False
+    if stream_mode is None:
+        stream_mode = False
 
-    if trace_mode:
-        logger.info('** TRACING MODE ENABLED **')
+    if concurrent_mode is None:
+        concurrent_mode = False
 
     logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
-    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, trace_mode, multi_thread)
+
+    pool = None
+    if concurrent_mode:
+        logger.info('init process pool ... ')
+        max_count = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(max_count)
+        logger.info('{} processes initialed'.format(max_count))
+
+    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, stream_mode, concurrent_mode, pool, trace_mode)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
     observer.start()
@@ -186,7 +201,13 @@ def main(input_folder, output_folder, degree, trace_mode, multi_thread):
     except KeyboardInterrupt:
         logger.info('program stopped')
         observer.stop()
-    observer.join()
+    except Exception as e:
+        logger.error(e)
+        observer.stop()
+    finally:
+        observer.join()
+        pool.close()
+        pool.join()
 
 
 if __name__ == '__main__':

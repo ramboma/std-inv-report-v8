@@ -7,6 +7,7 @@ __author__ = 'Gary.Z'
 
 import os
 import threading
+import copy
 import multiprocessing
 import time
 import shutil
@@ -21,10 +22,10 @@ from data_cleansing.salary_cleanser import *
 logger = get_logger(__name__)
 
 
-class DataCleanserRunner(multiprocessing.Process):
+class DataCleanserRunner:
     def __init__(self, input_file, output_file):
         # threading.Thread.__init__(self)
-        multiprocessing.Process.__init__(self)
+        # multiprocessing.Process.__init__(self)
         self._input_file = input_file
         self._output_file = output_file
         self._degree_filter = None
@@ -102,6 +103,7 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
     @clocking
     def run(self):
         self._log_header()
+        logger.info('** PROCESS MODE: IN MEMORY **')
 
         logger.info('loading input file \'{}\''.format(self._input_file))
         wb = xl.load_workbook(self._input_file)
@@ -155,6 +157,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
     def run(self):
 
         self._log_header()
+        logger.info('** PROCESS MODE: STREAM **')
 
         temp_file = self._output_file + '.tmp'
 
@@ -305,46 +308,62 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         return value_list
 
 
-@clocking
-def run_serial(input_file, degree, tag, setting_groups, trace_mode):
-    for setting in setting_groups:
-        runner = DataCleanserMemoryRunner(input_file, setting['output_file'])
+def get_a_runner(setting, stream_mode=False):
+    if stream_mode:
+        runner = DataCleanserStreamRunner(setting['input_file'], setting['output_file'])
+    else:
+        runner = DataCleanserMemoryRunner(setting['input_file'], setting['output_file'])
 
-        if degree is not None:
-            runner.degree_filter = degree
-        runner.with_rule_2_2 = setting['internal']
-        runner.with_rule_7 = setting['analysis']
-        runner.sheet_tag = tag
-        runner.trace_mode = trace_mode
+    if setting['degree'] is not None:
+        runner.degree_filter = setting['degree']
+    runner.with_rule_2_2 = setting['internal']
+    runner.with_rule_7 = setting['analysis']
+    runner.sheet_tag = setting['tag']
+    runner.trace_mode = setting['trace_mode']
+
+    # process_name = get_process_name(setting['internal'], setting['analysis'])
+    # runner.name = process_name
+
+    return runner
+
+
+def runner_wrapper(runner):
+    logger.info(runner)
+    runner.run()
+    # return runner
+
+
+@clocking
+def run_serial(setting_groups, stream_mode=False):
+    logger.info('** CONCURRENT MODE: SERIAL **')
+    for setting in setting_groups:
+        runner = get_a_runner(setting, stream_mode)
         runner.run()
 
 
 @clocking
-def run_concurrent(input_file, degree, tag, setting_groups, trace_mode):
+def run_concurrent(setting_groups, stream_mode=False, pool=None):
+    if pool is None:
+        logger.info('** CONCURRENT MODE: MULTI-PROCESS **')
+    else:
+        logger.info('** CONCURRENT MODE: PROCESS POOL**')
 
-    runners = []
+    processes = []
     for setting in setting_groups:
+        runner = get_a_runner(setting, stream_mode)
 
-        runner = DataCleanserStreamRunner(input_file, setting['output_file'])
+        if pool is None:
+            process = multiprocessing.Process(target=runner_wrapper, args=(runner, ),
+                                              name=get_process_name(setting['internal'], setting['analysis']))
+            processes.append(process)
+            process.start()
+        else:
+            pool.apply_async(runner_wrapper, (runner, ))
+            # pool.apply_async(runner_wrapper, (get_process_name(setting['internal'], setting['analysis']), ))
 
-        process_name = get_process_name(setting['internal'], setting['analysis'])
-        # runner.setName(thread_name)
-        runner.name = process_name
-
-        if degree is not None:
-            runner.degree_filter = degree
-        runner.with_rule_2_2 = setting['internal']
-        runner.with_rule_7 = setting['analysis']
-        runner.sheet_tag = tag
-        runner.trace_mode = trace_mode
-
-        # runner.setDaemon(True)
-        runners.append(runner)
-
-    for runner in runners:
-        runner.start()
-    for runner in runners:
-        runner.join()
+    if pool is None:
+        for runner in processes:
+            runner.join()
 
 
 def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None):
