@@ -23,7 +23,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
     def __init__(self, batch_cleansing_handler, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
         super().__init__()
 
-        self._batch_cleansing_handler = batch_cleansing_handler;
+        self._batch_cleansing_handler = batch_cleansing_handler
         self._output_folder = output_folder
         self._degree = degree
         self._trace_mode = trace_mode
