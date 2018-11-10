@@ -110,19 +110,6 @@ def answer_sum(data, subject):
     return sum
 
 
-def test():
-    df = pd.DataFrame({'A': [0, 1, 2, 3, 4],
-                       'B': [5, 6, 5, 8, 9],
-                       'C': ['a', 'b', 'c', 'a', 'b']})
-    df['new'] = df.index
-
-    df.replace({'new': {0: 100, 4: 400}}, inplace=True)
-    print(df)
-    pd_s = pd.DataFrame(df, columns=['C', 'B'])
-    grouped = df.groupby(['C', 'B'], as_index=False).count()
-    print(grouped)
-
-
 def multi_columns(data, subject, max_times=0):
     '''多选题的选项列'''
     multi_column = []
@@ -140,12 +127,9 @@ def multi_answer_count(data, subject):
     '''多选题 答题人数统计'''
     multi_column = multi_columns(data, subject)
     df_answer = data.loc[:,multi_column]
-    # resolve SettingWithCopyWarning problem
-    #df_copy = df_answer.copy()
     df_answer.dropna(how='all', inplace=True)
     df_answer.fillna(0, inplace=True)
     answer_count = df_answer.loc[:,multi_column[0]].count()
-    print(answer_count)
     return answer_count
 
 
@@ -207,7 +191,8 @@ def ability_item_distribution(data, subject):
     # 单个学生能力
     df_answer.loc[:,'ability'] = df_answer.loc[:,'sum'] / item_size
     ability = (df_answer.loc[:,'ability'].sum() / answer_count).round(2)
-    df_result = pd.DataFrame({'答案': [subject[0:subject.rindex('-')]], '回答此答案人数': [answer_count], '能力': [ability]})
+    df_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [subject[0:subject.rindex('-')]],
+                              CONFIG.RATE_COLUMN[2]: [answer_count], '能力': [ability]})
     return df_result
 
 

@@ -18,6 +18,7 @@ MEASURE_NAME_IMPORTANT = '重要度'
 MEASURE_NAME_PLEASED = '满足度'
 MEASURE_NAME_HELP = '帮助度'
 MEASURE_NAME_FEEL = '体验度'
+MEASURE_NAME_NUM = '机会'
 
 ANSWER_TYPE_RELATIVE = 'RELATIVE'
 ANSWER_TYPE_SATISFY = 'SATISFY'
@@ -27,6 +28,8 @@ ANSWER_TYPE_IMPORTANT = 'IMPORTANT'
 ANSWER_TYPE_PLEASED = 'PLEASED'
 ANSWER_TYPE_HELP = 'HELP'
 ANSWER_TYPE_FEEL = 'FEEL'
+ANSWER_TYPE_NUM = 'NUM'
+
 
 ANSWER_NORMAL_MEET_V = ['非常符合', '比较符合', '一般', '比较不符合', '非常不符合', '无法评价']
 ANSWER_SCORE_DICT_MEET_V = {'非常符合': 5, '比较符合': 4, '一般': 3, '比较不符合': 2, '非常不符合': 1, '无法评价': 0}
@@ -49,12 +52,14 @@ ANSWER_NORMAL_HELP = ['很大帮助', '较大帮助', '有些帮助', '没什么
 ANSWER_SCORE_DICT_HELP = {'很大帮助': 5, '较大帮助': 4, '有些帮助': 3, '没什么帮助': 2, '完全没帮助': 1, '无法评价': 0}
 ANSWER_NORMAL_FEEL = ['很好', '比较好', '一般', '比较差', '很差', '无法评价']
 ANSWER_SCORE_DICT_FEEL = {'很好': 5, '比较好': 4, '一般': 3, '比较差': 2, '很差': 1, '无法评价': 0}
+ANSWER_NORMAL_NUM = ['非常多', '比较多', '一般', '比较少', '非常少', '无法评价']
+ANSWER_SCORE_DICT_NUM = {'非常多': 5, '比较多': 4, '一般': 3, '比较少': 2, '非常少': 1, '无法评价': 0}
 
 ABILITY_SCORE = {'非常符合': 5, '有点符合': 4, '不一定': 3, '有点不符合': 2, '非常不符合': 1}
 ABILITY_SCORE_REVERSE = {'非常符合': 1, '有点符合': 2, '不一定': 3, '有点不符合': 4, '非常不符合': 5}
 
-ANSWER_RECOMMED = ['愿意', '不确定', '不愿意']
 
+ANSWER_RECOMMED = ['愿意', '不确定', '不愿意']
 
 ABILITY_REVERSE = ['I2-2-2-4', 'I2-2-6-15', 'I2-2-7-20', 'I2-2-8-22', 'I2-2-13-33',
                    'I2-2-14-35', 'I2-2-16-41', 'I2-2-16-43',
@@ -67,48 +72,59 @@ COLUMN_NAME_GRP_VAL_COUNT = {'grp': '分组', 'subject': '答题总人数', 'cnt
 RATE_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例')
 MEAN_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例', '度量', '均值')
 EMPLOYEE_RATE_COLUMN = '就业率'
-EMP_FREE_RATE_COLUMN = '灵活就业率'
+EMP_FREE = '灵活就业率'
+EMP_FREE_COLUMNS = ['自主创业','自由职业']
+
+DIMISSION='离职率'
+DIMISSION_COLUMNS=['1次','2次','3次及以上']
+
 COMBINE_RATE = '行业比率'
 GROUP_COLUMN = ('学院', '专业', '分组')
 COLLEGE_MAJOR = ('_10', '_14')
 TOTAL_COLUMN = '总体'
-SPECIAL_WHERE='条件'
+SPECIAL_WHERE = '条件'
 B10_1_ANSWER = ['0次']
-OPER_NOT='非'
+OPER_NOT = '非'
 
 # 条件过滤的key值
-DICT_KEY = ('column', 'cond','oper')
+DICT_KEY = ('column', 'cond', 'oper')
 
-SPECIAL_COLUMN=('性别','民族','类别')
-DICT_SUBJECT={'H4-A':'专业课教师教学态度','H4-B':'专业课教师教学水平','H4-C':'公共课教师教学态度',
-              'H4-D':'公共课教师教学水平','H4-E':'教学总评价',
-              'H4-F':'生涯规划/就业指导课','H4-G':'职业咨询与辅导','H4-H':'校园招聘会/宣讲会',
-              'H4-I':'学校发布的招聘信息','H4-J':'就业帮扶与推荐','H4-K':'就业手续办理（户口档案迁移等)',
-              'H4-L':'创业课程和讲座','H4-M':'创新创业大赛','H4-N':'创业模拟与实训',
-              'H4-O':'创业指导服务（如信息咨询、管理运营等）',
-              'H3-E':'创业场地','H3-F':'创业资金',
-              'H3-A': '实验教学', 'H3-B': '实习实训',
-              'H3-C': '社会实践', 'H3-D': '毕业论文（设计）',
-              'H2-A': '课堂目标', 'H2-B': '课堂纪律',
-              'H2-C': '师生互动', 'H2-D': '反馈效果','H2-E': '教学效果',
-              'B5-B': '行业', 'B1': '单位类型','B3-A': '就业省',
-              'B4-B': '就业职业'
-              }
-SPECIAL_SUBJECT={'B9-1':'专业','B7-1':'工作满意度','B7-2':'薪酬',
-              'B7-3':'职业发展前景','B7-4':'工作内容',
-              'B8':'职业期待'}
+SPECIAL_COLUMN = ('性别', '民族', '类别')
+DICT_SUBJECT = {'H4-A': '专业课教师教学态度', 'H4-B': '专业课教师教学水平', 'H4-C': '公共课教师教学态度',
+                'H4-D': '公共课教师教学水平', 'H4-E': '教学总评价',
+                'H4-F': '生涯规划/就业指导课', 'H4-G': '职业咨询与辅导', 'H4-H': '校园招聘会/宣讲会',
+                'H4-I': '学校发布的招聘信息', 'H4-J': '就业帮扶与推荐', 'H4-K': '就业手续办理（户口档案迁移等)',
+                'H4-L': '创业课程和讲座', 'H4-M': '创新创业大赛', 'H4-N': '创业模拟与实训',
+                'H4-O': '创业指导服务（如信息咨询、管理运营等）',
+                'H3-E': '创业场地', 'H3-F': '创业资金',
+                'H3-A': '实验教学', 'H3-B': '实习实训',
+                'H3-C': '社会实践', 'H3-D': '毕业论文（设计）',
+                'H2-A': '课堂目标', 'H2-B': '课堂纪律',
+                'H2-C': '师生互动', 'H2-D': '反馈效果', 'H2-E': '教学效果',
+                'B5-B': '行业', 'B1': '单位类型', 'B3-A': '就业地区', 'B3-B': '就业城市',
+                'B4-B': '就业职业','D2':'求职困难'
+                }
+SPECIAL_SUBJECT = {'B9-1': '专业', 'B7-1': '工作满意度', 'B7-2': '薪酬',
+                   'B7-3': '职业发展前景', 'B7-4': '工作内容',
+                   'B8': '职业期待'}
 
-JOB_SATISFY_SUBJECT={'B7-1':'对工作总体的满意情况','B7-2':'对工作薪酬的满意情况',
-              'B7-3':'对职业发展前景的满意情况','B7-4':'对工作内容意的满意情况'}
+DICT_TITLE = {'B5-B': '就业行业分布', 'B1': '就业单位类型分布', 'B3-A': '就业地区', 'B3-B': '省内就业地区分布',
+              'B4-B': '就业职业分布', 'B2': '就业单位规模分布',
+              'C1': '一直未就业分布', 'C2': '未就业毕业生目前去向分布',
+              'D2':'求职困难','D1':'求职成功途径',
+              'A2':'毕业去向','B9-2':'从事低专业相关工作的原因分布'}
 
-MAJOR_QUALITY_SUBJECT={'I1-1-A':'专业知识','I1-1-B':'专业能力','I1-2-A':'专业知识','I1-2-B':'专业能力'}
+JOB_SATISFY_SUBJECT = {'B7-1': '对工作总体的满意情况', 'B7-2': '对工作薪酬的满意情况',
+                       'B7-3': '对职业发展前景的满意情况', 'B7-4': '对工作内容意的满意情况'}
 
-DICT_REP={'非男':'女','非汉族':'少数民族','非福建省':'省外'}
-SPECIAL_COLUMN=('性别','民族','类别')
+MAJOR_QUALITY_SUBJECT = {'I1-1-A': '专业知识', 'I1-1-B': '专业能力', 'I1-2-A': '专业知识', 'I1-2-B': '专业能力'}
+
+DICT_REP = {'非男': '女', '非汉族': '少数民族', '非福建省': '省外'}
+SPECIAL_COLUMN = ('性别', '民族', '类别')
 PROVINCE = '福建省'
 # 条件过滤的key值
-DICT_KEY = ('column', 'cond','oper')
-OPER=('eq','noteq')
+DICT_KEY = ('column', 'cond', 'oper')
+OPER = ('eq', 'noteq')
 
 GENDER = ('男', '女')
 NATIONAL_COLUMN = ('汉族', '少数民族')
@@ -119,7 +135,9 @@ MEDICAL_COLUMN = ('医药卫生', '非医疗卫生')
 HEALTH_COLUMN = ('卫生', '非卫生')
 TEACHER_COLUMN = ('师范', '非师范')
 
-
 REPORT_FOLDER = "../test-data/san-ming/report/"
 
 ERROR_PARAMS = "参数错误"
+
+DECIMALS6 = 6
+DECIMALS2 = 2

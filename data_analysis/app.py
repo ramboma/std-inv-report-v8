@@ -13,9 +13,8 @@ import pandas as pd
 
 def main(file):
     data = excelUtil.read_excel(file)
-    further.employee_report(data, CONFIG.REPORT_FOLDER + '就业率及就业就业状态.xlsx')
-
-
+    further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '就业满意度.xlsx')
+    further.income_report(data, CONFIG.REPORT_FOLDER + '月均收入.xlsx')
 
 def test():
     data = pd.DataFrame(data={'class': ['c1', 'c1', 'c2', 'c2'],

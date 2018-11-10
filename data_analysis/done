@@ -8,8 +8,7 @@
     further.major_relative_report(data, CONFIG.REPORT_FOLDER + '专业相关度.xlsx')
     further.job_meet_report(data, CONFIG.REPORT_FOLDER + '职业期待吻合度.xlsx')
 
-    # 完成部分行专列
-    further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '职业满意度.xlsx')
+    further.job_satisfy_report(data, CONFIG.REPORT_FOLDER + '就业满意度.xlsx')
     further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
 
     further.income_report(data, CONFIG.REPORT_FOLDER + '月均收入.xlsx')
