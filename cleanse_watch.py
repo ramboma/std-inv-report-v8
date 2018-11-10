@@ -123,9 +123,9 @@ def batch_cleansing(input_file, output_folder, degree, trace_mode, multi_thread)
             {'internal': False, 'analysis': False, 'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree)},
         ])
         if multi_thread:
-            run_multi_thread(input_file, degree, tag, setting_groups, trace_mode)
+            run_concurrent(input_file, degree, tag, setting_groups, trace_mode)
         else:
-            run_single_thread(input_file, degree, tag, setting_groups, trace_mode)
+            run_serial(input_file, degree, tag, setting_groups, trace_mode)
 
     except Exception as e:
         logger.error(e, exc_info=True)

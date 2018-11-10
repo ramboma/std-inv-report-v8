@@ -77,9 +77,9 @@ def main(input_file, output_folder, analysis, internal, all, degree, trace_mode,
         ])
 
     if multi_thread:
-        run_multi_thread(input_file, degree, tag, setting_groups, trace_mode)
+        run_concurrent(input_file, degree, tag, setting_groups, trace_mode)
     else:
-        run_single_thread(input_file, degree, tag, setting_groups, trace_mode)
+        run_serial(input_file, degree, tag, setting_groups, trace_mode)
 
 
 if __name__ == '__main__':

@@ -151,6 +151,31 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         self.__q2c_mapping = {}
         self.__max_column = 0
 
+    @clocking
+    def run(self):
+
+        self._log_header()
+
+        temp_file = self._output_file + '.tmp'
+
+        try:
+            salary_value_collector = SalaryValueCollector()
+            with NamedTemporaryFile(suffix='.xlsx', delete=True) as tmp:
+                tmp.close()
+                temp_file = tmp.name
+
+                self.run_part_1(temp_file, salary_value_collector)
+                salary_value_collector.lock_down()
+                self.run_part_2(temp_file, salary_value_collector)
+
+        except Exception as e:
+            logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
+        self._log_tailer()
+
     def run_part_1(self, tmp_file, salary_value_collector):
         logger.info('loading input file \'{}\''.format(self._input_file))
         in_wb = xl.load_workbook(self._input_file, read_only=True)
@@ -266,33 +291,6 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             out_wb.close()
             in_wb.close()
 
-    @clocking
-    def run(self):
-
-        self._log_header()
-
-        temp_file = self._output_file + '.tmp'
-
-        try:
-            salary_value_collector = SalaryValueCollector()
-            with NamedTemporaryFile(suffix='.xlsx', delete=True) as tmp:
-                tmp.close()
-                temp_file = tmp.name
-
-                self.run_part_1(temp_file, salary_value_collector)
-                salary_value_collector.lock_down()
-                self.run_part_2(temp_file, salary_value_collector)
-
-        except Exception as e:
-            logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
-        finally:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-
-        self._log_tailer()
-
-        return
-
     @staticmethod
     def _copy_readonly_cells_to_value_list(row, expected_columns=231):
         value_list = []
@@ -308,7 +306,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
 
 
 @clocking
-def run_single_thread(input_file, degree, tag, setting_groups, trace_mode):
+def run_serial(input_file, degree, tag, setting_groups, trace_mode):
     for setting in setting_groups:
         runner = DataCleanserMemoryRunner(input_file, setting['output_file'])
 
@@ -322,16 +320,16 @@ def run_single_thread(input_file, degree, tag, setting_groups, trace_mode):
 
 
 @clocking
-def run_multi_thread(input_file, degree, tag, setting_groups, trace_mode):
+def run_concurrent(input_file, degree, tag, setting_groups, trace_mode):
 
     runners = []
     for setting in setting_groups:
 
         runner = DataCleanserStreamRunner(input_file, setting['output_file'])
 
-        thread_name = get_thread_name(setting['internal'], setting['analysis'])
+        process_name = get_process_name(setting['internal'], setting['analysis'])
         # runner.setName(thread_name)
-        runner.name = thread_name
+        runner.name = process_name
 
         if degree is not None:
             runner.degree_filter = degree
@@ -369,7 +367,7 @@ def get_error_filename(dirpath, name):
         return os.path.join(dirpath, '{}_error.txt'.format(name))
 
 
-def get_thread_name(internal, analysis):
+def get_process_name(internal, analysis):
     if internal:
         target = 'internal'
     else:
