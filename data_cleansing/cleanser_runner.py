@@ -7,6 +7,7 @@ __author__ = 'Gary.Z'
 
 import os
 import threading
+import multiprocessing
 import time
 import shutil
 from tempfile import NamedTemporaryFile
@@ -20,9 +21,10 @@ from data_cleansing.salary_cleanser import *
 logger = get_logger(__name__)
 
 
-class DataCleanserRunner(threading.Thread):
+class DataCleanserRunner(multiprocessing.Process):
     def __init__(self, input_file, output_file):
-        threading.Thread.__init__(self)
+        # threading.Thread.__init__(self)
+        multiprocessing.Process.__init__(self)
         self._input_file = input_file
         self._output_file = output_file
         self._degree_filter = None
@@ -160,50 +162,55 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
 
-        filter_chain = FilterChain()
-        filter_chain.add_filter(FilterResetColumnNames())
-        filter_chain.add_filter(FilterExcludeUnnecessaryHeaders())
-        filter_chain.add_filter(FilterOnlyIncludeDegree(self.degree_filter))
+        try:
+            filter_chain = FilterChain()
+            filter_chain.add_filter(FilterResetColumnNames())
+            filter_chain.add_filter(FilterExcludeUnnecessaryHeaders())
+            filter_chain.add_filter(FilterOnlyIncludeDegree(self.degree_filter))
 
-        filter_chain.add_filter(FilterExcludeTestRecords())
-        filter_chain.add_filter(FilterExcludeRecordWithoutA2Answer())
-        if self.with_rule_2_2:
-            filter_chain.add_filter(FilterExcludeRecordWithoutSubmitTime())
-        filter_chain.add_filter(FilterRinseIrrelevantAnswers(3, RINSE_RULE_IRRELEVANT_QUESTIONS))
-        filter_chain.add_filter(FilterRinseNcOptionValues())
-        filter_chain.add_filter(FilterRinseInvalidAnswers())
+            filter_chain.add_filter(FilterExcludeTestRecords())
+            filter_chain.add_filter(FilterExcludeRecordWithoutA2Answer())
+            if self.with_rule_2_2:
+                filter_chain.add_filter(FilterExcludeRecordWithoutSubmitTime())
+            filter_chain.add_filter(FilterRinseIrrelevantAnswers(3, RINSE_RULE_IRRELEVANT_QUESTIONS))
+            filter_chain.add_filter(FilterRinseNcOptionValues())
+            filter_chain.add_filter(FilterRinseInvalidAnswers())
 
-        idx = 0
-        for row in in_ws.rows:
-            idx += 1
+            idx = 0
+            for row in in_ws.rows:
+                idx += 1
 
-            value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
+                value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
 
-            filter_chain.reset_state()
-            filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
+                filter_chain.reset_state()
+                filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
 
-            if value_list.__len__() > 0:
-                out_ws.append(value_list)
-                if idx > HEADER_ROW_INDEX:
-                    salary_index = self.__q2c_mapping['B6'][0]
-                    salary_value = value_list[salary_index]
-                    if salary_value is not None:
-                        salary_value_collector.collect(int(salary_value))
+                if value_list.__len__() > 0:
+                    out_ws.append(value_list)
+                    if idx > HEADER_ROW_INDEX:
+                        salary_index = self.__q2c_mapping['B6'][0]
+                        salary_value = value_list[salary_index]
+                        if salary_value is not None:
+                            salary_value_collector.collect(int(salary_value))
 
-            if idx % 500 == 0:
-                logger.info('>> {} rows processed'.format(idx))
+                if idx % 1000 == 0:
+                    logger.info('>> {} rows processed'.format(idx))
 
-            # if idx > 300:
-            #     break
+                # if idx > 300:
+                #     break
 
-        logger.info('>> {} rows processed in total'.format(idx))
+            logger.info('>> {} rows processed in total'.format(idx))
 
-        filter_chain.counter_report()
+            filter_chain.counter_report()
 
-        logger.info('writing to temp file {}'.format(tmp_file))
-        out_wb.save(tmp_file)
-        out_wb.close()
-        in_wb.close()
+            logger.info('writing to temp file {}'.format(tmp_file))
+            out_wb.save(tmp_file)
+        except Exception as e:
+            raise e
+        finally:
+            # logger.debug("close in/out wb handle")
+            out_wb.close()
+            in_wb.close()
 
     def run_part_2(self, tmp_file, salary_value_collector):
         logger.info('loading temp file \'{}\''.format(tmp_file))
@@ -215,60 +222,72 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
 
-        filter_chain = FilterChain()
-        salary_filter = FilterRinseUnusualSalaryValues(salary_value_collector)
-        filter_chain.add_filter(salary_filter)
-        if self.with_rule_7:
-            filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
+        try:
+            filter_chain = FilterChain()
+            salary_filter = FilterRinseUnusualSalaryValues(salary_value_collector)
+            filter_chain.add_filter(salary_filter)
+            if self.with_rule_7:
+                filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
 
-        logger.info(salary_filter.__str__())
-        salary_value_collector.report()
+            logger.info(salary_filter.__str__())
+            salary_value_collector.report()
 
-        idx = 0
-        for row in in_ws.rows:
-            idx += 1
+            idx = 0
+            for row in in_ws.rows:
+                idx += 1
 
-            value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
+                value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
 
-            if idx > HEADER_ROW_INDEX:
-                filter_chain.reset_state()
-                filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
+                if idx > HEADER_ROW_INDEX:
+                    filter_chain.reset_state()
+                    filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
 
-            if value_list.__len__() > 0:
-                out_ws.append(value_list)
+                if value_list.__len__() > 0:
+                    out_ws.append(value_list)
 
-            if idx % 500 == 0:
-                logger.info('>> {} rows processed'.format(idx))
+                if idx % 1000 == 0:
+                    logger.info('>> {} rows processed'.format(idx))
 
-        logger.info('>> {} rows processed in total'.format(idx))
+            logger.info('>> {} rows processed in total'.format(idx))
 
-        filter_chain.counter_report()
+            filter_chain.counter_report()
 
-        if self._sheet_tag is not None:
-            out_ws.title = 'cleaned_{}'.format(self._sheet_tag)
-        else:
-            out_ws.title = 'cleaned'
+            if self._sheet_tag is not None:
+                out_ws.title = 'cleaned_{}'.format(self._sheet_tag)
+            else:
+                out_ws.title = 'cleaned'
 
-        logger.info('writing output file {}'.format(self._output_file))
-        out_wb.save(self._output_file)
-        out_wb.close()
-        in_wb.close()
+            logger.info('writing output file {}'.format(self._output_file))
+            out_wb.save(self._output_file)
+        except Exception as e:
+            raise e
+        finally:
+            # logger.debug("close in/out wb handle")
+            out_wb.close()
+            in_wb.close()
 
     @clocking
     def run(self):
+
         self._log_header()
 
-        salary_value_collector = SalaryValueCollector()
-
         temp_file = self._output_file + '.tmp'
-        with NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
-            temp_file = tmp.name
 
-        self.run_part_1(temp_file, salary_value_collector)
-        salary_value_collector.lock_down()
-        self.run_part_2(temp_file, salary_value_collector)
+        try:
+            salary_value_collector = SalaryValueCollector()
+            with NamedTemporaryFile(suffix='.xlsx', delete=True) as tmp:
+                tmp.close()
+                temp_file = tmp.name
 
-        os.remove(temp_file)
+                self.run_part_1(temp_file, salary_value_collector)
+                salary_value_collector.lock_down()
+                self.run_part_2(temp_file, salary_value_collector)
+
+        except Exception as e:
+            logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
 
         self._log_tailer()
 
@@ -311,7 +330,8 @@ def run_multi_thread(input_file, degree, tag, setting_groups, trace_mode):
         runner = DataCleanserStreamRunner(input_file, setting['output_file'])
 
         thread_name = get_thread_name(setting['internal'], setting['analysis'])
-        runner.setName(thread_name)
+        # runner.setName(thread_name)
+        runner.name = thread_name
 
         if degree is not None:
             runner.degree_filter = degree
@@ -320,7 +340,7 @@ def run_multi_thread(input_file, degree, tag, setting_groups, trace_mode):
         runner.sheet_tag = tag
         runner.trace_mode = trace_mode
 
-        runner.setDaemon(True)
+        # runner.setDaemon(True)
         runners.append(runner)
 
     for runner in runners:
