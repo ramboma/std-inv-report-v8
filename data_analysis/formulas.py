@@ -504,7 +504,7 @@ def answer_mean(data, subject):
     '''均值计算'''
     pd_count = Util.answer_count(data, subject)
     pd_sum = Util.answer_sum(data, subject)
-    mean = (pd_sum / pd_count).round(decimals=CONFIG.DECIMALS6)
+    mean = (pd_sum / pd_count).round(decimals=CONFIG.DECIMALS2)
     # 返回 答题总人数，均值
     pd_mean = pd.DataFrame({CONFIG.MEAN_COLUMN[2]: [pd_count],
                             CONFIG.MEAN_COLUMN[-1]: [mean]})
@@ -517,8 +517,7 @@ def major_mean(data, subject):
     pd_source.dropna(inplace=True)
     grouped = pd_source.groupby([CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]], as_index=False)
     pd_result = grouped[subject].agg([np.mean, np.count_nonzero])
-    formate = lambda x: "%.2f" % x
-    pd_result['mean'] = pd_result['mean'].apply(formate)
+    pd_result['mean'] = pd_result['mean'].round(decimals=CONFIG.DECIMALS2)
     pd_result['count_nonzero'] = pd_result['count_nonzero'].astype('int')
 
     pd_result.reset_index(inplace=True)
@@ -542,8 +541,7 @@ def single_grp_mean(data, subject, single_grp, is_college=False):
     pd_source.dropna(inplace=True)
     grouped = pd_source.groupby(single_grp, as_index=False)
     pd_result = grouped[subject].agg([np.mean, np.count_nonzero])
-    formate = lambda x: "%.2f" % x
-    pd_result['mean'] = pd_result['mean'].apply(formate)
+    pd_result['mean'] = pd_result['mean'].round(decimals=CONFIG.DECIMALS2)
     pd_result['count_nonzero'] = pd_result['count_nonzero'].astype('int')
 
     pd_result.reset_index(inplace=True)
@@ -561,7 +559,6 @@ def answer_period(data, subject, start, end, step):
     income = data['B6']
     counts = income.count()
     period = pd.cut(income.values, ind_500)
-
     period_counts = period.value_counts()
     pd_period = pd.DataFrame({CONFIG.RATE_COLUMN[0]: period_counts.index,
                               CONFIG.RATE_COLUMN[1]: period_counts.values})
@@ -661,10 +658,6 @@ def answer_five_rate(data, subject, measure_type):
     pd_five_rate['均值'] = (alpha_x / pd_five_rate['答题总人数']).round(decimals=CONFIG.DECIMALS2)
 
     pd_five_rate.drop('measure_score', axis='columns', inplace=True)
-
-    # pd_five_rate[CONFIG.RATE_COLUMN[-1]] = pd_five_rate.loc[:, CONFIG.RATE_COLUMN[-1]].map(lambda x: '%.2f%%' % x)
-    # pd_five_rate[measure_name] = pd_five_rate.loc[:,measure_name].map(lambda x: '%.2f%%' % x)
-
     return pd_five_rate
 
 
@@ -710,6 +703,8 @@ def answer_five_rate_single_grp(data, subject, grp, measure_type):
     pd_left_mean.rename(columns={'mean': '均值'}, inplace=True)
     pd_left_mean.drop('measure_score', axis='columns', inplace=True)
     pd_left_mean.drop('measure_score_y', axis='columns', inplace=True)
+    pd_left_mean.fillna(0, inplace=True)
+
     return pd_left_mean
 
 
@@ -756,6 +751,8 @@ def answer_five_rate_major_grp(data, subject, measure_type):
     pd_left_mean.rename(columns={'mean': '均值'}, inplace=True)
     pd_left_mean.drop('measure_score', axis='columns', inplace=True)
     pd_left_mean.drop('measure_score_y', axis='columns', inplace=True)
+    pd_left_mean.fillna(0, inplace=True)
+
     return pd_left_mean
 
 
@@ -773,3 +770,4 @@ def percent(df_data):
     df_data.loc[:, columns] = df_data.loc[:, columns].applymap(lambda x: '%.2f%%' % x)
 
     return df_data
+

@@ -56,3 +56,26 @@ def tdl_value_rate_t(df_data,subject,file_path):
     df_concat.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
     excelUtil.writeExcel(df_concat, file_path, CONFIG.TOTAL_COLUMN +sheet_name)
     return
+
+def tdl_multi_answer_dist(data, subject,file_path,sheet_name, dict_config):
+    '''多选题 根据题号统计每个选项人数和占比， 对学生生活服务对评价-生活服务需要提高的方面'''
+    # step1 答题总人数
+    answer_count = answerUtil.multi_answer_count(data, subject)
+    # step2 结果集
+    multi_column = answerUtil.multi_columns(data, subject)
+    df_answer = data[multi_column]
+    key = []
+    result = []
+    for col in df_answer.columns:
+        key.append(col)
+        result.append(df_answer[col].count())
+    df_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: key,
+                              CONFIG.RATE_COLUMN[1]: result})
+    df_result[CONFIG.RATE_COLUMN[2]] = answer_count
+    df_result[CONFIG.RATE_COLUMN[-1]] = (df_result[CONFIG.RATE_COLUMN[1]] / df_result[CONFIG.RATE_COLUMN[2]]).round(decimals=CONFIG.DECIMALS6)
+    df_result.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
+    df_result.loc[:, CONFIG.RATE_COLUMN[0]] = df_result.loc[:, CONFIG.RATE_COLUMN[0]].map(dict_config)
+    excelUtil.writeExcel(df_result, file_path, sheet_name)
+
+    return
+

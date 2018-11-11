@@ -13,7 +13,7 @@ EXCEPTED_ANSWER = '无法评价'
 MEASURE_NAME_RELATIVE = '相关度'
 MEASURE_NAME_SATISFY = '满意度'
 MEASURE_NAME_MEET = '符合度'
-MEASURE_NAME_MEET_V = '非常符合度'
+MEASURE_NAME_MEET_V = '符合度'
 MEASURE_NAME_IMPORTANT = '重要度'
 MEASURE_NAME_PLEASED = '满足度'
 MEASURE_NAME_HELP = '帮助度'
@@ -82,6 +82,7 @@ COMBINE_RATE = '行业比率'
 GROUP_COLUMN = ('学院', '专业', '分组')
 COLLEGE_MAJOR = ('_10', '_14')
 TOTAL_COLUMN = '总体'
+AVG_SALARY='本校平均薪酬'
 SPECIAL_WHERE = '条件'
 B10_1_ANSWER = ['0次']
 OPER_NOT = '非'
@@ -102,7 +103,8 @@ DICT_SUBJECT = {'H4-A': '专业课教师教学态度', 'H4-B': '专业课教师�
                 'H2-A': '课堂目标', 'H2-B': '课堂纪律',
                 'H2-C': '师生互动', 'H2-D': '反馈效果', 'H2-E': '教学效果',
                 'B5-B': '行业', 'B1': '单位类型', 'B3-A': '就业地区', 'B3-B': '就业城市',
-                'B4-B': '就业职业','D2':'求职困难'
+                'B4-B': '就业职业','D2':'求职困难',
+
                 }
 SPECIAL_SUBJECT = {'B9-1': '专业', 'B7-1': '工作满意度', 'B7-2': '薪酬',
                    'B7-3': '职业发展前景', 'B7-4': '工作内容',
@@ -136,7 +138,8 @@ HEALTH_COLUMN = ('卫生', '非卫生')
 TEACHER_COLUMN = ('师范', '非师范')
 
 REPORT_FOLDER = "../test-data/san-ming/report/"
-
+SOURCE_FOLDER = "../test-data/san-ming/cleaned/"
+CONFIG_FILE='subject_content.xlsx'
 ERROR_PARAMS = "参数错误"
 
 DECIMALS6 = 6

@@ -50,8 +50,11 @@ def writeExcelWithIndex(dataFrame, filePath, sheetName):
     writer.save()
     writer.close()
 
+    percent_cols = [CONFIG.MEASURE_NAME_HELP,CONFIG.MEASURE_NAME_SATISFY]
+    formate_percent(filePath, sheetName, percent_cols,2)
 
-def formate_percent(file_path, sheet_name, percent_cols):
+
+def formate_percent(file_path, sheet_name, percent_cols,head=1):
     wbook = xl.load_workbook(file_path)
     sheet = wbook[sheet_name]
     max_row = sheet.max_row
@@ -59,11 +62,11 @@ def formate_percent(file_path, sheet_name, percent_cols):
 
     for i in range(1, max_col + 1):
         colTag = xl.utils.get_column_letter(i)
-        sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_PERCENTAGE_00
         sheet.column_dimensions[colTag].width = 10
 
-        if sheet.cell(row=1, column=i).value in percent_cols:
-            for j in range(2, max_row + 1):
+        if sheet.cell(row=head, column=i).value in percent_cols:
+            sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_PERCENTAGE_00
+            for j in range(head+1, max_row + 1):
                 sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_PERCENTAGE_00
     wbook.save(file_path)
     wbook.close()

@@ -28,7 +28,7 @@
     further.school_recommed_report(data, CONFIG.REPORT_FOLDER + '母校推荐度.xlsx')
 
     # 学生指导与服务
-    further.evelution_H4_Q_report(data, CONFIG.REPORT_FOLDER + '对生学生活服务的评价.xlsx')
+    further.evelution_H4_Q_report(data, CONFIG.REPORT_FOLDER + '对学生生活服务的评价.xlsx')
     further.evelution_H4_P_report(data, CONFIG.REPORT_FOLDER + '对学生管理工作的评价.xlsx')
     further.evelution_H4_F_K_report(data, CONFIG.REPORT_FOLDER + '对就业教育服务的评价.xlsx')
     further.evelution_H4_L_O_report(data, CONFIG.REPORT_FOLDER + '对创业教育服务的反馈.xlsx')

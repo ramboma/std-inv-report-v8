@@ -120,28 +120,30 @@ def employee_region_report(data, filePath):
     # 生源地当地比
     birth_value_rate = (birth_value_count / birth_count).round(CONFIG.DECIMALS6)
     pd_birth_rate = pd.DataFrame({'省内就业': [birth_value_rate],
-                                  '省外就业': [100 - birth_value_rate],
+                                  '省外就业': [1 - birth_value_rate],
                                   CONFIG.RATE_COLUMN[2]: birth_count})
-
-    excelUtil.writeExcel(pd_birth_rate, filePath, '省内生源就业地区流向')
+    df_combine = pd.concat([pd_birth_rate, pd_birth_rate], sort=False)
+    df_combine.insert(0, '省内生源就业地区流向', ['省内生源', CONFIG.TOTAL_COLUMN])
+    excelUtil.writeExcel(df_combine, filePath, '省内生源就业地区流向')
 
     pd_not_birth = data[data['A1-A'] != CONFIG.PROVINCE]
     # 外地生源答题总人数
     not_birth_count = answerUtil.answer_count(pd_not_birth, 'B3-A')
     # 外地生源本地就业人数 省内就业
     not_birth_local_count = answerUtil.answer_of_subject_count(pd_not_birth, 'B3-A', CONFIG.PROVINCE)
-    not_birth_local_rate = (not_birth_local_count / not_birth_count * 100).round(2)
+    not_birth_local_rate = (not_birth_local_count / not_birth_count).round(decimals=CONFIG.DECIMALS6)
 
     # 外地生源回生源地就业人数 回生源所在地就业
     not_birth_birth_count = pd_not_birth[pd_not_birth['A1-A'] == pd_not_birth['B3-A']]['B3-A'].count()
-    not_birth_birth_rate = (not_birth_birth_count / not_birth_count * 100).round(2)
+    not_birth_birth_rate = (not_birth_birth_count / not_birth_count).round(decimals=CONFIG.DECIMALS6)
 
     pd_not_birth_rate = pd.DataFrame({'回生源所在地就业': [not_birth_birth_rate],
-                                      '其他省份就业': [100 - not_birth_local_rate - not_birth_birth_rate],
+                                      '其他省份就业': [1 - not_birth_local_rate - not_birth_birth_rate],
                                       '省内就业': [not_birth_local_rate],
                                       CONFIG.RATE_COLUMN[2]: not_birth_count})
-
-    excelUtil.writeExcel(pd_not_birth_rate, filePath, '省外生源就业地区流向')
+    df_combine=pd.concat([pd_not_birth_rate,pd_not_birth_rate],sort=False)
+    df_combine.insert(0,'省外生源就业地区流向',['省外生源',CONFIG.TOTAL_COLUMN])
+    excelUtil.writeExcel(df_combine, filePath, '省外生源就业地区流向')
 
     pd_single_grp_mean = formulas.single_grp_mean(data, 'B6', 'B3-A')
     excelUtil.writeExcel(pd_single_grp_mean, filePath, '主要就业地区月均收入')
@@ -261,38 +263,45 @@ def income_report(data, filePath):
     # mean
     subject = 'B6'
     pd_mean = formulas.answer_mean(data, subject)
-    excelUtil.writeExcel(pd_mean, filePath, '总体月均收入')
 
     pd_college_mean = formulas.single_grp_mean(data, subject, CONFIG.BASE_COLUMN[0], True)
-    excelUtil.writeExcel(pd_college_mean, filePath, '各学院月均收入')
+    pd_combin=pd.concat([pd_college_mean,pd_mean],sort=False)
+    pd_combin.iloc[-1,0]=CONFIG.AVG_SALARY
+    excelUtil.writeExcel(pd_combin, filePath, '各学院月均收入')
 
     pd_major_mean = formulas.major_mean(data, subject)
-    excelUtil.writeExcel(pd_major_mean, filePath, '各专业月均收入')
+    pd_combin=pd.concat([pd_major_mean,pd_mean],sort=False)
+    pd_combin.iloc[-1,0:1]=CONFIG.AVG_SALARY
+    excelUtil.writeExcel(pd_combin, filePath, '各专业月均收入')
 
-    # 500
     start = 2000
     period_n = 4
-    step = 500
-    pd_500 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t = formulas.rate_T(pd_500, [CONFIG.MEAN_COLUMN[-1]])
-    excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
+    steps=[500,1000,1500]
+    for step in steps:
+        pd_500 = formulas.answer_period(data, subject, start, start + period_n * step, step)
+        data_t = formulas.rate_T(pd_500)
+        dict_name=build_period_name(start,step,period_n,100000)
+        data_t.rename(columns=dict_name,inplace=True)
+        data_t[CONFIG.MEAN_COLUMN[-1]]=pd_mean[CONFIG.MEAN_COLUMN[-1]]
+        data_combine=pd.concat([data_t,data_t],sort=False)
+        data_combine.insert(0,CONFIG.TOTAL_COLUMN,CONFIG.TOTAL_COLUMN)
+        excelUtil.writeExcel(data_combine, filePath, '毕业生月均收入及薪酬分布_' + str(step))
 
-    step = 1000
-    pd_1000 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t = formulas.rate_T(pd_1000)
-    excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
-
-    step = 2000
-    pd_2000 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t = formulas.rate_T(pd_2000)
-    excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
-
-    step = 1500
-    pd_1500 = formulas.answer_period(data, subject, start, start + period_n * step, step)
-    data_t = formulas.rate_T(pd_1500)
-    excelUtil.writeExcel(data_t, filePath, '毕业生月均收入及薪酬分布_' + str(step))
     return
 
+def build_period_name(start,step,period_n,max):
+    key='(0, {}]'.format(start)
+    val='{}元及以下'.format(start)
+    name={key:val}
+    for i in range(0,period_n):
+        key='({}, {}]'.format(start+i*step,start+(i+1)*step)
+        val='{}-{}元'.format(start+i*step,start+(i+1)*step)
+        name[key]=val
+    key = '({}, {}]'.format(start+period_n*step,max)
+    val='{}元及以上'.format(start+period_n*step+1)
+    name[key] = val
+    print(name)
+    return name
 
 def school_satisfy_report(data, filePath):
     '''母校满意度报告'''
@@ -361,24 +370,23 @@ def self_employed_report(data, filePath):
     excelUtil.writeExcel(business_rate, filePath, '自主创业比例')
 
     subject = 'G3'
-    df_distribution = answerUtil.multi_answer_distribution(data, subject)
-    df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(df_distribution, filePath, '创业原因')
+    sheet_name='创业原因'
+    config_dict=get_config()
+    template.tdl_multi_answer_dist(data,subject,filePath,sheet_name,config_dict)
 
     subject = 'G4'
-    df_distribution = answerUtil.multi_answer_distribution(data, subject)
-    df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(df_distribution, filePath, '创业资金来源')
+    sheet_name = '创业资金来源'
+    template.tdl_multi_answer_dist(data, subject, filePath, sheet_name, config_dict)
 
     subject = 'G5'
-    df_distribution = answerUtil.multi_answer_distribution(data, subject)
-    df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(df_distribution, filePath, '创业困难')
+    sheet_name = '创业困难'
+    template.tdl_multi_answer_dist(data, subject, filePath, sheet_name, config_dict)
 
     subject = 'G1-B'
+    sheet_name = '创业行业'
     df_distribution = formulas.answer_rate(data, subject)
     df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(df_distribution, filePath, '创业行业')
+    excelUtil.writeExcel(df_distribution, filePath, sheet_name)
 
     subject = 'G2'
     df_mean = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
@@ -389,12 +397,15 @@ def self_employed_report(data, filePath):
 
 def basic_quality_report(data, file):
     '''基础素质报告'''
+    config_dict=get_config()
     subject = 'I2-1'
-    df_distribution = answerUtil.multi_answer_distribution(data, subject)
-    df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(df_distribution, file, '重要度')
+    sheet_name='重要度'
+
+    template.tdl_multi_answer_dist(data,subject,file,sheet_name,config_dict)
 
     subject = 'I2-2'
+    sheet_name='重要度'
+
     df_ability = answerUtil.ability_distribution(data, subject)
     df_ability.sort_values(CONFIG.RATE_COLUMN[1], ascending=0, inplace=True)
     excelUtil.writeExcel(df_ability, file, '满足度')
@@ -533,24 +544,24 @@ def evelution_H4_P_report(data, file):
     report_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY, sheet_name, file)
 
     subject = 'H5'
-    df_distribution = answerUtil.multi_answer_distribution(data, subject)
-    df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-
-    excelUtil.writeExcel(df_distribution, file, '学生管理工作改进')
-
+    dict_config=get_config()
+    template.tdl_multi_answer_dist(data,subject,file,'学生管理工作改进',dict_config)
     return
 
+def get_config():
+    df_config=excelUtil.read_excel(CONFIG.SOURCE_FOLDER+CONFIG.CONFIG_FILE)
+    config_dict={row['subject']:row['content'] for index, row in df_config.iterrows()}
+    return config_dict
 
 def evelution_H4_Q_report(data, file):
-    '''母校生活服务报告'''
+    '''生活服务满意度'''
     subject = 'H4-Q'
     sheet_name = '生活服务满意度'
     report_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY, sheet_name, file)
 
     subject = 'H6'
-    df_distribution = answerUtil.multi_answer_distribution(data, subject)
-    df_distribution.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-    excelUtil.writeExcel(df_distribution, file, '生活服务需要提高的方面')
+    dict_config=get_config()
+    template.tdl_multi_answer_dist(data,subject,file,'生活服务需要提高的方面',dict_config)
 
     return
 
@@ -678,7 +689,7 @@ def job_meet_report(data, filePath):
 
 
 def job_satisfy_report(data, filePath):
-    '''职业满意度'''
+    '''就业满意度'''
     subject = 'B7'
     measure_type = CONFIG.ANSWER_TYPE_SATISFY
     measure_name = formulas.parse_measure_name(measure_type)
@@ -687,7 +698,7 @@ def job_satisfy_report(data, filePath):
     # 单独产生总体职业满意度、包含学院、专业
     report_five_rate(data, array_subjects[0], measure_type, CONFIG.JOB_SATISFY_SUBJECT[array_subjects[0]], filePath)
 
-    # 行拼接所以选项的满意度，报表格式不同
+    # 行拼接所有选项的满意度，报表格式不同
     df_init = pd.DataFrame()
     for sub in array_subjects:
         sheetName = CONFIG.JOB_SATISFY_SUBJECT[sub]
