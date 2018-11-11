@@ -57,6 +57,26 @@ def tdl_value_rate_t(df_data,subject,file_path):
     excelUtil.writeExcel(df_concat, file_path, CONFIG.TOTAL_COLUMN +sheet_name)
     return
 
+def tdl_five_rate(df_data,subject,measure_type,file_path,sheet_name):
+    '''五维总体占比，行转列，追加总体'''
+    ls_metrics_cols = list(CONFIG.BASE_COLUMN)
+    ls_metrics_cols.append(subject)
+    df_metrics = df_data.loc[:, ls_metrics_cols]
+
+    focus_name = formulas.parse_measure_name(measure_type)
+    array_focus = [focus_name, CONFIG.MEAN_COLUMN[-1]]
+
+    value_rate = formulas.answer_five_rate(df_metrics, subject, measure_type)
+    rate_t = formulas.rate_T(value_rate, array_focus)
+    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0)]
+    rate_t.fillna(0,inplace=True)
+    rate_combin = pd.concat([rate_t, rate_t])
+    rate_combin.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
+    excelUtil.writeExcel(rate_combin, file_path, CONFIG.TOTAL_COLUMN + sheet_name)
+
+    #返回后便于拼接总体
+    return rate_t
+
 def tdl_multi_answer_dist(data, subject,file_path,sheet_name, dict_config):
     '''多选题 根据题号统计每个选项人数和占比， 对学生生活服务对评价-生活服务需要提高的方面'''
     # step1 答题总人数

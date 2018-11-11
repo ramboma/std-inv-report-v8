@@ -50,7 +50,7 @@ def writeExcelWithIndex(dataFrame, filePath, sheetName):
     writer.save()
     writer.close()
 
-    percent_cols = [CONFIG.MEASURE_NAME_HELP,CONFIG.MEASURE_NAME_SATISFY]
+    percent_cols = [CONFIG.MEASURE_NAME_HELP,CONFIG.MEASURE_NAME_SATISFY,CONFIG.MEASURE_NAME_MEET]
     formate_percent(filePath, sheetName, percent_cols,2)
 
 
@@ -73,8 +73,9 @@ def formate_percent(file_path, sheet_name, percent_cols,head=1):
 
 
 def percent_columns(columns):
-    elimite_cols = [CONFIG.MEAN_COLUMN[2], CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[1], CONFIG.MEAN_COLUMN[0],
-                    CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.GROUP_COLUMN[2], CONFIG.TOTAL_COLUMN]
+    elimite_cols = [CONFIG.MEAN_COLUMN[2], CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[1],
+                    CONFIG.MEAN_COLUMN[0], CONFIG.ABILITY_COLUMN,CONFIG.GROUP_COLUMN[2],
+                    CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1],  CONFIG.TOTAL_COLUMN]
     for column in elimite_cols:
         if column in columns:
             columns.remove(column)

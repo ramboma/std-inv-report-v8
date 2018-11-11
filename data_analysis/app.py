@@ -13,8 +13,11 @@ import pandas as pd
 
 def main(file):
     data = excelUtil.read_excel(file)
-    further.further_report(data, CONFIG.REPORT_FOLDER + '国内升学.xlsx')
-
+    further.evelution_H4_R_report(data, CONFIG.REPORT_FOLDER + '社团活动.xlsx')
+    further.evelution_academic_report(data, CONFIG.REPORT_FOLDER + '母校学风认可度.xlsx')
+    further.evelution_H4_T_report(data, CONFIG.REPORT_FOLDER + '教育教学总体评价.xlsx')
+    further.evelution_H4_S_report(data, CONFIG.REPORT_FOLDER + '实践教学的评价.xlsx')
+    further.evelution_H4_E_report(data, CONFIG.REPORT_FOLDER + '任课教师.xlsx')
 
 def test():
     data = pd.DataFrame({'class': ['c1', 'c2', 'c3', 'c4'],
@@ -25,7 +28,13 @@ def test():
                         'content':['C1','C2','C3','C4']
     })
 
+    s=data.loc[:,'score'].sum()
+    print('{},avg:{}'.format(s,s/4))
+    ds=data.describe()
+    ds=ds[ds.index=='mean']
+    ds=pd.concat([data,ds],sort=False)
 
+    print(ds)
     data2.set_index('subject',inplace=True)
     data.loc[:, 'class']=data.loc[:,'class'].map({'c1':'C1'})
     print(data)

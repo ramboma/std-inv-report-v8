@@ -198,7 +198,7 @@ def formula_income_mean(data, dict_cond={}):
 
     count = Util.answer_count(df_data, subject)
     sum = Util.answer_sum(df_data, subject)
-    mean = (sum / count).round(decimals=CONFIG.DECIMALS6)
+    mean = (sum / count).round(decimals=CONFIG.DECIMALS2)
     # 均值 答题总人数
     pd_mean = pd.DataFrame({CONFIG.MEAN_COLUMN[2]: [count],
                             CONFIG.MEAN_COLUMN[-1]: [mean]})
@@ -761,8 +761,10 @@ def percent(df_data):
         return df_data
     columns = [col for col in df_data.columns]
     print(columns)
-    elimite_cols = [CONFIG.MEAN_COLUMN[2], CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[1], CONFIG.MEAN_COLUMN[0],
-                    CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.GROUP_COLUMN[2], CONFIG.TOTAL_COLUMN]
+    elimite_cols = [CONFIG.MEAN_COLUMN[2], CONFIG.MEAN_COLUMN[-1],
+                    CONFIG.MEAN_COLUMN[1], CONFIG.MEAN_COLUMN[0],
+                    CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.ABILITY_COLUMN,
+                    CONFIG.GROUP_COLUMN[2], CONFIG.TOTAL_COLUMN]
     for column in elimite_cols:
         if column in columns:
             columns.remove(column)
@@ -771,3 +773,24 @@ def percent(df_data):
 
     return df_data
 
+def rebuild_five_columns(measure_type, level=0, minus=0):
+    # 用于重排转置后的列的顺序
+    five_metric = parse_measure(measure_type)
+    five_metric = five_metric[0:-1]
+
+    # 学院、专业、五纬排序、度量值、均值、答题总人数
+    metric_name = parse_measure_name(measure_type)
+    order_column = five_metric.copy()
+    if level == 1:
+        order_column.insert(0, CONFIG.GROUP_COLUMN[0])
+    elif level == 2:
+        order_column.insert(0, CONFIG.GROUP_COLUMN[0])
+        order_column.insert(1, CONFIG.GROUP_COLUMN[1])
+    elif level == 3:
+        order_column.insert(0, CONFIG.GROUP_COLUMN[-1])
+    # 默认不减少，即考虑度量、均值
+    if not minus:
+        order_column.append(metric_name)
+        order_column.append(CONFIG.MEAN_COLUMN[-1])
+    order_column.append(CONFIG.MEAN_COLUMN[2])
+    return order_column

@@ -140,12 +140,10 @@ def ability_distribution(data, subject):
     df_answer = data.loc[:, multi_column]
     multi_grp_column = [x[0:x.rindex('-') + 1] for x in multi_column]
     multi_grp_column = list(set(multi_grp_column))
-    result_column = ['答案', '回答此答案人数', '能力']
-    df_init = pd.DataFrame(columns=result_column)  # 创建一个空的dataframe
+    df_init = pd.DataFrame()  # 创建一个空的dataframe
     for item in multi_grp_column:
         df_ability = ability_item_distribution(df_answer, item)
         df_init = pd.concat([df_init, df_ability])
-    print(df_init)
     return df_init
 
 
@@ -174,7 +172,8 @@ def ability_item_distribution(data, subject):
     df_answer.loc[:,'ability'] = df_answer.loc[:,'sum'] / item_size
     ability = (df_answer.loc[:,'ability'].sum() / answer_count).round(2)
     df_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [subject[0:subject.rindex('-')]],
-                              CONFIG.RATE_COLUMN[2]: [answer_count], '能力': [ability]})
+                              CONFIG.ABILITY_COLUMN: [ability],
+                              CONFIG.RATE_COLUMN[2]: [answer_count]})
     return df_result
 
 
