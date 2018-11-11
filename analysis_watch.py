@@ -7,29 +7,25 @@ __author__ = 'Gary.Z'
 
 import click
 import time
+import os
 import shutil
-# import portalocker
-import multiprocessing
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from data_cleansing.cleanser_runner import *
+from data_cleansing.logging import *
+from data_analysis.reports_generator import *
 
 logger = get_logger(__name__)
 
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
 
-    def __init__(self, batch_cleansing_handler, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
+    def __init__(self, batch_cleansing_handler, output_folder):
         super().__init__()
 
         self._batch_cleansing_handler = batch_cleansing_handler
         self._output_folder = output_folder
-        self._degree = degree
-        self._trace_mode = trace_mode
-        self._stream_mode = stream_mode
-        self._concurrent_mode = concurrent_mode
-        self._pool = pool
 
     def on_moved(self, event):
         # super(LoggingEventHandler, self).on_moved(event)
@@ -48,8 +44,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
             logger.info('input file {} detected'.format(event.src_path))
-            self._batch_cleansing_handler(event.src_path, self._output_folder, self._degree,
-                                          self._stream_mode, self._concurrent_mode, self._pool, self._trace_mode)
+            self._batch_cleansing_handler(event.src_path, self._output_folder)
         pass
 
     def on_deleted(self, event):
@@ -84,7 +79,7 @@ def try_move_file(src, dst, max_retry=20, retry_interval=3):
             raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(retry_interval * max_retry))
 
 
-def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
+def run_generate_reports(input_file, output_folder):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
@@ -95,43 +90,12 @@ def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, c
     dirpath = output_folder
 
     try:
-        tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
+        # call report generator class here
+        rg = ReportGenerator(input_file, output_folder)
+        rg.generate()
+        # or call generation function here
+        generate_reports(input_file, output_folder)
 
-        setting_groups = []
-        setting_groups.extend([
-            # internal, analysis
-            {
-                'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree),
-                'internal': True, 'analysis': True,
-                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
-            },
-            # internal, customer
-            {
-                'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree),
-                'internal': True, 'analysis': False,
-                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
-            },
-            # public, analysis
-            {
-                'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree),
-                'internal': False, 'analysis': True,
-                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
-            },
-            # public, customer
-            {
-                'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree),
-                'internal': False, 'analysis': False,
-                'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
-            },
-        ])
-        if concurrent_mode:
-            run_concurrent(setting_groups, stream_mode, pool)
-        else:
-            run_serial(setting_groups, stream_mode)
 
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -173,25 +137,9 @@ def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trac
         logger.error('output path [{}] is not folder, quit'.format(output_folder))
         exit(0)
 
-    if trace_mode is None:
-        trace_mode = False
-
-    if stream_mode is None:
-        stream_mode = False
-
-    if concurrent_mode is None:
-        concurrent_mode = False
-
     logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
 
-    pool = None
-    if concurrent_mode:
-        logger.info('init process pool ... ')
-        max_count = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(max_count)
-        logger.info('{} processes initialed'.format(max_count))
-
-    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, stream_mode, concurrent_mode, pool, trace_mode)
+    event_handler = InputFileMatchingEventHandler(run_generate_reports, output_folder)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
     observer.start()
@@ -206,8 +154,6 @@ def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trac
         observer.stop()
     finally:
         observer.join()
-        pool.close()
-        pool.join()
 
 
 if __name__ == '__main__':
