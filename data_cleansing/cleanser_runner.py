@@ -175,6 +175,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
         finally:
             if os.path.exists(temp_file):
+                logger.info('remove temp file {}'.format(temp_file))
                 os.remove(temp_file)
 
         self._log_tailer()
