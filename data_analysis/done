@@ -58,6 +58,8 @@
     further.special_origin_province_report(data, CONFIG.REPORT_FOLDER + '省内省外生源.xlsx')
     further.special_indurstry_province_report(data, CONFIG.REPORT_FOLDER + '省内省外就业.xlsx')
     further.special_national_report(data, CONFIG.REPORT_FOLDER + '汉族少数名族.xlsx')
+    further.special_medical_report(data, CONFIG.REPORT_FOLDER + '医疗卫生职业.xlsx')
+    further.special_social_health_report(data, CONFIG.REPORT_FOLDER + '卫生和社会工作.xlsx')
 
     # 学习效果
     further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')

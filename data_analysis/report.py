@@ -1,17 +1,105 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'report.py'
+'py'
 
 __author__ = 'kuoren'
 
 import pandas as pd
-import numpy as np
 import data_analysis.utils as answerUtil
 import data_analysis.read_excel_util as excelUtil
 import data_analysis.config as CONFIG
 import data_analysis.formulas as formulas
 import data_analysis.template as template
+from data_analysis.cleaned_loader import *
+from data_analysis.config_loader import *
+from data_cleansing.logging import *
+from data_cleansing.clock import *
+
+logger = get_logger(__name__)
+
+
+class Reporter:
+    def __init__(self, source_file, output_fold, config_path):
+        self.source_file = source_file
+        self.output_fold = output_fold
+        self.config_path = config_path
+
+    @clocking
+    def do_report(self):
+        cleaned_loader = CleanedLoader(self.source_file)
+        cleaned_data = cleaned_loader.cleaned_data
+
+        if cleaned_data is None:
+            logger.error('************read cleaned file error')
+            return
+
+        config_loader = ConfigLoader(self.config_path)
+        config_dict = config_loader.config_dict
+
+        # 就业率和就业状态
+        work_option_report(cleaned_data, self.output_fold + '就业机会.xlsx')
+        non_employee_report(cleaned_data, self.output_fold + '未就业分析.xlsx')
+        employee_report(cleaned_data, self.output_fold + '就业率及就业就业状态.xlsx')
+
+        # 就业竞争力
+        major_relative_report(cleaned_data, self.output_fold + '专业相关度.xlsx')
+        job_meet_report(cleaned_data, self.output_fold + '职业期待吻合度.xlsx')
+
+        job_satisfy_report(cleaned_data, self.output_fold + '就业满意度.xlsx')
+        work_stability_report(cleaned_data, self.output_fold + '工作稳定性.xlsx')
+
+        income_report(cleaned_data, self.output_fold + '月均收入.xlsx')
+
+        # 就业分布
+        employee_indurstry(cleaned_data, self.output_fold + '就业行业分布.xlsx')
+        employee_job(cleaned_data, self.output_fold + '就业职业分布.xlsx')
+        employee_industry_type(cleaned_data, self.output_fold + '就业单位分布.xlsx')
+        employee_industry_size(cleaned_data, self.output_fold + '就业单位分布.xlsx')
+        employee_region_report(cleaned_data, self.output_fold + '就业地区分布.xlsx')
+
+        # 求职过程与就业指导服务
+        employee_difficult_report(cleaned_data, self.output_fold + '求职过程.xlsx')
+
+        # 母校综合评价
+        school_satisfy_report(cleaned_data, self.output_fold + '母校满意度.xlsx')
+        school_recommed_report(cleaned_data, self.output_fold + '母校推荐度.xlsx')
+
+        # 学生指导与服务
+        evelution_H4_Q_report(cleaned_data, self.output_fold + '对学生生活服务的评价.xlsx',config_dict)
+        evelution_H4_P_report(cleaned_data, self.output_fold + '对学生管理工作的评价.xlsx', config_dict)
+        evelution_H4_F_K_report(cleaned_data, self.output_fold + '对就业教育服务的评价.xlsx')
+        evelution_H4_L_O_report(cleaned_data, self.output_fold + '对创业教育服务的反馈.xlsx')
+
+        # 附加题
+        evelution_H4_R_report(cleaned_data, self.output_fold + '社团活动.xlsx')
+        evelution_academic_report(cleaned_data, self.output_fold + '母校学风认可度.xlsx')
+        evelution_H4_T_report(cleaned_data, self.output_fold + '教育教学总体评价.xlsx')
+        evelution_H4_S_report(cleaned_data, self.output_fold + '实践教学的评价.xlsx')
+        evelution_H4_E_report(cleaned_data, self.output_fold + '任课教师.xlsx')
+
+        # 国内升学
+        further_report(cleaned_data, self.output_fold + '国内升学.xlsx')
+
+        # 出国境留学
+        study_abroad_report(cleaned_data, self.output_fold + '出国境留学.xlsx')
+        # 自主创业
+        self_employed_report(cleaned_data, self.output_fold + '自主创业.xlsx',config_dict)
+        # 人才培养
+        evelution_practice_report(cleaned_data, self.output_fold + '对实践教学的评价.xlsx')
+        evelution_lesson_report(cleaned_data, self.output_fold + '对课堂教学的评价.xlsx')
+        evelution_teach_report(cleaned_data, self.output_fold + '对任课教师的评价.xlsx')
+
+        # 特殊人群
+        special_gender_report(cleaned_data, self.output_fold + '不同性别.xlsx')
+        special_education_report(cleaned_data, self.output_fold + '教育行业和非教育行业.xlsx')
+        special_origin_province_report(cleaned_data, self.output_fold + '省内省外生源.xlsx')
+        special_indurstry_province_report(cleaned_data, self.output_fold + '省内省外就业.xlsx')
+        special_national_report(cleaned_data, self.output_fold + '汉族少数名族.xlsx')
+
+        # 学习效果
+        major_quality_report(cleaned_data, self.output_fold + '专业素质.xlsx')
+        basic_quality_report(cleaned_data, self.output_fold + '基础素质.xlsx', config_dict)
 
 
 def employee_indurstry(data, filePath):
@@ -100,15 +188,15 @@ def employee_region_report(data, filePath):
     excelUtil.writeExcel(df_value_count, filePath, '总体就业省')
 
     # 构造福建省条件 {column:B3-A,cond:福建省,oper:eq}
-    cond={CONFIG.DICT_KEY[0]:'B3-A',CONFIG.DICT_KEY[1]:CONFIG.PROVINCE,
-          CONFIG.DICT_KEY[2]:CONFIG.OPER[0]}
-    college_value = formulas.answer_rate_condition(data,'B3-B',cond,[CONFIG.RATE_COLUMN[2]],[0])
+    cond = {CONFIG.DICT_KEY[0]: 'B3-A', CONFIG.DICT_KEY[1]: CONFIG.PROVINCE,
+            CONFIG.DICT_KEY[2]: CONFIG.OPER[0]}
+    college_value = formulas.answer_rate_condition(data, 'B3-B', cond, [CONFIG.RATE_COLUMN[2]], [0])
     excelUtil.writeExcel(college_value, filePath, '省内就业城市')
 
-    #各学院就业地区分布
+    # 各学院就业地区分布
     template.tdl_college_combine(data, 'B3-A', filePath)
 
-    #各学院省内就业地区分布
+    # 各学院省内就业地区分布
     df_province = data[data['B3-A'] == CONFIG.PROVINCE]
     template.tdl_college_combine(df_province, 'B3-B', filePath)
 
@@ -141,8 +229,8 @@ def employee_region_report(data, filePath):
                                       '其他省份就业': [1 - not_birth_local_rate - not_birth_birth_rate],
                                       '省内就业': [not_birth_local_rate],
                                       CONFIG.RATE_COLUMN[2]: not_birth_count})
-    df_combine=pd.concat([pd_not_birth_rate,pd_not_birth_rate],sort=False)
-    df_combine.insert(0,'省外生源就业地区流向',['省外生源',CONFIG.TOTAL_COLUMN])
+    df_combine = pd.concat([pd_not_birth_rate, pd_not_birth_rate], sort=False)
+    df_combine.insert(0, '省外生源就业地区流向', ['省外生源', CONFIG.TOTAL_COLUMN])
     excelUtil.writeExcel(df_combine, filePath, '省外生源就业地区流向')
 
     pd_single_grp_mean = formulas.single_grp_mean(data, 'B6', 'B3-A')
@@ -156,45 +244,46 @@ def employee_region_report(data, filePath):
 
 def study_abroad_report(data, filePath):
     '''出国境留学'''
-    subject='F1'
+    subject = 'F1'
     count = answerUtil.answer_count(data, 'A2')
     study_value = formulas.answer_rate(data, 'F1')
     study_value[CONFIG.RATE_COLUMN[2]] = count
     study_value[CONFIG.RATE_COLUMN[-1]] = (
-            study_value.loc[:, CONFIG.RATE_COLUMN[1]] / study_value.loc[:, CONFIG.RATE_COLUMN[2]]).round(decimals=CONFIG.DECIMALS6)
+            study_value.loc[:, CONFIG.RATE_COLUMN[1]] / study_value.loc[:, CONFIG.RATE_COLUMN[2]]).round(
+        decimals=CONFIG.DECIMALS6)
     data_t = formulas.rate_T(study_value)
-    df_combine=pd.concat([data_t,data_t],sort=False)
-    df_combine.insert(0,'留学比列',['本科毕业生',CONFIG.TOTAL_COLUMN])
+    df_combine = pd.concat([data_t, data_t], sort=False)
+    df_combine.insert(0, '留学比列', ['本科毕业生', CONFIG.TOTAL_COLUMN])
     excelUtil.writeExcel(df_combine, filePath, '留学比列')
 
-    template.tdl_five_rate(data, 'F2', CONFIG.ANSWER_TYPE_SATISFY,filePath,'留学录取结果满意度')
-    template.tdl_five_rate(data, 'F3', CONFIG.ANSWER_TYPE_RELATIVE,filePath,'留学专业一致性')
-    template.tdl_value_rate(data,'F4',filePath)
+    template.tdl_five_rate(data, 'F2', CONFIG.ANSWER_TYPE_SATISFY, filePath, '留学录取结果满意度')
+    template.tdl_five_rate(data, 'F3', CONFIG.ANSWER_TYPE_RELATIVE, filePath, '留学专业一致性')
+    template.tdl_value_rate(data, 'F4', filePath)
     return
 
 
 def further_report(data, filePath):
     # 总体情况
-    subject='A2'
+    subject = 'A2'
     further_rate = formulas.answer_rate(data, 'A2')
     # 只统计求学比例
-    rate_t=formulas.rate_T(further_rate)
-    rate_t=rate_t.loc[:,[CONFIG.A2_ANSWER[3],CONFIG.RATE_COLUMN[2]]]
-    df_combine=pd.concat([rate_t,rate_t],sort=False)
-    df_combine.insert(0,'总体国内升学比例',['本科毕业生',CONFIG.TOTAL_COLUMN])
+    rate_t = formulas.rate_T(further_rate)
+    rate_t = rate_t.loc[:, [CONFIG.A2_ANSWER[3], CONFIG.RATE_COLUMN[2]]]
+    df_combine = pd.concat([rate_t, rate_t], sort=False)
+    df_combine.insert(0, '总体国内升学比例', ['本科毕业生', CONFIG.TOTAL_COLUMN])
     excelUtil.writeExcel(df_combine, filePath, '总体国内升学比例')
 
-    template.tdl_value_rate(data,'E2',filePath)
+    template.tdl_value_rate(data, 'E2', filePath)
 
-    template.tdl_five_rate(data,'E1',CONFIG.ANSWER_TYPE_SATISFY,filePath,'升学录取结果满意度')
+    template.tdl_five_rate(data, 'E1', CONFIG.ANSWER_TYPE_SATISFY, filePath, '升学录取结果满意度')
     template.tdl_five_rate(data, 'E3', CONFIG.ANSWER_TYPE_RELATIVE, filePath, '升学专业相关度')
-    template.tdl_value_rate(data,'E4',filePath)
+    template.tdl_value_rate(data, 'E4', filePath)
 
 
 def work_stability_report(data, filePath):
-    subject='B10-1'
+    subject = 'B10-1'
     # 追加离职率计算
-    report_value_rate(data,subject,'离职情况分布',filePath,CONFIG.DIMISSION,CONFIG.DIMISSION_COLUMNS)
+    report_value_rate(data, subject, '离职情况分布', filePath, CONFIG.DIMISSION, CONFIG.DIMISSION_COLUMNS)
 
     change_reason = formulas.answer_rate(data, 'B10-2')
     excelUtil.writeExcel(change_reason, filePath, '更换工作原因')
@@ -227,7 +316,7 @@ def employee_report(data, filePath):
     excelUtil.writeExcel(df_concat, filePath, '各专业就业率')
 
     # 总体就业去向 追加灵活就业率
-    report_value_rate(data,subject,'毕业去向',filePath,CONFIG.EMP_FREE,CONFIG.EMP_FREE_COLUMNS)
+    report_value_rate(data, subject, '毕业去向', filePath, CONFIG.EMP_FREE, CONFIG.EMP_FREE_COLUMNS)
     return
 
 
@@ -247,13 +336,14 @@ def work_option_report(data, filePath):
 def non_employee_report(data, filePath):
     '''未就业报告'''
     # 一直未就业分布
-    subject='C1'
-    template.tdl_value_rate(data,subject,filePath)
+    subject = 'C1'
+    template.tdl_value_rate(data, subject, filePath)
 
     # 未就业毕业生目前去向分布
     subject = 'C2'
     template.tdl_value_rate(data, subject, filePath)
     return
+
 
 def income_report(data, filePath):
     # mean
@@ -261,43 +351,45 @@ def income_report(data, filePath):
     pd_mean = formulas.answer_mean(data, subject)
 
     pd_college_mean = formulas.single_grp_mean(data, subject, CONFIG.BASE_COLUMN[0], True)
-    pd_combin=pd.concat([pd_college_mean,pd_mean],sort=False)
-    pd_combin.iloc[-1,0]=CONFIG.AVG_SALARY
+    pd_combin = pd.concat([pd_college_mean, pd_mean], sort=False)
+    pd_combin.iloc[-1, 0] = CONFIG.AVG_SALARY
     excelUtil.writeExcel(pd_combin, filePath, '各学院月均收入')
 
     pd_major_mean = formulas.major_mean(data, subject)
-    pd_combin=pd.concat([pd_major_mean,pd_mean],sort=False)
-    pd_combin.iloc[-1,0:1]=CONFIG.AVG_SALARY
+    pd_combin = pd.concat([pd_major_mean, pd_mean], sort=False)
+    pd_combin.iloc[-1, 0:1] = CONFIG.AVG_SALARY
     excelUtil.writeExcel(pd_combin, filePath, '各专业月均收入')
 
     start = 2000
     period_n = 4
-    steps=[500,1000,1500]
+    steps = [500, 1000, 1500, 2000]
     for step in steps:
         pd_500 = formulas.answer_period(data, subject, start, start + period_n * step, step)
         data_t = formulas.rate_T(pd_500)
-        dict_name=build_period_name(start,step,period_n,100000)
-        data_t.rename(columns=dict_name,inplace=True)
-        data_t[CONFIG.MEAN_COLUMN[-1]]=pd_mean[CONFIG.MEAN_COLUMN[-1]]
-        data_combine=pd.concat([data_t,data_t],sort=False)
-        data_combine.insert(0,CONFIG.TOTAL_COLUMN,CONFIG.TOTAL_COLUMN)
+        dict_name = build_period_name(start, step, period_n, 100000)
+        data_t.rename(columns=dict_name, inplace=True)
+        data_t[CONFIG.MEAN_COLUMN[-1]] = pd_mean[CONFIG.MEAN_COLUMN[-1]]
+        data_combine = pd.concat([data_t, data_t], sort=False)
+        data_combine.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
         excelUtil.writeExcel(data_combine, filePath, '毕业生月均收入及薪酬分布_' + str(step))
 
     return
 
-def build_period_name(start,step,period_n,max):
-    key='(0, {}]'.format(start)
-    val='{}元及以下'.format(start)
-    name={key:val}
-    for i in range(0,period_n):
-        key='({}, {}]'.format(start+i*step,start+(i+1)*step)
-        val='{}-{}元'.format(start+i*step,start+(i+1)*step)
-        name[key]=val
-    key = '({}, {}]'.format(start+period_n*step,max)
-    val='{}元及以上'.format(start+period_n*step+1)
+
+def build_period_name(start, step, period_n, max):
+    key = '(0, {}]'.format(start)
+    val = '{}元及以下'.format(start)
+    name = {key: val}
+    for i in range(0, period_n):
+        key = '({}, {}]'.format(start + i * step, start + (i + 1) * step)
+        val = '{}-{}元'.format(start + i * step, start + (i + 1) * step)
+        name[key] = val
+    key = '({}, {}]'.format(start + period_n * step, max)
+    val = '{}元及以上'.format(start + period_n * step + 1)
     name[key] = val
     print(name)
     return name
+
 
 def school_satisfy_report(data, filePath):
     '''母校满意度报告'''
@@ -349,16 +441,16 @@ def school_recommed_report(data, filePath):
 def employee_difficult_report(data, filePath):
     '''求职过程报告'''
     data_a2 = data[data['A2'].isin([CONFIG.A2_ANSWER[0], CONFIG.A2_ANSWER[2]])]
-    subject='D2'
+    subject = 'D2'
     template.tdl_value_rate(data_a2, subject, filePath)
     template.tdl_major_combine(data_a2, subject, filePath)
 
-    subject='D1'
+    subject = 'D1'
     template.tdl_value_rate(data_a2, subject, filePath)
     return
 
 
-def self_employed_report(data, filePath):
+def self_employed_report(data, filePath,config_dict):
     '''自主创业报告'''
     business_rate = formulas.answer_rate(data, 'A2')
     # 只统计自主创业的
@@ -366,9 +458,8 @@ def self_employed_report(data, filePath):
     excelUtil.writeExcel(business_rate, filePath, '自主创业比例')
 
     subject = 'G3'
-    sheet_name='创业原因'
-    config_dict=get_config()
-    template.tdl_multi_answer_dist(data,subject,filePath,sheet_name,config_dict)
+    sheet_name = '创业原因'
+    template.tdl_multi_answer_dist(data, subject, filePath, sheet_name, config_dict)
 
     subject = 'G4'
     sheet_name = '创业资金来源'
@@ -391,20 +482,18 @@ def self_employed_report(data, filePath):
     return
 
 
-def basic_quality_report(data, file):
+def basic_quality_report(data, file,config_dict):
     '''基础素质报告'''
-    config_dict=get_config()
     subject = 'I2-1'
-    sheet_name='重要度'
+    sheet_name = '重要度'
 
-    template.tdl_multi_answer_dist(data,subject,file,sheet_name,config_dict)
+    template.tdl_multi_answer_dist(data, subject, file, sheet_name, config_dict)
 
     subject = 'I2-2'
-    sheet_name='重要度'
+    sheet_name = '重要度'
 
     df_ability = answerUtil.ability_distribution(data, subject)
-    config_dict=get_config()
-    df_ability.loc[:,CONFIG.RATE_COLUMN[0]]=df_ability.loc[:,CONFIG.RATE_COLUMN[0]].map(config_dict)
+    df_ability.loc[:, CONFIG.RATE_COLUMN[0]] = df_ability.loc[:, CONFIG.RATE_COLUMN[0]].map(config_dict)
     df_ability.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
     excelUtil.writeExcel(df_ability, file, '满足度')
 
@@ -440,8 +529,8 @@ def evelution_lesson_report(data, file):
     df_desc = df_summary.describe()
     df_mean = df_desc[df_desc.index == 'mean']
     df_combine = pd.concat([df_summary, df_mean], sort=False)
-    df_combine.iloc[-1,0]=CONFIG.TOTAL_COLUMN
-    df_combine.loc[:,CONFIG.MEAN_COLUMN[-1]]=df_combine.loc[:,CONFIG.MEAN_COLUMN[-1]].round(2)
+    df_combine.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]] = df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]].round(2)
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
@@ -464,8 +553,8 @@ def evelution_practice_report(data, file):
     df_desc = df_summary.describe()
     df_mean = df_desc[df_desc.index == 'mean']
     df_combine = pd.concat([df_summary, df_mean], sort=False)
-    df_combine.iloc[-1,0]=CONFIG.TOTAL_COLUMN
-    df_combine.loc[:,CONFIG.MEAN_COLUMN[-1]]=df_combine.loc[:,CONFIG.MEAN_COLUMN[-1]].round(2)
+    df_combine.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]] = df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]].round(2)
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
@@ -490,8 +579,8 @@ def evelution_teach_report(data, file):
     df_desc = df_summary.describe()
     df_mean = df_desc[df_desc.index == 'mean']
     df_combine = pd.concat([df_summary, df_mean], sort=False)
-    df_combine.iloc[-1,0]=CONFIG.TOTAL_COLUMN
-    df_combine.loc[:,CONFIG.MEAN_COLUMN[-1]]=df_combine.loc[:,CONFIG.MEAN_COLUMN[-1]].round(2)
+    df_combine.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]] = df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]].round(2)
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
@@ -550,31 +639,25 @@ def evelution_H4_R_report(data, file):
     return
 
 
-def evelution_H4_P_report(data, file):
+def evelution_H4_P_report(data, file,config_dict):
     '''母校学生管理报告'''
     subject = 'H4-P'
     sheet_name = '管理工作满意度'
     report_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY, sheet_name, file)
 
     subject = 'H5'
-    dict_config=get_config()
-    template.tdl_multi_answer_dist(data,subject,file,'学生管理工作改进',dict_config)
+    template.tdl_multi_answer_dist(data, subject, file, '学生管理工作改进', config_dict)
     return
 
-def get_config():
-    df_config=excelUtil.read_excel(CONFIG.SOURCE_FOLDER+CONFIG.CONFIG_FILE)
-    config_dict={row['subject']:row['content'] for index, row in df_config.iterrows()}
-    return config_dict
 
-def evelution_H4_Q_report(data, file):
+def evelution_H4_Q_report(data, file,config_dict):
     '''生活服务满意度'''
     subject = 'H4-Q'
     sheet_name = '生活服务满意度'
     report_five_rate(data, subject, CONFIG.ANSWER_TYPE_SATISFY, sheet_name, file)
 
     subject = 'H6'
-    dict_config=get_config()
-    template.tdl_multi_answer_dist(data,subject,file,'生活服务需要提高的方面',dict_config)
+    template.tdl_multi_answer_dist(data, subject, file, '生活服务需要提高的方面', config_dict)
 
     return
 
@@ -645,7 +728,6 @@ def report_combine_value_five_rate(data, array_subject, metric_type, metric_name
         df_t.loc[:, metric_name] = subject
         df_init = pd.concat([df_init, df_t], sort=False)
     df_init.loc[:, metric_name] = df_init.loc[:, metric_name].map(dict_subject)
-
     return df_init
 
 
@@ -691,7 +773,7 @@ def major_relative_report(data, filePath):
     report_five_rate(data, subject, CONFIG.ANSWER_TYPE_RELATIVE, '专业相关情况', filePath)
 
     subject = 'B9-2'
-    template.tdl_value_rate(data,subject,filePath)
+    template.tdl_value_rate(data, subject, filePath)
 
 
 def job_meet_report(data, filePath):
@@ -734,14 +816,14 @@ def job_satisfy_report(data, filePath):
 
 def special_common_report(data, subject, filePath, suffix, dict_where, title):
     # 条件过滤
-    data_fileter=data.loc[:,CONFIG.SPECIAL_REL]
+    data_fileter = data.loc[:, CONFIG.SPECIAL_REL]
     col_cond = dict_where[CONFIG.DICT_KEY[0]]
-    oper=dict_where[CONFIG.DICT_KEY[2]]
+    oper = dict_where[CONFIG.DICT_KEY[2]]
     val = dict_where[CONFIG.DICT_KEY[1]]
     data_fileter[col_cond].fillna('', inplace=True)
-    if oper==CONFIG.OPER[2]:
-        vals=val.split('和')
-        df_data=data_fileter.loc[data_fileter[col_cond].isin(vals)]
+    if oper == CONFIG.OPER[2]:
+        vals = val.split('和')
+        df_data = data_fileter.loc[data_fileter[col_cond].isin(vals)]
         df_data1 = data_fileter.loc[(data[col_cond] != vals[0]) &
                                     (data_fileter[col_cond] != vals[1])
                                     & (data_fileter[col_cond] != '')]
@@ -769,7 +851,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_emp_feature.insert(0, title, CONFIG.TOTAL_COLUMN)
     print(df_emp_feature)
 
-    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature],sort=False)
+    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
 
     df_emp_competitive1 = special_employee_competitive(df_data)
@@ -844,7 +926,7 @@ def special_employee_competitive(data, dict_where={}):
     # 薪酬
     df_salary = formulas.formula_income_mean(data, dict_where)
     df_salary.rename(columns={CONFIG.RATE_COLUMN[2]: '薪酬' + CONFIG.RATE_COLUMN[2],
-                              CONFIG.MEAN_COLUMN[-1]:'薪酬' +CONFIG.MEAN_COLUMN[-1]},inplace=True)
+                              CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1]}, inplace=True)
 
     # 专业相关度
     subject = 'B9-1'
@@ -901,11 +983,10 @@ def special_lesson(data):
     measure_name = '课堂教学各方面评价'
     df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
                                                 measure_name, CONFIG.DICT_SUBJECT)
-    df_summary.fillna(0,inplace=True)
-    df_mean=df_summary.describe()
-    df_mean=df_mean.loc[df_mean.index=='mean']
-    pd_concat=pd.concat([df_summary,df_mean],sort=False)
-    pd_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    df_mean = df_summary.describe()
+    df_mean = df_mean.loc[df_mean.index == 'mean']
+    pd_concat = pd.concat([df_summary, df_mean], sort=False)
+    pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
     return pd_concat
 
 
@@ -915,11 +996,10 @@ def special_practice(data, dict_where={}):
     measure_name = '实践教学各方面评价'
     df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_HELP,
                                                 measure_name, CONFIG.DICT_SUBJECT)
-    df_summary.fillna(0,inplace=True)
-    df_mean=df_summary.describe()
-    df_mean=df_mean.loc[df_mean.index=='mean']
-    pd_concat=pd.concat([df_summary,df_mean],sort=False)
-    pd_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    df_mean = df_summary.describe()
+    df_mean = df_mean.loc[df_mean.index == 'mean']
+    pd_concat = pd.concat([df_summary, df_mean], sort=False)
+    pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
     return pd_concat
 
 
@@ -931,25 +1011,24 @@ def special_teacher(data):
     measure_name = '对任课教师的评价'
     df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
                                                 measure_name, CONFIG.DICT_SUBJECT)
-    df_summary.fillna(0,inplace=True)
-    df_private=df_summary.loc[df_summary[measure_name].str.contains('专业')]
-    df_public=df_summary.loc[df_summary[measure_name].str.contains('公共')]
-    df_mean_pri=df_private.describe()
-    df_mean_pri=df_mean_pri.loc[df_mean_pri.index=='mean']
-    pd_concat1=pd.concat([df_private,df_mean_pri],sort=False)
-    pd_concat1.iloc[-1,0]='专业'+CONFIG.TOTAL_COLUMN
+    df_private = df_summary.loc[df_summary[measure_name].str.contains('专业')]
+    df_public = df_summary.loc[df_summary[measure_name].str.contains('公共')]
+    df_mean_pri = df_private.describe()
+    df_mean_pri = df_mean_pri.loc[df_mean_pri.index == 'mean']
+    pd_concat1 = pd.concat([df_private, df_mean_pri], sort=False)
+    pd_concat1.iloc[-1, 0] = '专业' + CONFIG.TOTAL_COLUMN
 
     df_mean_pub = df_public.describe()
     df_mean_pub = df_mean_pub.loc[df_mean_pub.index == 'mean']
     pd_concat2 = pd.concat([df_public, df_mean_pub], sort=False)
     pd_concat2.iloc[-1, 0] = '公共' + CONFIG.TOTAL_COLUMN
 
-    df_sum_mean=pd.concat([df_mean_pri,df_mean_pub],sort=False)
-    df_sum_mean=df_sum_mean.describe()
-    df_sum_mean=df_sum_mean.loc[df_sum_mean.index=='mean']
+    df_sum_mean = pd.concat([df_mean_pri, df_mean_pub], sort=False)
+    df_sum_mean = df_sum_mean.describe()
+    df_sum_mean = df_sum_mean.loc[df_sum_mean.index == 'mean']
 
-    pd_concat=pd.concat([pd_concat1,pd_concat2,df_sum_mean],sort=False)
-    pd_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    pd_concat = pd.concat([pd_concat1, pd_concat2, df_sum_mean], sort=False)
+    pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
     return pd_concat
 
 
@@ -1244,7 +1323,7 @@ def report_five_rate(data, subject, measure_type, measure_name, file_path):
     return
 
 
-def report_value_rate(df_data, subject, title, filePath, add_name='',add_columns=[], measure_type=''):
+def report_value_rate(df_data, subject, title, filePath, add_name='', add_columns=[], measure_type=''):
     ls_metrics_cols = list(CONFIG.BASE_COLUMN)
     if subject not in list(CONFIG.BASE_COLUMN):
         ls_metrics_cols.append(subject)
@@ -1254,11 +1333,11 @@ def report_value_rate(df_data, subject, title, filePath, add_name='',add_columns
     rate_t = formulas.rate_T(option)
     # 转置之后追加列，根据转置后的结果计算
     if add_name:
-        rate_t.loc[:,add_name]=0
+        rate_t.loc[:, add_name] = 0
         for cal_num in add_columns:
-            rate_t.loc[:,add_name] =rate_t.loc[:, add_name]+rate_t.loc[:,cal_num]
+            rate_t.loc[:, add_name] = rate_t.loc[:, add_name] + rate_t.loc[:, cal_num]
     if measure_type:
-        rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type,0,1)]
+        rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, 1)]
     df_concat = pd.concat([rate_t, rate_t], sort=False)
     df_concat.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
     excelUtil.writeExcel(df_concat, filePath, CONFIG.TOTAL_COLUMN + title)
@@ -1269,11 +1348,11 @@ def report_value_rate(df_data, subject, title, filePath, add_name='',add_columns
     college_t = formulas.college_rate_pivot(college_changes)
     college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
     if add_name:
-        college_t.loc[:, add_name]=0
+        college_t.loc[:, add_name] = 0
         for cal_num in add_columns:
-            college_t.loc[:, add_name] =college_t.loc[:, add_name]+college_t.loc[:,cal_num]
+            college_t.loc[:, add_name] = college_t.loc[:, add_name] + college_t.loc[:, cal_num]
     if measure_type:
-        college_t = college_t.loc[:, formulas.rebuild_five_columns(measure_type,1,1)]
+        college_t = college_t.loc[:, formulas.rebuild_five_columns(measure_type, 1, 1)]
     college_t = pd.concat([college_t, rate_t], sort=False)
     college_t.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
     excelUtil.writeExcel(college_t, filePath, CONFIG.GROUP_COLUMN[0] + title)
@@ -1287,7 +1366,7 @@ def report_value_rate(df_data, subject, title, filePath, add_name='',add_columns
         for cal_num in add_columns:
             major_t.loc[:, add_name] = major_t.loc[:, add_name] + major_t.loc[:, cal_num]
     if measure_type:
-        major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type,2,1)]
+        major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2, 1)]
     major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
     major_t = pd.concat([major_t, rate_t], sort=False)
     major_t.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
