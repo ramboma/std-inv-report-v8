@@ -128,16 +128,23 @@ SPECIAL_COLUMN = ('性别', '民族', '类别')
 PROVINCE = '福建省'
 # 条件过滤的key值
 DICT_KEY = ('column', 'cond', 'oper')
-OPER = ('eq', 'noteq')
+OPER = ('eq', 'noteq','in')
 
 GENDER = ('男', '女')
 NATIONAL_COLUMN = ('汉族', '少数民族')
 ORIGIN_COLUMN = ('省内生源', '省外生源')
 INDUSTRY_COLUMN = ('省内就业', '省外就业')
 EDUCATION_COLUMN = ('教育', '非教育')
-MEDICAL_COLUMN = ('医药卫生', '非医疗卫生')
+MEDICAL_COLUMN = ('医疗卫生', '非医疗卫生')
 HEALTH_COLUMN = ('卫生', '非卫生')
 TEACHER_COLUMN = ('师范', '非师范')
+
+SPECIAL_REL=['_3','_10', '_14','_16','A1-A','A2','B1', 'B3-A','B4-A', 'B4-B',
+             'B5-A','B5-B','B6','B9-1',
+             'B7-1','B7-2','B7-3','B7-4','B8','B10-1','H7','H8',
+             'H2-A', 'H2-B', 'H2-C', 'H2-D', 'H2-E',
+             'H3-A', 'H3-B', 'H3-C', 'H3-D',
+             'H4-A', 'H4-B', 'H4-C', 'H4-D', 'H4-E',]
 
 REPORT_FOLDER = "../test-data/san-ming/report/"
 SOURCE_FOLDER = "../test-data/san-ming/cleaned/"

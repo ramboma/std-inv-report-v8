@@ -734,23 +734,42 @@ def job_satisfy_report(data, filePath):
 
 def special_common_report(data, subject, filePath, suffix, dict_where, title):
     # 条件过滤
+    data_fileter=data.loc[:,CONFIG.SPECIAL_REL]
     col_cond = dict_where[CONFIG.DICT_KEY[0]]
+    oper=dict_where[CONFIG.DICT_KEY[2]]
     val = dict_where[CONFIG.DICT_KEY[1]]
-    df_data = data[data[col_cond] == val]
-    df_data1 = data[data[col_cond] != val]
+    data_fileter[col_cond].fillna('', inplace=True)
+    if oper==CONFIG.OPER[2]:
+        vals=val.split('和')
+        df_data=data_fileter.loc[data_fileter[col_cond].isin(vals)]
+        df_data1 = data_fileter.loc[(data[col_cond] != vals[0]) &
+                                    (data_fileter[col_cond] != vals[1])
+                                    & (data_fileter[col_cond] != '')]
+        data = data_fileter.loc[data_fileter[col_cond] != '']
+    else:
+        df_data = data_fileter.loc[data_fileter[col_cond] == val]
+        df_data1 = data_fileter.loc[(data_fileter[col_cond] != val)
+                                    & (data_fileter[col_cond] != '')]
+        data = data_fileter.loc[data_fileter[col_cond] != '']
+
     if CONFIG.OPER_NOT + val in CONFIG.DICT_REP.keys():
         val1 = CONFIG.DICT_REP[CONFIG.OPER_NOT + val]
     else:
         val1 = CONFIG.OPER_NOT + val
-
+    print(df_data)
     df_emp_feature1 = special_employee_featured(df_data)
     df_emp_feature1.insert(0, title, val)
+    print(df_emp_feature1)
+    print(df_data1)
     df_emp_feature2 = special_employee_featured(df_data1)
     df_emp_feature2.insert(0, title, val1)
+    print(df_emp_feature1)
+
     df_emp_feature = special_employee_featured(data)
     df_emp_feature.insert(0, title, CONFIG.TOTAL_COLUMN)
+    print(df_emp_feature)
 
-    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature])
+    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature],sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
 
     df_emp_competitive1 = special_employee_competitive(df_data)
@@ -761,12 +780,11 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_emp_competitive.insert(0, title, CONFIG.TOTAL_COLUMN)
     df_concat = pd.concat([df_emp_competitive1, df_emp_competitive2, df_emp_competitive], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业竞争力')
+
     df_lesson1 = special_lesson(df_data)
     df_lesson1.insert(0, title, val)
-
     df_lesson2 = special_lesson(df_data1)
     df_lesson2.insert(0, title, val1)
-
     df_lesson = special_lesson(data)
     df_lesson.insert(0, title, CONFIG.TOTAL_COLUMN)
     df_concat = pd.concat([df_lesson1, df_lesson2, df_lesson])
@@ -774,10 +792,8 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
 
     df_practice1 = special_practice(df_data)
     df_practice1.insert(0, title, val)
-
     df_practice2 = special_practice(df_data1)
     df_practice2.insert(0, title, val1)
-
     df_practice = special_practice(data)
     df_practice.insert(0, title, CONFIG.TOTAL_COLUMN)
     df_concat = pd.concat([df_practice1, df_practice2, df_practice])
@@ -785,10 +801,8 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
 
     df_teacher1 = special_teacher(df_data)
     df_teacher1.insert(0, title, val)
-
     df_teacher2 = special_teacher(df_data1)
     df_teacher2.insert(0, title, val1)
-
     df_teacher = special_teacher(data)
     df_teacher.insert(0, title, CONFIG.TOTAL_COLUMN)
     df_concat = pd.concat([df_teacher1, df_teacher2, df_teacher])
@@ -887,7 +901,12 @@ def special_lesson(data):
     measure_name = '课堂教学各方面评价'
     df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
                                                 measure_name, CONFIG.DICT_SUBJECT)
-    return df_summary
+    df_summary.fillna(0,inplace=True)
+    df_mean=df_summary.describe()
+    df_mean=df_mean.loc[df_mean.index=='mean']
+    pd_concat=pd.concat([df_summary,df_mean],sort=False)
+    pd_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    return pd_concat
 
 
 def special_practice(data, dict_where={}):
@@ -896,18 +915,42 @@ def special_practice(data, dict_where={}):
     measure_name = '实践教学各方面评价'
     df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_HELP,
                                                 measure_name, CONFIG.DICT_SUBJECT)
-    return df_summary
+    df_summary.fillna(0,inplace=True)
+    df_mean=df_summary.describe()
+    df_mean=df_mean.loc[df_mean.index=='mean']
+    pd_concat=pd.concat([df_summary,df_mean],sort=False)
+    pd_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    return pd_concat
 
 
 def special_teacher(data):
     '''特殊人群教师评价'''
     # H4A-E
 
-    focus = ['H4-' + chr(i) for i in range(65, 70)]
+    focus = ['H4-' + chr(i) for i in range(65, 69)]
     measure_name = '对任课教师的评价'
     df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
                                                 measure_name, CONFIG.DICT_SUBJECT)
-    return df_summary
+    df_summary.fillna(0,inplace=True)
+    df_private=df_summary.loc[df_summary[measure_name].str.contains('专业')]
+    df_public=df_summary.loc[df_summary[measure_name].str.contains('公共')]
+    df_mean_pri=df_private.describe()
+    df_mean_pri=df_mean_pri.loc[df_mean_pri.index=='mean']
+    pd_concat1=pd.concat([df_private,df_mean_pri],sort=False)
+    pd_concat1.iloc[-1,0]='专业'+CONFIG.TOTAL_COLUMN
+
+    df_mean_pub = df_public.describe()
+    df_mean_pub = df_mean_pub.loc[df_mean_pub.index == 'mean']
+    pd_concat2 = pd.concat([df_public, df_mean_pub], sort=False)
+    pd_concat2.iloc[-1, 0] = '公共' + CONFIG.TOTAL_COLUMN
+
+    df_sum_mean=pd.concat([df_mean_pri,df_mean_pub],sort=False)
+    df_sum_mean=df_sum_mean.describe()
+    df_sum_mean=df_sum_mean.loc[df_sum_mean.index=='mean']
+
+    pd_concat=pd.concat([pd_concat1,pd_concat2,df_sum_mean],sort=False)
+    pd_concat.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    return pd_concat
 
 
 def special_school(data):
@@ -1027,21 +1070,23 @@ def special_medical_report(data, filePath):
     '''特殊人群医疗卫生就业报告'''
     subject = 'B4-A'
     suffix = '医疗卫生'
-    where = '医疗卫生'
+    title = CONFIG.SPECIAL_COLUMN[2]
+    where = CONFIG.MEDICAL_COLUMN[0]
 
     dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where, CONFIG.DICT_KEY[2]: CONFIG.OPER[0]}
-    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.MEDICAL_COLUMN)
+    special_common_report(data, subject, filePath, suffix, dict_where, title)
     return
 
 
 def special_social_health_report(data, filePath):
     '''特殊人群卫生和社会报告'''
-    subject = 'B5-A'
+    subject = 'B5-B'
     suffix = '卫生和社会工作'
+    title = CONFIG.SPECIAL_COLUMN[2]
     where = '卫生和社会工作'
 
-    dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where, CONFIG.DICT_KEY[2]: CONFIG.OPER[0]}
-    special_common_report(data, subject, filePath, suffix, dict_where, CONFIG.HEALTH_COLUMN)
+    dict_where = {CONFIG.DICT_KEY[0]: subject, CONFIG.DICT_KEY[1]: where, CONFIG.DICT_KEY[2]: CONFIG.OPER[2]}
+    special_common_report(data, subject, filePath, suffix, dict_where, title)
     return
 
 
