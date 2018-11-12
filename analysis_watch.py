@@ -96,7 +96,6 @@ def run_generate_reports(input_file, output_folder):
         # or call generation function here
         generate_reports(input_file, output_folder)
 
-
     except Exception as e:
         logger.error(e, exc_info=True)
         with open(get_error_filename(dirpath, name), 'w') as f:
