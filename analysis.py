@@ -18,7 +18,8 @@ logger = get_logger(__name__)
 # @click.argument('file', nargs=1)
 @click.option('--input-file', '-i', required=True, help='Input file path')
 @click.option('--output-folder', '-o', help='Output folder path')
-def main(input_file, output_folder):
+@click.option('--config', '-c', help='Config file path')
+def main(input_file, output_folder, config):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_file):
@@ -36,11 +37,14 @@ def main(input_file, output_folder):
             logger.error('output path [{}] is not dir, quit'.format(output_folder))
             exit(0)
 
-        # call report generator class here
-        rg = ReportGenerator(input_file, output_folder)
-        rg.generate()
-        # or call generation function here
-        generate_reports(input_file, output_folder)
+    if config is None or config == '':
+        config = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'data_analysis/config.xlsx')
+
+    # call report generator class here
+    rg = ReportGenerator(input_file, output_folder)
+    rg.generate()
+    # or call generation function here
+    generate_reports(input_file, output_folder)
 
 
 if __name__ == '__main__':
