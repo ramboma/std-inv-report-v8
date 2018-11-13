@@ -23,7 +23,10 @@ logger = get_logger(__name__)
 class Reporter:
     def __init__(self, source_file, output_fold, config_path):
         self.source_file = source_file
-        self.output_fold = output_fold + '/'
+        if output_fold[-1] != os.sep:
+            self.output_fold = output_fold + os.sep
+        else:
+            self.output_fold = output_fold
         self.config_path = config_path
 
     @clocking
