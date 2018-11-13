@@ -10,15 +10,16 @@ from data_analysis.report import *
 
 class ReportGenerator:
     def __init__(self, input_file, output_fold, config_file):
-        self.input_file=input_file
-        self.output_fold=output_fold
-        self.config_file=config_file
+        self.input_file = input_file
+        self.output_fold = output_fold
+        self.config_file = config_file
     
     def generate(self):
         '''v1'''
-        rep=Reporter(self.input_file, self.output_fold, self.config_file)
+        rep = Reporter(self.input_file, self.output_fold, self.config_file)
         rep.do_report()
 
+
 def generate_reports(input_file, output_folder,config_file):
-    reportor=ReportGenerator(input_file, output_folder,config_file)
-    reportor.generate()
+    reporter = ReportGenerator(input_file, output_folder, config_file)
+    reporter.generate()

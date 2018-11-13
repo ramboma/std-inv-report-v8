@@ -5,6 +5,7 @@
 
 __author__ = 'kuoren'
 
+import os
 import pandas as pd
 import data_analysis.utils as answerUtil
 import data_analysis.read_excel_util as excelUtil
@@ -22,7 +23,10 @@ logger = get_logger(__name__)
 class Reporter:
     def __init__(self, source_file, output_fold, config_path):
         self.source_file = source_file
-        self.output_fold = output_fold
+        if output_fold[-1] != os.sep:
+            self.output_fold = output_fold + os.sep
+        else:
+            self.output_fold = output_fold
         self.config_path = config_path
 
     @clocking
@@ -38,7 +42,7 @@ class Reporter:
         config_dict = config_loader.config_dict
 
         # 就业率和就业状态
-        work_option_report(cleaned_data, self.output_fold + '就业机会.xlsx')
+        work_option_report(cleaned_data,  os.path.join(self.output_fold + '就业机会.xlsx'))
         non_employee_report(cleaned_data, self.output_fold + '未就业分析.xlsx')
         employee_report(cleaned_data, self.output_fold + '就业率及就业就业状态.xlsx')
 

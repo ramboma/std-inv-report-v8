@@ -7,13 +7,11 @@ __author__ = 'Gary.Z'
 
 import click
 import time
-import os
 import shutil
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from data_cleansing.logging import *
 from data_analysis.reports_generator import *
 
 logger = get_logger(__name__)
@@ -21,11 +19,12 @@ logger = get_logger(__name__)
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
 
-    def __init__(self, batch_cleansing_handler, output_folder):
+    def __init__(self, batch_cleansing_handler, output_folder, config):
         super().__init__()
 
         self._batch_cleansing_handler = batch_cleansing_handler
         self._output_folder = output_folder
+        self._config = config
 
     def on_moved(self, event):
         # super(LoggingEventHandler, self).on_moved(event)
@@ -44,7 +43,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         name, ext = os.path.splitext(filename)
         if ext == '.xlsx':
             logger.info('input file {} detected'.format(event.src_path))
-            self._batch_cleansing_handler(event.src_path, self._output_folder)
+            self._batch_cleansing_handler(event.src_path, self._output_folder, self._config)
         pass
 
     def on_deleted(self, event):
@@ -79,7 +78,11 @@ def try_move_file(src, dst, max_retry=20, retry_interval=3):
             raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(retry_interval * max_retry))
 
 
-def run_generate_reports(input_file, output_folder):
+def get_error_filename(dirpath, name):
+    return os.path.join(dirpath, '{}_error.txt'.format(name))
+
+
+def run_generate_reports(input_file, output_folder, config):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
@@ -90,11 +93,13 @@ def run_generate_reports(input_file, output_folder):
     dirpath = output_folder
 
     try:
+        tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
+        output_path = os.path.join(dirpath, '{}_analysis_{}'.format(name, tag))
+        os.mkdir(output_path)
+
         # call report generator class here
-        rg = ReportGenerator(input_file, output_folder)
+        rg = ReportGenerator(input_file, output_path, config)
         rg.generate()
-        # or call generation function here
-        generate_reports(input_file, output_folder)
 
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -108,11 +113,8 @@ def run_generate_reports(input_file, output_folder):
 # @click.argument('file', nargs=1)
 @click.option('--input-folder', '-i', required=True, help='Input file path')
 @click.option('--output-folder', '-o', required=False, help='Output folder path')
-@click.option('--degree', '-d', help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
-@click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-@click.option('--stream-mode', '-sm', is_flag=True, type=bool, help='Use stream mode to process data, or by default in memory')
-@click.option('--concurrent-mode', '-cm', is_flag=True, type=bool, help='Use multi-process to process data, or by default in serial')
-def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trace_mode):
+@click.option('--config', '-c', help='Config file path')
+def main(input_folder, output_folder, config):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_folder):
@@ -136,9 +138,12 @@ def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trac
         logger.error('output path [{}] is not folder, quit'.format(output_folder))
         exit(0)
 
+    if config is None or config == '':
+        config = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'data_analysis/config.xlsx')
+
     logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
 
-    event_handler = InputFileMatchingEventHandler(run_generate_reports, output_folder)
+    event_handler = InputFileMatchingEventHandler(run_generate_reports, output_folder, config)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
     observer.start()

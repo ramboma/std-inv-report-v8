@@ -7,6 +7,7 @@ __author__ = 'Gary.Z'
 
 import os
 import click
+import time
 
 from data_cleansing.logging import *
 from data_analysis.reports_generator import *
@@ -36,12 +37,19 @@ def main(input_file, output_folder, config):
         if not os.path.isdir(output_folder):
             logger.error('output path [{}] is not dir, quit'.format(output_folder))
             exit(0)
+        dirpath = output_folder
+        filename = os.path.basename(input_file)
+        name, ext = os.path.splitext(filename)
+
+    tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
+    output_path = os.path.join(dirpath, '{}_analysis_{}'.format(name, tag))
+    os.mkdir(output_path)
 
     if config is None or config == '':
         config = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'data_analysis/config.xlsx')
 
     # call report generator class here
-    rg = ReportGenerator(input_file, output_folder, config)
+    rg = ReportGenerator(input_file, output_path, config)
     rg.generate()
     # or call generation function here
     #generate_reports(input_file, output_folder, config)
