@@ -322,8 +322,8 @@ def major_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=
     df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
     df_row_combine = df_combined.groupby([CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]],
                                          as_index=False).aggregate(
-        lambda x: list(x))
-    # 转置合并
+        lambda x: ';'.join(list(x)))
+    # 转置合并 ';'.join(list(df_combined.loc[:, combin_name]))
     df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
     df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
 
@@ -349,7 +349,7 @@ def college_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_nam
     df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
     df_row_combine = df_combined.groupby(CONFIG.GROUP_COLUMN[0],
                                          as_index=False).aggregate(
-        lambda x: list(x))
+        lambda x: ';'.join(list(x)))
     print(df_row_combine)
     # 转置合并
     df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=CONFIG.GROUP_COLUMN[0])
@@ -376,7 +376,7 @@ def single_row_combine(df_data, grp_column, array_focus=[CONFIG.MEAN_COLUMN[2]],
     df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
     df_row_combine = df_combined.groupby(grp_column,
                                          as_index=False).aggregate(
-        lambda x: list(x))
+        lambda x: ';'.join(list(x)))
     print(df_row_combine)
     # 转置合并
     df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=grp_column)
