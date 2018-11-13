@@ -17,7 +17,7 @@ MEASURE_NAME_MEET_V = '符合度'
 MEASURE_NAME_IMPORTANT = '重要度'
 MEASURE_NAME_PLEASED = '满足度'
 MEASURE_NAME_HELP = '帮助度'
-MEASURE_NAME_FEEL = '体验度'
+MEASURE_NAME_FEEL = '认可度'
 MEASURE_NAME_NUM = '机会'
 
 ANSWER_TYPE_RELATIVE = 'RELATIVE'
@@ -58,6 +58,8 @@ ANSWER_SCORE_DICT_NUM = {'非常多': 5, '比较多': 4, '一般': 3, '比较少
 ABILITY_SCORE = {'非常符合': 5, '有点符合': 4, '不一定': 3, '有点不符合': 2, '非常不符合': 1}
 ABILITY_SCORE_REVERSE = {'非常符合': 1, '有点符合': 2, '不一定': 3, '有点不符合': 4, '非常不符合': 5}
 
+INDUSTRY_SIZE=['50人及以下','51-100人','101-200人','201-300人',
+               '301-1000人','1001-2000人','2001人及以上']
 
 ANSWER_RECOMMED = ['愿意', '不确定', '不愿意']
 

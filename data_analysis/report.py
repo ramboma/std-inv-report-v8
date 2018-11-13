@@ -171,17 +171,30 @@ def employee_industry_size(data, filePath):
     '''就业单位规模'''
     subject = 'B2'
     measure_name = '就业单位规模分布'
+    order_cols=CONFIG.INDUSTRY_SIZE
+    order_cols.append(CONFIG.RATE_COLUMN[2])
     df_value_count = formulas.answer_rate(data, subject)
     df_t = formulas.rate_T(df_value_count)
-    excelUtil.writeExcel(df_t, filePath, CONFIG.TOTAL_COLUMN + measure_name)
+    df_t=df_t[order_cols]
+    df_combine=pd.concat([df_t,df_t],sort=False)
+    df_combine.insert(0,'就业单位规模',['本科毕业生',CONFIG.TOTAL_COLUMN])
+    excelUtil.writeExcel(df_combine, filePath, CONFIG.TOTAL_COLUMN + measure_name)
 
     college_value = formulas.answer_college_value_rate(data, subject)
-    df_t = formulas.college_rate_pivot(college_value)
-    excelUtil.writeExcel(df_t, filePath, CONFIG.GROUP_COLUMN[0] + measure_name)
+    df_college = formulas.college_rate_pivot(college_value)
+    order_cols.insert(0,CONFIG.GROUP_COLUMN[0])
+    df_college=df_college[order_cols]
+    df_combine = pd.concat([df_college, df_t], sort=False)
+    df_combine.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(df_combine, filePath, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     major_value = formulas.answer_major_value_rate(data, subject)
-    df_t = formulas.major_rate_pivot(major_value)
-    excelUtil.writeExcel(df_t, filePath, CONFIG.GROUP_COLUMN[1] + measure_name)
+    df_major = formulas.major_rate_pivot(major_value)
+    order_cols.insert(1, CONFIG.GROUP_COLUMN[1])
+    df_major = df_major[order_cols]
+    df_combine = pd.concat([df_major, df_t], sort=False)
+    df_combine.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(df_combine, filePath, CONFIG.GROUP_COLUMN[1] + measure_name)
 
     return
 
@@ -727,6 +740,7 @@ def report_combine_value_five_rate(data, array_subject, metric_type, metric_name
         df_t.loc[:, metric_name] = subject
         df_init = pd.concat([df_init, df_t], sort=False)
     df_init.loc[:, metric_name] = df_init.loc[:, metric_name].map(dict_subject)
+    df_init.fillna(0,inplace=True)
     return df_init
 
 
@@ -928,7 +942,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_school = special_school(data)
     df_school.insert(0, title, CONFIG.TOTAL_COLUMN)
     df_concat = pd.concat([df_school1, df_school2, df_school])
-    excelUtil.writeExcel(df_concat, filePath, suffix + '母校总和评价')
+    excelUtil.writeExcel(df_concat, filePath, suffix + '母校综合评价')
 
     return
 
@@ -1018,6 +1032,8 @@ def special_lesson(data):
     df_mean = df_mean.loc[df_mean.index == 'mean']
     pd_concat = pd.concat([df_summary, df_mean], sort=False)
     pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    pd_concat.iloc[-1, -1] = ''
+
     return pd_concat
 
 
@@ -1031,6 +1047,8 @@ def special_practice(data, dict_where={}):
     df_mean = df_mean.loc[df_mean.index == 'mean']
     pd_concat = pd.concat([df_summary, df_mean], sort=False)
     pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    pd_concat.iloc[-1, -1] = ''
+
     return pd_concat
 
 
@@ -1048,11 +1066,13 @@ def special_teacher(data):
     df_mean_pri = df_mean_pri.loc[df_mean_pri.index == 'mean']
     pd_concat1 = pd.concat([df_private, df_mean_pri], sort=False)
     pd_concat1.iloc[-1, 0] = '专业' + CONFIG.TOTAL_COLUMN
+    pd_concat1.iloc[-1, -1] = ''
 
     df_mean_pub = df_public.describe()
     df_mean_pub = df_mean_pub.loc[df_mean_pub.index == 'mean']
     pd_concat2 = pd.concat([df_public, df_mean_pub], sort=False)
     pd_concat2.iloc[-1, 0] = '公共' + CONFIG.TOTAL_COLUMN
+    pd_concat2.iloc[-1, -1] = ''
 
     df_sum_mean = pd.concat([df_mean_pri, df_mean_pub], sort=False)
     df_sum_mean = df_sum_mean.describe()
@@ -1060,6 +1080,8 @@ def special_teacher(data):
 
     pd_concat = pd.concat([pd_concat1, pd_concat2, df_sum_mean], sort=False)
     pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
+    pd_concat.iloc[-1, -1] = ''
+
     return pd_concat
 
 
@@ -1069,11 +1091,13 @@ def special_school(data):
     subject = 'H7'
     df_mean_satisfy = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
     df_mean_satisfy = df_mean_satisfy.loc[:, df_mean_satisfy.columns[-3:]]
-
+    df_mean_satisfy.columns=['母校满意度','母校满意度均值','满意度答题总人数']
     # 学校推荐度
     df_recommend = formulas.answer_rate(data, 'H8')
     df_recommend = df_recommend[df_recommend[CONFIG.RATE_COLUMN[0]] == CONFIG.ANSWER_RECOMMED[0]]
     df_recommend = df_recommend.loc[:, [CONFIG.RATE_COLUMN[-1], CONFIG.RATE_COLUMN[2]]]
+    df_recommend.columns=['母校推荐度','推荐度答题总人数']
+
     df_result = pd.concat([df_mean_satisfy, df_recommend], axis=1)
     return df_result
 
