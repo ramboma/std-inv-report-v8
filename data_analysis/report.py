@@ -66,7 +66,7 @@ class Reporter:
         school_recommed_report(cleaned_data, self.output_fold + '母校推荐度.xlsx')
 
         # 学生指导与服务
-        evelution_H4_Q_report(cleaned_data, self.output_fold + '对学生生活服务的评价.xlsx',config_dict)
+        evelution_H4_Q_report(cleaned_data, self.output_fold + '对学生生活服务的评价.xlsx', config_dict)
         evelution_H4_P_report(cleaned_data, self.output_fold + '对学生管理工作的评价.xlsx', config_dict)
         evelution_H4_F_K_report(cleaned_data, self.output_fold + '对就业教育服务的评价.xlsx')
         evelution_H4_L_O_report(cleaned_data, self.output_fold + '对创业教育服务的反馈.xlsx')
@@ -84,7 +84,7 @@ class Reporter:
         # 出国境留学
         study_abroad_report(cleaned_data, self.output_fold + '出国境留学.xlsx')
         # 自主创业
-        self_employed_report(cleaned_data, self.output_fold + '自主创业.xlsx',config_dict)
+        self_employed_report(cleaned_data, self.output_fold + '自主创业.xlsx', config_dict)
         # 人才培养
         evelution_practice_report(cleaned_data, self.output_fold + '对实践教学的评价.xlsx')
         evelution_lesson_report(cleaned_data, self.output_fold + '对课堂教学的评价.xlsx')
@@ -450,7 +450,7 @@ def employee_difficult_report(data, filePath):
     return
 
 
-def self_employed_report(data, filePath,config_dict):
+def self_employed_report(data, filePath, config_dict):
     '''自主创业报告'''
     business_rate = formulas.answer_rate(data, 'A2')
     # 只统计自主创业的
@@ -482,7 +482,7 @@ def self_employed_report(data, filePath,config_dict):
     return
 
 
-def basic_quality_report(data, file,config_dict):
+def basic_quality_report(data, file, config_dict):
     '''基础素质报告'''
     subject = 'I2-1'
     sheet_name = '重要度'
@@ -534,11 +534,11 @@ def evelution_lesson_report(data, file):
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
-                                      CONFIG.DICT_SUBJECT, 1)
+                                      CONFIG.DICT_SUBJECT, 1,True)
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_MEET_V,
-                                    CONFIG.DICT_SUBJECT, 2)
+                                    CONFIG.DICT_SUBJECT, 2,True)
     excelUtil.writeExcelWithIndex(df_major, file, CONFIG.GROUP_COLUMN[1] + measure_name)
 
     return
@@ -558,11 +558,11 @@ def evelution_practice_report(data, file):
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
-                                      CONFIG.DICT_SUBJECT, 1)
+                                      CONFIG.DICT_SUBJECT, 1, True)
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_HELP,
-                                    CONFIG.DICT_SUBJECT, 2)
+                                    CONFIG.DICT_SUBJECT, 2,True)
     excelUtil.writeExcelWithIndex(df_major, file, CONFIG.GROUP_COLUMN[1] + measure_name)
 
     return
@@ -574,21 +574,16 @@ def evelution_teach_report(data, file):
 
     focus = ['H4-' + chr(i) for i in range(65, 69)]
     measure_name = '对任课教师的评价'
-    df_summary = report_combine_value_five_rate(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                                measure_name, CONFIG.DICT_SUBJECT)
-    df_desc = df_summary.describe()
-    df_mean = df_desc[df_desc.index == 'mean']
-    df_combine = pd.concat([df_summary, df_mean], sort=False)
-    df_combine.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
-    df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]] = df_combine.loc[:, CONFIG.MEAN_COLUMN[-1]].round(2)
+    df_combine=special_teacher(data)
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
                                       CONFIG.DICT_SUBJECT, 1)
+
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                    CONFIG.DICT_SUBJECT, 2)
+                                    CONFIG.DICT_SUBJECT, 2,True)
     excelUtil.writeExcelWithIndex(df_major, file, CONFIG.GROUP_COLUMN[1] + measure_name)
 
     return
@@ -639,7 +634,7 @@ def evelution_H4_R_report(data, file):
     return
 
 
-def evelution_H4_P_report(data, file,config_dict):
+def evelution_H4_P_report(data, file, config_dict):
     '''母校学生管理报告'''
     subject = 'H4-P'
     sheet_name = '管理工作满意度'
@@ -650,7 +645,7 @@ def evelution_H4_P_report(data, file,config_dict):
     return
 
 
-def evelution_H4_Q_report(data, file,config_dict):
+def evelution_H4_Q_report(data, file, config_dict):
     '''生活服务满意度'''
     subject = 'H4-Q'
     sheet_name = '生活服务满意度'
@@ -731,7 +726,8 @@ def report_combine_value_five_rate(data, array_subject, metric_type, metric_name
     return df_init
 
 
-def report_combine_level(data, array_subject, metric_type, dict_subject, grp_level):
+def report_combine_level(data, array_subject, metric_type, dict_subject,
+                         grp_level, need_summary=False):
     '''组合题 三维 拼接'''
     if data.empty:
         return data
@@ -748,6 +744,7 @@ def report_combine_level(data, array_subject, metric_type, dict_subject, grp_lev
         return data
 
     df_init = pd.DataFrame()  # 创建一个空的dataframe
+
     for subject in array_subject:
         subject_name = dict_subject.get(subject)
         if grp_level == 1:
@@ -759,7 +756,37 @@ def report_combine_level(data, array_subject, metric_type, dict_subject, grp_lev
         dict_cols = {cs: subject_name + '_' + cs for cs in focus_column}
         df_t.rename(columns=dict_cols, inplace=True)
         df_init = pd.concat([df_init, df_t], sort=False, axis=1)
+    if need_summary:
+        if 'H4-A' in array_subject:
+            private_cols=df_init.columns.str.contains('专业')
+            print(private_cols)
+            cols=['专业'+CONFIG.TOTAL_COLUMN + '_' + focus_column[0],
+                  '专业' + CONFIG.TOTAL_COLUMN + '_' + focus_column[1],
+                  '公共' + CONFIG.TOTAL_COLUMN + '_' + focus_column[0],
+                  '公共' + CONFIG.TOTAL_COLUMN + '_' + focus_column[1],
+                  CONFIG.TOTAL_COLUMN + '_' + focus_column[0],
+                  CONFIG.TOTAL_COLUMN + '_' + focus_column[1]]
+            metric_cols = private_cols.str.contains(focus_column[0])
+            mean_cols = private_cols.str.contains(focus_column[1])
+            df_init[cols[0]] = (df_init.loc[:, metric_cols].sum(axis=1) / len(private_cols)).round(CONFIG.DECIMALS6)
+            df_init[cols[1]] = (df_init.loc[:, mean_cols].sum(axis=1) / len(private_cols)).round(CONFIG.DECIMALS2)
 
+            public_cols=df_init.columns.str.contains('公共')
+            metric_cols = public_cols.str.contains(focus_column[0])
+            mean_cols = public_cols.str.contains(focus_column[1])
+            df_init[cols[2]] = (df_init.loc[:, metric_cols].sum(axis=1) / len(public_cols)).round(CONFIG.DECIMALS6)
+            df_init[cols[3]] = (df_init.loc[:, mean_cols].sum(axis=1) / len(public_cols)).round(CONFIG.DECIMALS2)
+
+            df_init[cols[4]] = (df_init.loc[:, [cols[0],cols[2]]].sum(axis=1) / 2).round(CONFIG.DECIMALS6)
+            df_init[cols[5]] = (df_init.loc[:, [cols[1],cols[3]]].sum(axis=1) / 2).round(CONFIG.DECIMALS2)
+        else:
+            metric_cols = df_init.columns.str.contains(focus_column[0])
+            mean_cols = df_init.columns.str.contains(focus_column[1])
+            df_init[CONFIG.TOTAL_COLUMN + '_' + focus_column[0]] = (
+                df_init.loc[:, metric_cols].sum(axis=1) / len(array_subject)).round(CONFIG.DECIMALS6)
+            df_init[CONFIG.TOTAL_COLUMN + '_' + focus_column[1]] = (df_init.loc[:, mean_cols].sum(axis=1) / len(
+                array_subject)).round(CONFIG.DECIMALS2)
+    print(df_init)
     df_init.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_init.columns])
     df_init.sort_values(by=(subject_name, CONFIG.MEAN_COLUMN[2]), ascending=False, inplace=True)
     return df_init
@@ -1005,7 +1032,7 @@ def special_practice(data, dict_where={}):
 
 def special_teacher(data):
     '''特殊人群教师评价'''
-    # H4A-E
+    # H4A-D
 
     focus = ['H4-' + chr(i) for i in range(65, 69)]
     measure_name = '对任课教师的评价'

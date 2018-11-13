@@ -158,19 +158,15 @@ def ability_item_distribution(data, subject):
     # 结果集
     df_answer = data[multi_column].copy()
     df_answer.dropna(how='all', inplace=True)
-
-    df_answer.loc[:,'sum'] = 0
+    item_ability = 0
     for col in multi_column:
         # 反向分
         if col in CONFIG.ABILITY_REVERSE:
-            df_answer.loc[:,col + '_score'] = df_answer.loc[:,col].map(CONFIG.ABILITY_SCORE_REVERSE)
+            df_answer[col + '_score'] = df_answer.loc[:, col].map(CONFIG.ABILITY_SCORE_REVERSE)
         else:
-            df_answer.loc[:,col + '_score'] = df_answer.loc[:,col].map(CONFIG.ABILITY_SCORE)
-        df_answer.loc[:,'sum'] = df_answer.loc[:,'sum'] + df_answer.loc[:,col + '_score']
-    print(df_answer)
-    # 单个学生能力
-    df_answer.loc[:,'ability'] = df_answer.loc[:,'sum'] / item_size
-    ability = (df_answer.loc[:,'ability'].sum() / answer_count).round(2)
+            df_answer[col + '_score'] = df_answer.loc[:, col].map(CONFIG.ABILITY_SCORE)
+        item_ability = item_ability + df_answer.loc[:, col + '_score'].sum() / df_answer.loc[:, col + '_score'].count()
+    ability = (item_ability / item_size).round(CONFIG.DECIMALS2)
     df_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [subject[0:subject.rindex('-')]],
                               CONFIG.ABILITY_COLUMN: [ability],
                               CONFIG.RATE_COLUMN[2]: [answer_count]})
