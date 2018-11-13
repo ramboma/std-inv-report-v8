@@ -48,9 +48,6 @@ def main(input_file, output_folder, config):
     if config is None or config == '':
         config = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'data_analysis/config.xlsx')
 
-
-
-
     # call report generator class here
     rg = ReportGenerator(input_file, output_path, config)
     rg.generate()
