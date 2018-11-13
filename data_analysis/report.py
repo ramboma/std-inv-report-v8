@@ -582,7 +582,7 @@ def evelution_teach_report(data, file):
     excelUtil.writeExcel(df_combine, file, measure_name)
 
     df_college = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
-                                      CONFIG.DICT_SUBJECT, 1)
+                                      CONFIG.DICT_SUBJECT, 1,True)
 
     excelUtil.writeExcelWithIndex(df_college, file, CONFIG.GROUP_COLUMN[0] + measure_name)
 
@@ -762,25 +762,25 @@ def report_combine_level(data, array_subject, metric_type, dict_subject,
         df_init = pd.concat([df_init, df_t], sort=False, axis=1)
     if need_summary:
         if 'H4-A' in array_subject:
-            private_cols=df_init.columns.str.contains('专业')
-            print(private_cols)
             cols=['专业'+CONFIG.TOTAL_COLUMN + '_' + focus_column[0],
                   '专业' + CONFIG.TOTAL_COLUMN + '_' + focus_column[1],
                   '公共' + CONFIG.TOTAL_COLUMN + '_' + focus_column[0],
                   '公共' + CONFIG.TOTAL_COLUMN + '_' + focus_column[1],
                   CONFIG.TOTAL_COLUMN + '_' + focus_column[0],
                   CONFIG.TOTAL_COLUMN + '_' + focus_column[1]]
-            metric_cols = private_cols.str.contains(focus_column[0])
-            mean_cols = private_cols.str.contains(focus_column[1])
-            df_init[cols[0]] = (df_init.loc[:, metric_cols].sum(axis=1) / len(private_cols)).round(CONFIG.DECIMALS6)
-            df_init[cols[1]] = (df_init.loc[:, mean_cols].sum(axis=1) / len(private_cols)).round(CONFIG.DECIMALS2)
-
-            public_cols=df_init.columns.str.contains('公共')
-            metric_cols = public_cols.str.contains(focus_column[0])
-            mean_cols = public_cols.str.contains(focus_column[1])
-            df_init[cols[2]] = (df_init.loc[:, metric_cols].sum(axis=1) / len(public_cols)).round(CONFIG.DECIMALS6)
-            df_init[cols[3]] = (df_init.loc[:, mean_cols].sum(axis=1) / len(public_cols)).round(CONFIG.DECIMALS2)
-
+            private_rel=[dict_subject.get('H4-A')+'_'+focus_column[0],
+                         dict_subject.get('H4-B')+'_'+focus_column[0],
+                         dict_subject.get('H4-A') + '_' + focus_column[1],
+                         dict_subject.get('H4-B') + '_' + focus_column[1]]
+            public_rel = [dict_subject.get('H4-C') + '_' + focus_column[0],
+                           dict_subject.get('H4-D') + '_' + focus_column[0],
+                          dict_subject.get('H4-C') + '_' + focus_column[1],
+                          dict_subject.get('H4-D') + '_' + focus_column[1]
+                          ]
+            df_init[cols[0]] = (df_init.loc[:, private_rel[0:2]].sum(axis=1) /2).round(CONFIG.DECIMALS6)
+            df_init[cols[1]] = (df_init.loc[:, private_rel[2:4]].sum(axis=1) /2).round(CONFIG.DECIMALS2)
+            df_init[cols[2]] = (df_init.loc[:, public_rel[0:2]].sum(axis=1) / 2).round(CONFIG.DECIMALS6)
+            df_init[cols[3]] = (df_init.loc[:, public_rel[2:4]].sum(axis=1) / 2).round(CONFIG.DECIMALS2)
             df_init[cols[4]] = (df_init.loc[:, [cols[0],cols[2]]].sum(axis=1) / 2).round(CONFIG.DECIMALS6)
             df_init[cols[5]] = (df_init.loc[:, [cols[1],cols[3]]].sum(axis=1) / 2).round(CONFIG.DECIMALS2)
         else:
