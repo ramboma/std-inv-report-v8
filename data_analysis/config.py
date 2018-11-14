@@ -109,10 +109,11 @@ DICT_SUBJECT = {'H4-A': '专业课教师教学态度', 'H4-B': '专业课教师�
                 'B4-B': '就业职业','D2':'求职困难',
 
                 }
-SPECIAL_SUBJECT = {'B9-1': '专业', 'B7-1': '工作满意度', 'B7-2': '薪酬',
+SPECIAL_SUBJECT = {'B9-1': '专业', 'B7-1': '工作满意度', 'B7-2': '薪酬满意度',
                    'B7-3': '职业发展前景', 'B7-4': '工作内容',
                    'B8': '职业期待'}
-
+SPECIAL_SUBJECT_TYPE = {'B9-1': ANSWER_TYPE_RELATIVE, 'B7-1': ANSWER_TYPE_SATISFY, 'B7-2': ANSWER_TYPE_SATISFY,
+                        'B7-3': ANSWER_TYPE_SATISFY, 'B7-4': ANSWER_TYPE_SATISFY,'B8': ANSWER_TYPE_MEET}
 DICT_TITLE = {'B5-B': '就业行业分布', 'B1': '就业单位类型分布', 'B3-A': '就业地区', 'B3-B': '省内就业地区分布',
               'B4-B': '就业职业分布', 'B2': '就业单位规模分布',
               'C1': '一直未就业分布', 'C2': '未就业毕业生目前去向分布',

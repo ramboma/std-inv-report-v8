@@ -521,7 +521,7 @@ def major_mean(data, subject):
     pd_result['count_nonzero'] = pd_result['count_nonzero'].astype('int')
 
     pd_result.reset_index(inplace=True)
-    pd_result.columns = [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
+    pd_result.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
     pd_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
 
     return pd_result

@@ -106,6 +106,8 @@ class Reporter:
         # 学习效果
         major_quality_report(cleaned_data, self.output_fold + '专业素质.xlsx')
         basic_quality_report(cleaned_data, self.output_fold + '基础素质.xlsx', config_dict)
+        # summary
+        report_summary(cleaned_data, self.output_fold + '一览表.xlsx')
 
 
 def employee_indurstry(data, filePath):
@@ -951,10 +953,10 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
 def report_summary(data,file_path):
     '''一览表'''
 
-    df_college = special_employee_competitive(data,level=1)
-    excelUtil.writeExcelWithIndex(df_college, file_path, CONFIG.GROUP_COLUMN[0] + "就业竞争力")
-    df_major = special_employee_competitive(data, level=2)
-    excelUtil.writeExcelWithIndex(df_major, file_path, CONFIG.GROUP_COLUMN[1] + "就业竞争力")
+    df_college = special_employee_competitive_grp(data,level=1)
+    excelUtil.writeExcel(df_college, file_path, CONFIG.GROUP_COLUMN[0] + "就业竞争力")
+    df_major = special_employee_competitive_grp(data, level=2)
+    excelUtil.writeExcel(df_major, file_path, CONFIG.GROUP_COLUMN[1] + "就业竞争力")
 
     focus = ['H4-' + chr(i) for i in range(65, 69)]
     measure_name = '教育教学'
@@ -966,6 +968,7 @@ def report_summary(data,file_path):
     df_major = report_combine_level(data, focus, CONFIG.ANSWER_TYPE_SATISFY,
                                     CONFIG.DICT_SUBJECT, 2, True)
     excelUtil.writeExcelWithIndex(df_major, file_path, CONFIG.GROUP_COLUMN[1] + measure_name)
+    return
 
 def special_employee_featured(data):
     '''特殊人群就业特色分析'''
@@ -980,94 +983,43 @@ def special_employee_featured(data):
         df_init = pd.concat([df_init, df_combine], axis=1, sort=False)
     return df_init
 
-
-def special_employee_competitive(data, dict_where={},level=0):
+def special_employee_competitive_grp(data,level):
     '''特殊人群就业竞争力分析'''
+    if level==1:
+        join_on=CONFIG.GROUP_COLUMN[0]
+    else:
+        join_on=[CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1]]
 
     # 就业率
     if level==1:
         df_income=formulas.formulas_college_employe_rate(data)
     if level==2:
         df_income=formulas.formulas_major_employe_rate(data)
-    else:
-        df_income = formulas.formulas_employe_rate(data)
-    df_income.rename(columns={CONFIG.RATE_COLUMN[2]: '就业率' + CONFIG.RATE_COLUMN[2]})
+    df_income.rename(columns={CONFIG.RATE_COLUMN[2]:'就业率'+CONFIG.RATE_COLUMN[2]}, inplace=True)
 
     # 薪酬
     subject = 'B6'
     if level==1:
-        df_income=formulas.single_grp_mean(data, subject, CONFIG.BASE_COLUMN[0], True)
+        df_salary=formulas.single_grp_mean(data, subject, CONFIG.BASE_COLUMN[0], True)
     if level==2:
-        df_income=formulas.major_mean(data, subject)
-    else:
-        df_salary = formulas.formula_income_mean(data, dict_where)
-    df_salary.rename(columns={CONFIG.RATE_COLUMN[2]: '薪酬' + CONFIG.RATE_COLUMN[2],
-                              CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1]}, inplace=True)
+        df_salary=formulas.major_mean(data, subject)
+    rename_cols = df_salary.columns[-2:]
+    rename_dict = {rename_col: '薪酬' + rename_col for rename_col in rename_cols}
+    df_salary.rename(columns=rename_dict, inplace=True)
+    pd_join=pd.merge(df_income,df_salary,how='left',on=join_on)
 
     # 专业相关度
-    subject = 'B9-1'
-    if level==1:
-        df_major_relative = five_rate_single_t(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    if level==2:
-        df_major_relative = five_rate_major_t(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    else:
-        df_major_relative = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_RELATIVE)
-    df_major_relative = df_major_relative.loc[:, df_major_relative.columns[-3:]]
-    df_major_relative.columns = [CONFIG.SPECIAL_SUBJECT[subject] + name for name in df_major_relative.columns]
-
-    # 工作满意度
-    subject = 'B7-1'
-    if level==1:
-        df_job_satisfy = five_rate_single_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    if level==2:
-        df_job_satisfy = five_rate_major_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    else:
-        df_job_satisfy = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_job_satisfy = df_job_satisfy.loc[:, df_job_satisfy.columns[-3:]]
-    df_job_satisfy.columns = [CONFIG.SPECIAL_SUBJECT[subject] + name for name in df_job_satisfy.columns]
-
-    # 薪酬满意度
-    subject = 'B7-2'
-    if level==1:
-        df_salary_satisfy = five_rate_single_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    if level==2:
-        df_salary_satisfy = five_rate_major_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    else:
-        df_salary_satisfy = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_salary_satisfy = df_salary_satisfy.loc[:, df_salary_satisfy.columns[-3:]]
-    df_salary_satisfy.columns = [CONFIG.SPECIAL_SUBJECT[subject] + name for name in df_salary_satisfy.columns]
-
-    # 职业发展前景满意度
-    subject = 'B7-3'
-    if level==1:
-        df_industry_satisfy = five_rate_single_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    if level==2:
-        df_industry_satisfy = five_rate_major_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    else:
-        df_industry_satisfy = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_industry_satisfy = df_industry_satisfy.loc[:, df_industry_satisfy.columns[-3:]]
-    df_industry_satisfy.columns = [CONFIG.SPECIAL_SUBJECT[subject] + name for name in df_industry_satisfy.columns]
-    # 工作内容满意度
-    subject = 'B7-4'
-    if level==1:
-        df_job_content_satisfy = five_rate_single_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    if level==2:
-        df_job_content_satisfy = five_rate_major_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    else:
-        df_job_content_satisfy = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_SATISFY)
-    df_job_content_satisfy = df_job_content_satisfy.loc[:, df_job_content_satisfy.columns[-3:]]
-    df_job_content_satisfy.columns = [CONFIG.SPECIAL_SUBJECT[subject] + name for name in df_job_content_satisfy.columns]
-
-    # 职业期待吻合度
-    subject = 'B8'
-    if level==1:
-        df_job_hope = five_rate_single_t(data, subject, CONFIG.ANSWER_TYPE_MEET)
-    if level==2:
-        df_job_hope = five_rate_major_t(data, subject, CONFIG.ANSWER_TYPE_MEET)
-    else:
-        df_job_hope = five_rate_t(data, subject, CONFIG.ANSWER_TYPE_MEET)
-    df_job_hope = df_job_hope.loc[:, df_job_hope.columns[-3:]]
-    df_job_hope.columns = [CONFIG.SPECIAL_SUBJECT[subject] + name for name in df_job_hope.columns]
+    subjects=['B9-1', 'B7-1', 'B7-2','B7-3', 'B7-4', 'B8']
+    for subject in subjects:
+        metric_type=CONFIG.SPECIAL_SUBJECT_TYPE[subject]
+        if level==1:
+            df_grp = five_rate_single_t_sub(data, subject, metric_type)
+        if level==2:
+            df_grp = five_rate_major_t_sub(data, subject, metric_type)
+        rename_cols = df_grp.columns[-3:]
+        rename_dict={rename_col:CONFIG.SPECIAL_SUBJECT[subject] + rename_col for rename_col in rename_cols}
+        df_grp.rename(columns=rename_dict,inplace=True)
+        pd_join = pd.merge(pd_join, df_grp, how='left', on=join_on)
 
     # 离职率
     subject = 'B10-1'
@@ -1079,7 +1031,7 @@ def special_employee_competitive(data, dict_where={},level=0):
         college_t.loc[:, '离职率'] = 0
         for cal_num in CONFIG.DIMISSION_COLUMNS:
                 college_t.loc[:, '离职率'] = college_t.loc[:, '离职率'] + college_t.loc[:, cal_num]
-        change_times = college_t.loc[:, ['离职率', CONFIG.RATE_COLUMN[2]]]
+        change_times = college_t.loc[:, [CONFIG.GROUP_COLUMN[0], '离职率', CONFIG.RATE_COLUMN[2]]]
 
     if level==2:
         major_changes = formulas.answer_major_value_rate(data, subject,
@@ -1089,20 +1041,49 @@ def special_employee_competitive(data, dict_where={},level=0):
         major_t.loc[:, '离职率'] = 0
         for cal_num in CONFIG.DIMISSION_COLUMNS:
             major_t.loc[:, '离职率'] = major_t.loc[:, '离职率'] + major_t.loc[:, cal_num]
-        change_times = major_t.loc[:, ['离职率', CONFIG.RATE_COLUMN[2]]]
-    else:
-        change_times = formulas.answer_rate(data, subject)
-        no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])].loc[
-        0, CONFIG.RATE_COLUMN[-1]]
-        change_times.loc[:, '离职率'] = 1 - no_changes
-        change_times = change_times.loc[:, ['离职率', CONFIG.RATE_COLUMN[2]]]
-        change_times.drop_duplicates(inplace=True)
+        change_times = major_t.loc[:, [CONFIG.GROUP_COLUMN[0],CONFIG.GROUP_COLUMN[1],'离职率', CONFIG.RATE_COLUMN[2]]]
+    change_times.rename(columns={CONFIG.RATE_COLUMN[2]:'离职率'+CONFIG.RATE_COLUMN[2]}, inplace=True)
+    pd_join = pd.merge(pd_join, change_times, how='left', on=join_on)
+    return pd_join
 
-    df_concat = pd.concat([df_income, df_salary, df_major_relative, df_job_satisfy,
-                           df_salary_satisfy, df_industry_satisfy,
-                           df_job_content_satisfy, df_job_hope, change_times], axis=1)
+
+def special_employee_competitive(data, dict_where={}):
+    '''特殊人群就业竞争力分析'''
+
+    # 就业率
+    df_income = formulas.formulas_employe_rate(data)
+    df_income.rename(columns={CONFIG.RATE_COLUMN[2]: '就业率' + CONFIG.RATE_COLUMN[2]})
+
+    # 薪酬
+    subject = 'B6'
+    df_salary = formulas.formula_income_mean(data, dict_where)
+    df_salary=df_salary.loc[:,[CONFIG.MEAN_COLUMN[-1],CONFIG.RATE_COLUMN[2]]]
+    df_salary.drop_duplicates(inplace=True)
+    df_salary.rename(columns={CONFIG.RATE_COLUMN[2]: '薪酬' + CONFIG.RATE_COLUMN[2],
+                              CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1]}, inplace=True)
+
+    subjects = ['B9-1', 'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8']
+    pd_init=pd.DataFrame();
+    for subject in subjects:
+        metric_type = CONFIG.SPECIAL_SUBJECT_TYPE[subject]
+        df_t = five_rate_t(data, subject, metric_type)
+        rename_cols = df_t.columns[-3:]
+        df_t=df_t.loc[:,rename_cols]
+        df_t.drop_duplicates(inplace=True)
+        rename_dict = {rename_col: CONFIG.SPECIAL_SUBJECT[subject] + rename_col for rename_col in rename_cols}
+        df_t.rename(columns=rename_dict, inplace=True)
+        pd_init = pd.concat([pd_init, df_t],axis=1, sort=False)
+
+    # 离职率
+    subject = 'B10-1'
+    change_times = formulas.answer_rate(data, subject)
+    no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])].loc[0, CONFIG.RATE_COLUMN[-1]]
+    change_times.loc[:, '离职率'] = 1 - no_changes
+    change_times = change_times.loc[:, ['离职率', CONFIG.RATE_COLUMN[2]]]
+    change_times.drop_duplicates(inplace=True)
+
+    df_concat = pd.concat([df_income, df_salary, pd_init, change_times], axis=1)
     return df_concat
-
 
 def special_lesson(data):
     '''特殊人课堂教学分析'''
