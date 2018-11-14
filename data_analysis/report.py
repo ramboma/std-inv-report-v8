@@ -954,9 +954,46 @@ def report_summary(data,file_path):
     '''一览表'''
 
     df_college = special_employee_competitive_grp(data,level=1)
-    excelUtil.writeExcel(df_college, file_path, CONFIG.GROUP_COLUMN[0] + "就业竞争力")
+    nums=[]
+    others=[]
+    cols=df_college.columns[1:]
+    for col in cols:
+        if col.find(CONFIG.RATE_COLUMN[2])>0:
+            nums.append(col)
+        else:
+            others.append(col)
+
+    df_num=df_college.loc[:,nums].agg(['sum'])
+    df_mean=df_college.loc[:,others].agg(['mean'])
+    df_num.reset_index(inplace=True)
+    df_mean.reset_index(inplace=True)
+    df_sum=pd.concat([df_num,df_mean],axis=1)
+    nums.extend(others)
+    df_sum=df_sum[nums]
+    df_combine=pd.concat([df_college,df_sum],sort=False)
+    df_combine.iloc[-1,0]=CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(df_combine, file_path, CONFIG.GROUP_COLUMN[0] + "就业竞争力")
+
     df_major = special_employee_competitive_grp(data, level=2)
-    excelUtil.writeExcel(df_major, file_path, CONFIG.GROUP_COLUMN[1] + "就业竞争力")
+    nums = []
+    others = []
+    cols = df_major.columns[2:]
+    for col in cols:
+        if col.find(CONFIG.RATE_COLUMN[2]) > 0:
+            nums.append(col)
+        else:
+            others.append(col)
+
+    df_num = df_major.loc[:, nums].agg(['sum'])
+    df_mean = df_major.loc[:, others].agg(['mean'])
+    df_num.reset_index(inplace=True)
+    df_mean.reset_index(inplace=True)
+    df_sum = pd.concat([df_num, df_mean], axis=1)
+    nums.extend(others)
+    df_sum = df_sum[nums]
+    df_combine = pd.concat([df_major, df_sum], sort=False)
+    df_combine.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
+    excelUtil.writeExcel(df_combine, file_path, CONFIG.GROUP_COLUMN[1] + "就业竞争力")
 
     focus = ['H4-' + chr(i) for i in range(65, 69)]
     measure_name = '教育教学'
