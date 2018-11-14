@@ -19,6 +19,7 @@ def main(file):
     further.work_option_report(data, CONFIG.REPORT_FOLDER + '就业机会.xlsx')
     further.non_employee_report(data, CONFIG.REPORT_FOLDER + '未就业分析.xlsx')
     further.employee_report(data, CONFIG.REPORT_FOLDER + '就业率及就业就业状态.xlsx')
+    # test
 
     # 就业竞争力
     further.major_relative_report(data, CONFIG.REPORT_FOLDER + '专业相关度.xlsx')
