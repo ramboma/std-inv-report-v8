@@ -100,8 +100,8 @@ class Reporter:
         special_origin_province_report(cleaned_data, self.output_fold + '省内省外生源.xlsx')
         special_indurstry_province_report(cleaned_data, self.output_fold + '省内省外就业.xlsx')
         special_national_report(cleaned_data, self.output_fold + '汉族少数名族.xlsx')
-        special_medical_report(data, CONFIG.REPORT_FOLDER + '医疗卫生职业.xlsx')
-        special_social_health_report(data, CONFIG.REPORT_FOLDER + '卫生和社会工作.xlsx')
+        special_medical_report(cleaned_data, self.output_fold + '医疗卫生职业.xlsx')
+        special_social_health_report(cleaned_data, self.output_fold + '卫生和社会工作.xlsx')
 
         # 学习效果
         major_quality_report(cleaned_data, self.output_fold + '专业素质.xlsx')
