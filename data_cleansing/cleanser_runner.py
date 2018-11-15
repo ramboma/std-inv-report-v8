@@ -34,7 +34,7 @@ class DataCleanserRunner:
         self._sheet_tag = None
         self._trace_mode = False
 
-        dirpath, filename = os.path.split(input_file)
+        dirpath, filename = os.path.split(output_file)
         name, ext = os.path.splitext(filename)
         self._error_file = os.path.join(dirpath, '{}_error.txt'.format(name))
 
