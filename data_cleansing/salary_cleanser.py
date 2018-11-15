@@ -4,6 +4,7 @@
 
 __author__ = 'Gary.Z'
 
+import sys
 import numpy as np
 
 from data_cleansing.config import *
@@ -36,7 +37,10 @@ class SalaryValueCollector:
     def get_higher_limit(self):
         if not self.__lock_down:
             raise Exception('cannot operate on a non-lock-down instance')
-        return self.__value_list[self.__top_n - 1]
+        if self.__top_n > 0:
+            return self.__value_list[self.__top_n - 1]
+        else:
+            return sys.maxsize
 
     def get_top_n(self):
         return self.__top_n
@@ -46,7 +50,8 @@ class SalaryValueCollector:
         self.__top_n = round(self.__value_list.__len__() * SALARY_FILTER_TOP_RATIO)
 
         if self.__top_n < 1:
-            raise Exception('Unexpected top n < 1')
+            # raise Exception('Unexpected top n < 1')
+            logger.warn('Unexpected top n({}) < 1'.format(self.__top_n))
 
         new_list = []
         self.__value_list.sort(reverse=True)

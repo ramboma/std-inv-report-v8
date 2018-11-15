@@ -24,6 +24,7 @@ class FilterResetColumnNames(Filter):
         if incoming['idx'] <= HEADER_ROW_INDEX:
             self._counter += 1
             # logger.info(self.__str__())
+            validate_question_id_header(outgoing)
             reset_column_names(outgoing, generate_excel_column_indexes(iter_cnt=2))
             build_question_to_column_mapping_v2(outgoing, q2c_mapping)
         else:

@@ -33,12 +33,22 @@ def add_item_to_list_dict(dict, key, value):
 
 
 def validate_data_dimensions(work_sheet, expect_cols=231, expect_rows=3):
-    """ata dimension checking: row >=3 and col >= 231 """
+    """data dimension checking: row >=3 and col >= 231 """
     logger.info('validating data dimensions, cols: {}, rows: {}'.format(work_sheet.max_column, work_sheet.max_row))
     if work_sheet.max_column < expect_cols:
         raise Exception("column count must >= {}".format(expect_cols))
     if work_sheet.max_row < 3:
         raise Exception("row count must >= {}".format(expect_rows))
+
+
+def validate_question_id_header(values):
+    pattern = r'(?P<prefix>([A-Z0-9]+)(-[0-9]+)*)(-[A-Z]+)?'
+    for value in values:
+        if value is None or value == '':
+            continue
+        matches = re.match(pattern, value)
+        if matches is None:
+            raise Exception('invalid question id: {}, consider missing question id header'.format(value))
 
 
 def extract_question_id_prefix(title):
