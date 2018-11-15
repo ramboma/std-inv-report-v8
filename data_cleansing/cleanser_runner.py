@@ -10,6 +10,7 @@ import threading
 import copy
 import multiprocessing
 import time
+import random
 import shutil
 from tempfile import NamedTemporaryFile
 
@@ -34,12 +35,15 @@ class DataCleanserRunner:
         self._sheet_tag = None
         self._trace_mode = False
 
-        dirpath, filename = os.path.split(output_file)
-        name, ext = os.path.splitext(filename)
-        self._error_file = os.path.join(dirpath, '{}_error.txt'.format(name))
-
     def get_error_file(self):
-        return self._error_file
+        dirpath, filename = os.path.split(self._output_file)
+        name, ext = os.path.splitext(filename)
+        return os.path.join(dirpath, '{}_error.txt'.format(name))
+
+    def get_log_file(self):
+        dirpath, filename = os.path.split(self._output_file)
+        name, ext = os.path.splitext(filename)
+        return os.path.join(dirpath, '{}_runlog.txt'.format(name))
 
     @property
     def with_rule_2_2(self):
@@ -174,6 +178,10 @@ class DataCleanserStreamRunner(DataCleanserRunner):
                 tmp.close()
                 temp_file = tmp.name
 
+                # break_secs = random.uniform(1.0, 3.0)
+                # logger.debug('break for {} secs'.format(break_secs))
+                # time.sleep(break_secs)
+                #
                 self.run_part_1(temp_file, salary_value_collector)
                 salary_value_collector.lock_down()
                 self.run_part_2(temp_file, salary_value_collector)
@@ -190,7 +198,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
 
     def run_part_1(self, tmp_file, salary_value_collector):
         logger.info('loading input file \'{}\''.format(self._input_file))
-        in_wb = xl.load_workbook(self._input_file, read_only=True)
+        in_wb = try_load_workbook(self._input_file, True)
         in_ws = in_wb.worksheets[0]
         validate_data_dimensions(in_ws)
 
@@ -337,14 +345,16 @@ def get_a_runner(setting, stream_mode=False):
 
 
 def runner_wrapper(runner):
+    # log_handler = get_file_log_handler(runner.get_log_file(), logging.DEBUG)
+    # logger.addHandler(log_handler)
     try:
-        # logger.info(runner)
         runner.run()
     except Exception as e:
         logger.error(e, exc_info=True)
         with open(runner.get_error_file(), 'w') as f:
             f.write(e.__str__())
     finally:
+        # logger.removeHandler(log_handler)
         pass
 
     # return runner
@@ -399,6 +409,17 @@ def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None
         return os.path.join(dirpath, '{}_cleaned_{}_{}_{}_{}{}'.format(name, degree, target, scope, tag, ext))
 
 
+def get_output_folder(dirpath, name, tag, degree=None):
+    if degree is None:
+        return os.path.join(dirpath, '{}_cleaned_{}'.format(name, tag))
+    else:
+        return os.path.join(dirpath, '{}_cleaned_{}_{}'.format(name, degree, tag))
+
+
+def get_log_file(dirpath, name):
+    return os.path.join(dirpath, '{}_runlog.txt'.format(name))
+
+
 def get_error_filename(dirpath, name):
         return os.path.join(dirpath, '{}_error.txt'.format(name))
 
@@ -415,3 +436,23 @@ def get_process_name(internal, analysis):
 
     return os.path.join('{}-{}'.format(target, scope))
 
+
+def try_load_workbook(file, read_only=True, max_retry=20, retry_interval=3):
+    wb = None
+    success = False
+    retry_count = max_retry
+    while (not success) and retry_count > 0:
+        try:
+            wb = xl.load_workbook(file, read_only)
+            success = True
+        except Exception as e:
+            logger.debug(e)
+            logger.info("waiting for workbook lock release")
+            time.sleep(retry_interval)
+        finally:
+            retry_count -= 1
+    if not success:
+        raise Exception('workbook is locked by another process and exceeded waiting time limit: {} secs'.format(
+            retry_interval * max_retry))
+
+    return wb
