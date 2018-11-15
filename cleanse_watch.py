@@ -88,6 +88,11 @@ def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, c
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
+    tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
+    output_folder = get_output_folder(output_folder, name, tag, degree)
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+
     backup_file = os.path.join(output_folder, filename)
     try_move_file(input_file, backup_file)
     input_file = backup_file
@@ -95,8 +100,6 @@ def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, c
     dirpath = output_folder
 
     try:
-        tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
-
         setting_groups = []
         setting_groups.extend([
             # internal, analysis

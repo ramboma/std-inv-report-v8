@@ -73,7 +73,7 @@ def main(input_file, output_folder, analysis, internal, batch, degree, stream_mo
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
              }
         )
-        run_serial(setting_groups, stream_mode)
+        # run_serial(setting_groups, stream_mode)
     else:
         setting_groups.extend([
             # internal, analysis
@@ -105,10 +105,10 @@ def main(input_file, output_folder, analysis, internal, batch, degree, stream_mo
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
         ])
-        if concurrent_mode:
-            run_concurrent(setting_groups, stream_mode)
-        else:
-            run_serial(setting_groups, stream_mode)
+    if concurrent_mode:
+        run_concurrent(setting_groups, stream_mode)
+    else:
+        run_serial(setting_groups, stream_mode)
 
 
 if __name__ == '__main__':

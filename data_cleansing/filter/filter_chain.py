@@ -13,26 +13,31 @@ logger = get_logger(__name__)
 
 class FilterChain:
     def __init__(self):
-        self.__filters = []
-        self.__index = 0
+        self._filters = []
+        self._index = 0
+        self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
+
+    @property
+    def logger(self):
+        return self._logger
 
     def add_filter(self, filter):
-        logger.info('Add filter: {}'.format(filter.__str__()))
-        self.__filters.append(filter)
+        self._logger.info('Add filter: {}'.format(filter.__str__()))
+        self._filters.append(filter)
         return self
 
     def do_filter(self, incoming, outgoing, q2c_mapping):
         # if self.__interrupt or self.__index >= self.__filters.__len__():
-        if self.__index >= self.__filters.__len__():
+        if self._index >= self._filters.__len__():
             return
-        filter = self.__filters[self.__index]
-        self.__index += 1
+        filter = self._filters[self._index]
+        self._index += 1
         filter.do_filter(incoming, outgoing, self, q2c_mapping)
 
     def reset_state(self):
-        self.__index = 0
+        self._index = 0
         # self.__interrupt = False
 
     def counter_report(self):
-        for filter in self.__filters:
+        for filter in self._filters:
             filter.counter_report()

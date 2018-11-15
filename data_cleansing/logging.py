@@ -9,7 +9,7 @@ import logging
 
 # formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s - %(message)s')
 # formatter = logging.Formatter('%(asctime)s %(name)s %(thread)d(%(threadName)s) %(levelname)s - %(message)s')
-DEFAULT_LOG_FORMAT = '%(asctime)s %(name)s %(process)d(%(processName)s) %(levelname)s - %(message)s'
+DEFAULT_LOG_FORMAT = '%(asctime)s %(name)s %(processName)s-%(process)d %(levelname)s - %(message)s'
 
 
 def get_log_formatter(log_format=DEFAULT_LOG_FORMAT):
@@ -35,10 +35,15 @@ def get_logger(name, file='runlog.txt'):
 
 
 def get_file_log_handler(path, level=logging.INFO, log_formatter=get_log_formatter()):
-    file_handler = logging.FileHandler(path, mode='a')
+    file_handler = logging.FileHandler(path, 'a', 'utf-8')
     file_handler.setLevel(level)
     file_handler.setFormatter(log_formatter)
     return file_handler
 
+
+# def get_process_log_file():
+#     dirpath, filename = os.path.split(self._output_file)
+#     name, ext = os.path.splitext(filename)
+#     return os.path.join(dirpath, '{}_runlog.txt'.format(name))
 
 

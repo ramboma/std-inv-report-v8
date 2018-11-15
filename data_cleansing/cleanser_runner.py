@@ -19,6 +19,7 @@ from data_cleansing.rule.rules_assembler import *
 from data_cleansing.filter.filter_chain import *
 from data_cleansing.filter.cleanse_filter import *
 from data_cleansing.salary_cleanser import *
+from data_cleansing.validation.cleanse_validator import *
 
 logger = get_logger(__name__)
 
@@ -34,16 +35,21 @@ class DataCleanserRunner:
         self._with_rule_7 = False
         self._sheet_tag = None
         self._trace_mode = False
+        self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
 
-    def get_error_file(self):
+    def _get_error_file(self):
         dirpath, filename = os.path.split(self._output_file)
         name, ext = os.path.splitext(filename)
         return os.path.join(dirpath, '{}_error.txt'.format(name))
 
-    def get_log_file(self):
+    def _get_log_file(self):
         dirpath, filename = os.path.split(self._output_file)
         name, ext = os.path.splitext(filename)
         return os.path.join(dirpath, '{}_runlog.txt'.format(name))
+
+    @property
+    def logger(self):
+        return self._logger
 
     @property
     def with_rule_2_2(self):
@@ -89,22 +95,22 @@ class DataCleanserRunner:
         raise Exception('not implement')
 
     def _log_header(self):
-        logger.info('')
-        logger.info('############################## Cleansing start ##################################')
-        logger.info('input file: \'{}\''.format(self._input_file))
-        logger.info('output file: \'{}\''.format(self._output_file))
+        self._logger.info('')
+        self._logger.info('############################## Cleansing start ##################################')
+        self._logger.info('input file: \'{}\''.format(self._input_file))
+        self._logger.info('output file: \'{}\''.format(self._output_file))
         if self._degree_filter is not None:
-            logger.info('with degree filter: {}'.format(self.degree_filter))
-        logger.info('with rule 2.2: {}'.format(self._with_rule_2_2))
-        logger.info('with rule 7: {}'.format(self._with_rule_7))
-        logger.info('trace mode: {}'.format(self._trace_mode))
-        logger.info('#################################################################################')
-        logger.info('')
+            logger.info('with degree filter: {}'.format(self._degree_filter))
+        self._logger.info('with rule 2.2: {}'.format(self._with_rule_2_2))
+        self._logger.info('with rule 7: {}'.format(self._with_rule_7))
+        self._logger.info('trace mode: {}'.format(self._trace_mode))
+        self._logger.info('#################################################################################')
+        self._logger.info('')
 
     def _log_tailer(self):
-        logger.info('')
-        logger.info('############################## Cleansing end ##################################')
-        logger.info('')
+        self._logger.info('')
+        self._logger.info('############################## Cleansing end ##################################')
+        self._logger.info('')
 
 
 class DataCleanserMemoryRunner(DataCleanserRunner):
@@ -114,12 +120,14 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
     @clocking
     def run(self):
         self._log_header()
-        logger.info('** PROCESS MODE: IN MEMORY **')
+        self._logger.info('** PROCESS MODE: IN MEMORY **')
 
-        logger.info('loading input file \'{}\''.format(self._input_file))
+        self._logger.info('loading input file \'{}\''.format(self._input_file))
         wb = xl.load_workbook(self._input_file)
         st = wb.worksheets[0]
-        validate_data_dimensions(st)
+
+        data_dimension_validator = DataDimensionValidator()
+        data_dimension_validator.do_validate(st)
 
         cleanser = DataCleanser(st)
         cleanser.trace_mode = self._trace_mode
@@ -142,14 +150,14 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
 
         cleanser.apply_rule_set(rule_set)
 
-        validate_data_dimensions(st)
+        data_dimension_validator.do_validate(st)
 
         if self._sheet_tag is not None:
             cleanser.set_sheet_name('cleaned_{}'.format(self._sheet_tag))
         else:
             cleanser.set_sheet_name('cleaned')
 
-        logger.info('writing output file {}'.format(self._output_file))
+        self._logger.info('writing output file {}'.format(self._output_file))
         wb.save(self._output_file)
         wb.close()
 
@@ -167,40 +175,44 @@ class DataCleanserStreamRunner(DataCleanserRunner):
     @clocking
     def run(self):
 
+        # process_file_log_handler = get_file_log_handler(self._get_log_file(), logging.DEBUG)
+        # self._logger.addHandler(process_file_log_handler)
+
         self._log_header()
-        logger.info('** PROCESS MODE: STREAM **')
+        self._logger.info('** PROCESS MODE: STREAM **')
 
         temp_file = self._output_file + '.tmp'
 
+        salary_value_collector = SalaryValueCollector()
+
         try:
-            salary_value_collector = SalaryValueCollector()
             with NamedTemporaryFile(suffix='.xlsx', delete=True) as tmp:
                 tmp.close()
                 temp_file = tmp.name
 
-                # break_secs = random.uniform(1.0, 3.0)
-                # logger.debug('break for {} secs'.format(break_secs))
-                # time.sleep(break_secs)
-                #
                 self.run_part_1(temp_file, salary_value_collector)
                 salary_value_collector.lock_down()
                 self.run_part_2(temp_file, salary_value_collector)
 
         except Exception as e:
-            logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
-            raise e
+            self._logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
+            with open(self._get_error_file(), 'w') as f:
+                f.write(e.__str__())
         finally:
             if os.path.exists(temp_file):
-                logger.info('remove temp file {}'.format(temp_file))
+                self._logger.info('remove temp file {}'.format(temp_file))
                 os.remove(temp_file)
 
         self._log_tailer()
 
     def run_part_1(self, tmp_file, salary_value_collector):
-        logger.info('loading input file \'{}\''.format(self._input_file))
+        self._logger.info('loading input file \'{}\''.format(self._input_file))
         in_wb = try_load_workbook(self._input_file, True)
         in_ws = in_wb.worksheets[0]
-        validate_data_dimensions(in_ws)
+        in_ws.calculate_dimension(force=True)
+
+        data_dimension_validator = DataDimensionValidator()
+        data_dimension_validator.do_validate(in_ws)
 
         self.__max_column = in_ws.max_column
 
@@ -209,6 +221,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
 
         try:
             filter_chain = FilterChain()
+
             filter_chain.add_filter(FilterResetColumnNames())
             filter_chain.add_filter(FilterExcludeUnnecessaryHeaders())
             filter_chain.add_filter(FilterOnlyIncludeDegree(self.degree_filter))
@@ -239,16 +252,16 @@ class DataCleanserStreamRunner(DataCleanserRunner):
                             salary_value_collector.collect(int(salary_value))
 
                 if idx % 1000 == 0:
-                    logger.info('>> {} rows processed'.format(idx))
+                    self._logger.info('>> {} rows processed'.format(idx))
 
                 # if idx > 300:
                 #     break
 
-            logger.info('>> {} rows processed in total'.format(idx))
+            self._logger.info('>> {} rows processed in total'.format(idx))
 
             filter_chain.counter_report()
 
-            logger.info('writing to temp file {}'.format(tmp_file))
+            self._logger.info('writing to temp file {}'.format(tmp_file))
             out_wb.save(tmp_file)
         except Exception as e:
             raise e
@@ -258,23 +271,26 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             in_wb.close()
 
     def run_part_2(self, tmp_file, salary_value_collector):
-        logger.info('loading temp file \'{}\''.format(tmp_file))
+        self._logger.info('loading temp file \'{}\''.format(tmp_file))
         in_wb = xl.load_workbook(tmp_file, read_only=True)
         in_ws = in_wb.worksheets[0]
         in_ws.calculate_dimension(force=True)
-        validate_data_dimensions(in_ws)
+
+        data_dimension_validator = DataDimensionValidator()
+        data_dimension_validator.do_validate(in_ws)
 
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
 
         try:
             filter_chain = FilterChain()
+
             salary_filter = FilterRinseUnusualSalaryValues(salary_value_collector)
             filter_chain.add_filter(salary_filter)
             if self.with_rule_7:
                 filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
 
-            logger.info(salary_filter.__str__())
+            self._logger.info(salary_filter.__str__())
             salary_value_collector.report()
 
             idx = 0
@@ -291,9 +307,9 @@ class DataCleanserStreamRunner(DataCleanserRunner):
                     out_ws.append(value_list)
 
                 if idx % 1000 == 0:
-                    logger.info('>> {} rows processed'.format(idx))
+                    self._logger.info('>> {} rows processed'.format(idx))
 
-            logger.info('>> {} rows processed in total'.format(idx))
+            self._logger.info('>> {} rows processed in total'.format(idx))
 
             filter_chain.counter_report()
 
@@ -302,7 +318,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             else:
                 out_ws.title = 'cleaned'
 
-            logger.info('writing output file {}'.format(self._output_file))
+            self._logger.info('writing output file {}'.format(self._output_file))
             out_wb.save(self._output_file)
         except Exception as e:
             raise e
@@ -338,26 +354,17 @@ def get_a_runner(setting, stream_mode=False):
     runner.sheet_tag = setting['tag']
     runner.trace_mode = setting['trace_mode']
 
-    # process_name = get_process_name(setting['internal'], setting['analysis'])
-    # runner.name = process_name
-
     return runner
 
 
-def runner_wrapper(runner):
-    # log_handler = get_file_log_handler(runner.get_log_file(), logging.DEBUG)
-    # logger.addHandler(log_handler)
+def runner_wrapper(setting, stream_mode=False):
     try:
+        runner = get_a_runner(setting, stream_mode)
         runner.run()
     except Exception as e:
-        logger.error(e, exc_info=True)
-        with open(runner.get_error_file(), 'w') as f:
-            f.write(e.__str__())
+        raise e
     finally:
-        # logger.removeHandler(log_handler)
         pass
-
-    # return runner
 
 
 @clocking
@@ -377,15 +384,13 @@ def run_concurrent(setting_groups, stream_mode=False, pool=None):
 
     processes = []
     for setting in setting_groups:
-        runner = get_a_runner(setting, stream_mode)
-
         if pool is None:
-            process = multiprocessing.Process(target=runner_wrapper, args=(runner, ),
+            process = multiprocessing.Process(target=runner_wrapper, args=(setting, stream_mode),
                                               name=get_process_name(setting['internal'], setting['analysis']))
             processes.append(process)
             process.start()
         else:
-            pool.apply_async(runner_wrapper, (runner, ))
+            pool.apply_async(runner_wrapper, (setting, stream_mode))
             # pool.apply_async(runner_wrapper, (get_process_name(setting['internal'], setting['analysis']), ))
 
     if pool is None:

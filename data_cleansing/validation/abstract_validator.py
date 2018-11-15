@@ -10,10 +10,10 @@ from data_cleansing.config import *
 logger = get_logger(__name__)
 
 
-class Filter(object):
-    def __init__(self, f_id, f_title):
-        self._id = f_id
-        self._title = f_title
+class Validator(object):
+    def __init__(self, v_id, v_title):
+        self._id = v_id
+        self._title = v_title
         self._counter = 0
         self._debug_info = []
         self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
@@ -33,19 +33,10 @@ class Filter(object):
     def title(self):
         return self._title
 
-    @property
-    def counter(self):
-        return self._counter
-
-    def do_filter(self, incoming, outgoing, chain, q2c_mapping):
+    def do_validate(self, obj):
         raise Exception('method not implement')
 
-    def counter_report(self):
-        self._logger.info('filter {} total filter count: {}'.format(self._id, self._counter))
-        if self._debug_info.__len__() > 0:
-            self._logger.debug(self._debug_info)
-
     def __str__(self):
-        return 'filter {}: {}'.format(self._id, self._title)
+        return 'validator {}: {}'.format(self._id, self._title)
 
     __repr__ = __str__

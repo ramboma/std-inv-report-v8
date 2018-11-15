@@ -18,7 +18,6 @@ logger = get_logger(__name__)
 class FilterResetColumnNames(Filter):
     def __init__(self):
         super().__init__('pre-process-1', 'set student info column name with _1~_N, set rest columns follow predefined rules, e.g. A1-A')
-        pass
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         if incoming['idx'] <= HEADER_ROW_INDEX:
@@ -32,7 +31,7 @@ class FilterResetColumnNames(Filter):
 
 
 class FilterExcludeUnnecessaryHeaders(Filter):
-    def __init__(self, start_row=1, row_count=2):
+    def __init__(self, start_row=1, row_count=2, file_logger_handler=None):
         super().__init__('pre-process-2', 'filter pre-process-2: removing unnecessary header rows start at {}, count {}'
                          .format(HEADER_ROW_INDEX + start_row, row_count))
         self.__start_row = start_row
@@ -65,7 +64,7 @@ class FilterOnlyIncludeDegree(Filter):
 
 
 class FilterExcludeTestRecords(Filter):
-    def __init__(self, filter_column='_14'):
+    def __init__(self, filter_column='_14', file_logger_handler=None):
         super().__init__('1', 'remove test data, e.g. column {} (专业名称) with value {}'.format(filter_column, MAJOR_FILTER_LIST))
         self.__filter_column = filter_column
 
@@ -80,7 +79,7 @@ class FilterExcludeTestRecords(Filter):
 
 
 class FilterExcludeRecordWithoutA2Answer(Filter):
-    def __init__(self, filter_column='A2'):
+    def __init__(self, filter_column='A2', file_logger_handler=None):
         super().__init__('2.1', 'remove un-qualified row, e.g. no answer for question {}'.format(filter_column))
         self.__filter_column = filter_column
 
@@ -95,7 +94,7 @@ class FilterExcludeRecordWithoutA2Answer(Filter):
 
 
 class FilterExcludeRecordWithoutSubmitTime(Filter):
-    def __init__(self, filter_column='_22'):
+    def __init__(self, filter_column='_22', file_logger_handler=None):
         super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time (column {}) exist'.format(filter_column))
         self.__filter_column = filter_column
 
@@ -110,7 +109,7 @@ class FilterExcludeRecordWithoutSubmitTime(Filter):
 
 
 class FilterRinseIrrelevantAnswers(Filter):
-    def __init__(self, id, irrelevant_question_rules):
+    def __init__(self, id, irrelevant_question_rules, file_logger_handler=None):
         super().__init__(id, 'replace non-relevance answers(cell) with NaN against question-relevance rules')
         self.__irrelevant_question_rules = irrelevant_question_rules
 
@@ -142,7 +141,7 @@ class FilterRinseIrrelevantAnswers(Filter):
 
 
 class FilterRinseNcOptionValues(Filter):
-    def __init__(self, filter_columns=('H5-L', 'H6-H')):
+    def __init__(self, filter_columns=('H5-L', 'H6-H'), file_logger_handler=None):
         super().__init__('4', 'replace values like "无法评价", "以上均不需要改进" with NaN')
         self.__filter_columns = filter_columns
         self._counter = [0, 0, 0]
@@ -167,7 +166,7 @@ class FilterRinseNcOptionValues(Filter):
 
 
 class FilterRinseInvalidAnswers(Filter):
-    def __init__(self, filter_column='G1'):
+    def __init__(self, filter_column='G1', file_logger_handler=None):
         super().__init__('5', 'replace invalid answers(cell) with NaN')
         self.__filter_column = filter_column
 
@@ -181,7 +180,7 @@ class FilterRinseInvalidAnswers(Filter):
 
 
 class FilterRinseUnusualSalaryValues(Filter):
-    def __init__(self, salary_value_collector, filter_column='B6'):
+    def __init__(self, salary_value_collector, filter_column='B6', file_logger_handler=None):
         super().__init__('6', 'rinse salary < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
         self.__salary_value_collector = salary_value_collector
         self.__filter_column = filter_column
