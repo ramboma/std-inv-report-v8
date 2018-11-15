@@ -34,6 +34,13 @@ class DataCleanserRunner:
         self._sheet_tag = None
         self._trace_mode = False
 
+        dirpath, filename = os.path.split(input_file)
+        name, ext = os.path.splitext(filename)
+        self._error_file = os.path.join(dirpath, '{}_error.txt'.format(name))
+
+    def get_error_file(self):
+        return self._error_file
+
     @property
     def with_rule_2_2(self):
         return self._with_rule_2_2
@@ -329,8 +336,16 @@ def get_a_runner(setting, stream_mode=False):
 
 
 def runner_wrapper(runner):
-    logger.info(runner)
-    runner.run()
+    try:
+        # logger.info(runner)
+        runner.run()
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        with open(runner.get_error_file(), 'w') as f:
+            f.write(e.__str__())
+    finally:
+        pass
+
     # return runner
 
 

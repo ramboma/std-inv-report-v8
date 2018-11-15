@@ -8,12 +8,12 @@ __author__ = 'Gary.Z'
 import logging
 
 
-def get_logger(name):
+def get_logger(name, file='runlog.txt'):
     # formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s - %(message)s')
     # formatter = logging.Formatter('%(asctime)s %(name)s %(thread)d(%(threadName)s) %(levelname)s - %(message)s')
     formatter = logging.Formatter('%(asctime)s %(name)s %(process)d(%(processName)s) %(levelname)s - %(message)s')
 
-    file_handler = logging.FileHandler('runlog.txt', mode='a')
+    file_handler = logging.FileHandler(file, mode='a')
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
 
