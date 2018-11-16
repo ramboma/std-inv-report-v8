@@ -42,73 +42,83 @@ class Reporter:
         config_dict = config_loader.config_dict
 
         # 就业率和就业状态
-        work_option_report(cleaned_data,  os.path.join(self.output_fold + '就业机会.xlsx'))
-        non_employee_report(cleaned_data, self.output_fold + '未就业分析.xlsx')
-        employee_report(cleaned_data, self.output_fold + '就业率及就业就业状态.xlsx')
+        run(work_option_report,cleaned_data,self.output_fold,'就业机会')
+        run(non_employee_report,cleaned_data, self.output_fold,'未就业分析')
+        run(employee_report,cleaned_data, self.output_fold,'就业率及就业就业状态')
 
         # 就业竞争力
-        major_relative_report(cleaned_data, self.output_fold + '专业相关度.xlsx')
-        job_meet_report(cleaned_data, self.output_fold + '职业期待吻合度.xlsx')
-
-        job_satisfy_report(cleaned_data, self.output_fold + '就业满意度.xlsx')
-        work_stability_report(cleaned_data, self.output_fold + '工作稳定性.xlsx')
-
-        income_report(cleaned_data, self.output_fold + '月均收入.xlsx')
+        run(major_relative_report,cleaned_data, self.output_fold,'专业相关度')
+        run(job_meet_report,cleaned_data, self.output_fold,'职业期待吻合度')
+        run(job_satisfy_report,cleaned_data, self.output_fold,'就业满意度')
+        run(work_stability_report,cleaned_data, self.output_fold,'工作稳定性')
+        run(income_report,cleaned_data, self.output_fold,'月均收入')
 
         # 就业分布
-        employee_indurstry(cleaned_data, self.output_fold + '就业行业分布.xlsx')
-        employee_job(cleaned_data, self.output_fold + '就业职业分布.xlsx')
-        employee_industry_type(cleaned_data, self.output_fold + '就业单位分布.xlsx')
-        employee_industry_size(cleaned_data, self.output_fold + '就业单位分布.xlsx')
-        employee_region_report(cleaned_data, self.output_fold + '就业地区分布.xlsx')
+        run(employee_indurstry,cleaned_data, self.output_fold , '就业行业分布')
+        run(employee_job,cleaned_data, self.output_fold , '就业职业分布')
+        run(employee_industry_type,cleaned_data, self.output_fold , '就业单位分布')
+        run(employee_industry_size,cleaned_data, self.output_fold , '就业单位分布')
+        run(employee_region_report,cleaned_data, self.output_fold , '就业地区分布')
 
         # 求职过程与就业指导服务
-        employee_difficult_report(cleaned_data, self.output_fold + '求职过程.xlsx')
+        run(employee_difficult_report,cleaned_data, self.output_fold ,'求职过程')
 
         # 母校综合评价
-        school_satisfy_report(cleaned_data, self.output_fold + '母校满意度.xlsx')
-        school_recommed_report(cleaned_data, self.output_fold + '母校推荐度.xlsx')
+        run(school_satisfy_report,cleaned_data, self.output_fold , '母校满意度')
+        run(school_recommed_report,cleaned_data, self.output_fold , '母校推荐度')
 
         # 学生指导与服务
-        evelution_H4_Q_report(cleaned_data, self.output_fold + '对学生生活服务的评价.xlsx', config_dict)
-        evelution_H4_P_report(cleaned_data, self.output_fold + '对学生管理工作的评价.xlsx', config_dict)
-        evelution_H4_F_K_report(cleaned_data, self.output_fold + '对就业教育服务的评价.xlsx')
-        evelution_H4_L_O_report(cleaned_data, self.output_fold + '对创业教育服务的反馈.xlsx')
+        run(evelution_H4_Q_report,cleaned_data, self.output_fold , '对学生生活服务的评价', config_dict)
+        run(evelution_H4_P_report,cleaned_data, self.output_fold , '对学生管理工作的评价', config_dict)
+        run(evelution_H4_F_K_report,cleaned_data, self.output_fold , '对就业教育服务的评价')
+        run(evelution_H4_L_O_report,cleaned_data, self.output_fold , '对创业教育服务的反馈')
 
         # 附加题
-        evelution_H4_R_report(cleaned_data, self.output_fold + '社团活动.xlsx')
-        evelution_academic_report(cleaned_data, self.output_fold + '母校学风认可度.xlsx')
-        evelution_H4_T_report(cleaned_data, self.output_fold + '教育教学总体评价.xlsx')
-        evelution_H4_S_report(cleaned_data, self.output_fold + '实践教学的评价.xlsx')
-        evelution_H4_E_report(cleaned_data, self.output_fold + '任课教师.xlsx')
+        run(evelution_H4_R_report,cleaned_data, self.output_fold , '社团活动')
+        run(evelution_academic_report,cleaned_data, self.output_fold , '母校学风认可度')
+        run(evelution_H4_T_report,cleaned_data, self.output_fold , '教育教学总体评价')
+        run(evelution_H4_S_report,cleaned_data, self.output_fold , '实践教学的评价')
+        run(evelution_H4_E_report,cleaned_data, self.output_fold , '任课教师')
 
         # 国内升学
-        further_report(cleaned_data, self.output_fold + '国内升学.xlsx')
+        run(further_report,cleaned_data, self.output_fold , '国内升学')
 
         # 出国境留学
-        study_abroad_report(cleaned_data, self.output_fold + '出国境留学.xlsx')
+        run(study_abroad_report,cleaned_data, self.output_fold , '出国境留学')
         # 自主创业
-        self_employed_report(cleaned_data, self.output_fold + '自主创业.xlsx', config_dict)
+        run(self_employed_report,cleaned_data, self.output_fold , '自主创业', config_dict)
         # 人才培养
-        evelution_practice_report(cleaned_data, self.output_fold + '对实践教学的评价.xlsx')
-        evelution_lesson_report(cleaned_data, self.output_fold + '对课堂教学的评价.xlsx')
-        evelution_teach_report(cleaned_data, self.output_fold + '对任课教师的评价.xlsx')
+        run(evelution_practice_report,cleaned_data, self.output_fold , '对实践教学的评价')
+        run(evelution_lesson_report,cleaned_data, self.output_fold , '对课堂教学的评价')
+        run(evelution_teach_report,cleaned_data, self.output_fold , '对任课教师的评价')
 
         # 特殊人群
-        special_gender_report(cleaned_data, self.output_fold + '不同性别.xlsx')
-        special_education_report(cleaned_data, self.output_fold + '教育行业和非教育行业.xlsx')
-        special_origin_province_report(cleaned_data, self.output_fold + '省内省外生源.xlsx')
-        special_indurstry_province_report(cleaned_data, self.output_fold + '省内省外就业.xlsx')
-        special_national_report(cleaned_data, self.output_fold + '汉族少数名族.xlsx')
-        special_medical_report(cleaned_data, self.output_fold + '医疗卫生职业.xlsx')
-        special_social_health_report(cleaned_data, self.output_fold + '卫生和社会工作.xlsx')
+        run(special_gender_report,cleaned_data, self.output_fold , '不同性别')
+        run(special_education_report,cleaned_data, self.output_fold , '教育行业和非教育行业')
+        run(special_origin_province_report,cleaned_data, self.output_fold , '省内省外生源')
+        run(special_indurstry_province_report,cleaned_data, self.output_fold , '省内省外就业')
+        run(special_national_report,cleaned_data, self.output_fold , '汉族少数名族')
+        run(special_medical_report,cleaned_data, self.output_fold , '医疗卫生职业')
+        run(special_social_health_report,cleaned_data, self.output_fold ,'卫生和社会工作')
 
         # 学习效果
-        major_quality_report(cleaned_data, self.output_fold + '专业素质.xlsx')
-        basic_quality_report(cleaned_data, self.output_fold + '基础素质.xlsx', config_dict)
+        run(major_quality_report,cleaned_data, self.output_fold , '专业素质')
+        run(basic_quality_report,cleaned_data, self.output_fold , '基础素质', config_dict)
         # summary
-        report_summary(cleaned_data, self.output_fold + '一览表.xlsx')
+        run(report_summary,cleaned_data, self.output_fold , '一览表')
 
+def run(func,data,out_dir,file_name,conf={}):
+    try:
+        logger.info("****{} start****".format(file_name))
+        file_path=os.path.join(out_dir + file_name+CONFIG.EXCEL_EXT)
+        if not conf:
+            func(data,file_path)
+        else:
+            func(data,file_path,conf)
+        logger.info("****{} finished****".format(file_name))
+    except Exception as e:
+        logger.error("****{} error****".format(file_name))
+        logger.error(str(e))
 
 def employee_indurstry(data, filePath):
     '''就业行业分布'''
