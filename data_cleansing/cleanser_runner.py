@@ -6,12 +6,8 @@
 __author__ = 'Gary.Z'
 
 import os
-import threading
-import copy
 import multiprocessing
 import time
-import random
-import shutil
 from tempfile import NamedTemporaryFile
 
 from data_cleansing.data_cleanser import *
@@ -20,14 +16,13 @@ from data_cleansing.filter.filter_chain import *
 from data_cleansing.filter.cleanse_filter import *
 from data_cleansing.salary_cleanser import *
 from data_cleansing.validation.cleanse_validator import *
+from data_cleansing.excel_file_reader import *
 
 logger = get_logger(__name__)
 
 
 class DataCleanserRunner:
     def __init__(self, input_file, output_file):
-        # threading.Thread.__init__(self)
-        # multiprocessing.Process.__init__(self)
         self._input_file = input_file
         self._output_file = output_file
         self._degree_filter = None
@@ -169,8 +164,8 @@ class DataCleanserMemoryRunner(DataCleanserRunner):
 class DataCleanserStreamRunner(DataCleanserRunner):
     def __init__(self, input_file, output_file):
         super().__init__(input_file, output_file)
-        self.__q2c_mapping = {}
-        self.__max_column = 0
+        self._q2c_mapping = {}
+        self._max_column = 0
         self._process_file_log_handler = get_file_log_handler(self._get_log_file(), logging.DEBUG)
         self._logger.addHandler(self._process_file_log_handler)
 
@@ -182,16 +177,16 @@ class DataCleanserStreamRunner(DataCleanserRunner):
 
         temp_file = self._output_file + '.tmp'
 
-        salary_value_collector = SalaryValueCollector(self._process_file_log_handler)
+        salary_collector = SalaryValueCollector(self._process_file_log_handler)
 
         try:
             with NamedTemporaryFile(suffix='.xlsx', delete=True) as tmp:
                 tmp.close()
                 temp_file = tmp.name
 
-                self.run_part_1(temp_file, salary_value_collector)
-                salary_value_collector.lock_down()
-                self.run_part_2(temp_file, salary_value_collector)
+                self.run_part_1(temp_file, salary_collector)
+                salary_collector.lock_down()
+                self.run_part_2(temp_file, salary_collector)
 
         except Exception as e:
             self._logger.error('unexpected error: {}, stopped'.format(e), exc_info=True)
@@ -204,16 +199,20 @@ class DataCleanserStreamRunner(DataCleanserRunner):
 
         self._log_tailer()
 
-    def run_part_1(self, tmp_file, salary_value_collector):
+    def run_part_1(self, tmp_file, salary_collector):
         self._logger.info('loading input file \'{}\''.format(self._input_file))
-        in_wb = try_load_workbook(self._input_file, True)
-        in_ws = in_wb.worksheets[0]
-        in_ws.calculate_dimension(force=True)
+
+        input_processor = ExcelFileProcessor(self._input_file)
+        input_processor.try_load()
+
+        # in_wb = try_load_workbook(self._input_file, True)
+        # in_ws = in_wb.worksheets[0]
+        # in_ws.calculate_dimension(force=True)
 
         data_dimension_validator = DataDimensionValidator(log_handler=self._process_file_log_handler)
-        data_dimension_validator.do_validate(in_ws)
+        data_dimension_validator.do_validate((input_processor.get_max_cols(), input_processor.get_max_rows()))
 
-        self.__max_column = in_ws.max_column
+        self._max_column = input_processor.get_max_cols()
 
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
@@ -233,30 +232,8 @@ class DataCleanserStreamRunner(DataCleanserRunner):
             filter_chain.add_filter(FilterRinseNcOptionValues(log_handler=self._process_file_log_handler))
             filter_chain.add_filter(FilterRinseInvalidAnswers(log_handler=self._process_file_log_handler))
 
-            idx = 0
-            for row in in_ws.rows:
-                idx += 1
-
-                value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
-
-                filter_chain.reset_state()
-                filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
-
-                if value_list.__len__() > 0:
-                    out_ws.append(value_list)
-                    if idx > HEADER_ROW_INDEX:
-                        salary_index = self.__q2c_mapping['B6'][0]
-                        salary_value = value_list[salary_index]
-                        if salary_value is not None:
-                            salary_value_collector.collect(int(salary_value))
-
-                if idx % 1000 == 0:
-                    self._logger.info('>> {} rows processed'.format(idx))
-
-                # if idx > 300:
-                #     break
-
-            self._logger.info('>> {} rows processed in total'.format(idx))
+            total = input_processor.traverse_rows(self._input_file_row_processor, (filter_chain, salary_collector, out_ws))
+            self._logger.info('>> {} rows processed in total'.format(total))
 
             filter_chain.counter_report()
 
@@ -267,16 +244,32 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         finally:
             # logger.debug("close in/out wb handle")
             out_wb.close()
-            in_wb.close()
+            input_processor.close()
 
-    def run_part_2(self, tmp_file, salary_value_collector):
+    def _input_file_row_processor(self, row_num, row, value_list, filter_chain, salary_collector, out_ws):
+
+        filter_chain.reset_state()
+        filter_chain.do_filter({'idx': row_num, 'row': row}, value_list, self._q2c_mapping)
+
+        if value_list.__len__() > 0:
+            out_ws.append(value_list)
+            if row_num > HEADER_ROW_INDEX:
+                salary_index = self._q2c_mapping['B6'][0]
+                salary_value = value_list[salary_index]
+                if salary_value is not None:
+                    salary_collector.collect(int(salary_value))
+
+        if row_num % 1000 == 0:
+            self._logger.info('>> {} rows processed'.format(row_num))
+
+    def run_part_2(self, tmp_file, salary_collector):
         self._logger.info('loading temp file \'{}\''.format(tmp_file))
         in_wb = xl.load_workbook(tmp_file, read_only=True)
         in_ws = in_wb.worksheets[0]
         in_ws.calculate_dimension(force=True)
 
         data_dimension_validator = DataDimensionValidator()
-        data_dimension_validator.do_validate(in_ws)
+        data_dimension_validator.do_validate((in_ws.max_column, in_ws.max_row))
 
         out_wb = xl.Workbook(write_only=True)
         out_ws = out_wb.create_sheet()
@@ -284,23 +277,23 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         try:
             filter_chain = FilterChain()
 
-            salary_filter = FilterRinseUnusualSalaryValues(salary_value_collector)
+            salary_filter = FilterRinseUnusualSalaryValues(salary_collector)
             filter_chain.add_filter(salary_filter)
             if self.with_rule_7:
                 filter_chain.add_filter(FilterRinseIrrelevantAnswers(7, RINSE_RULE_IRRELEVANT_QUESTIONS_V6_COMPATIBLE))
 
             self._logger.info(salary_filter.__str__())
-            salary_value_collector.report()
+            salary_collector.report()
 
             idx = 0
             for row in in_ws.rows:
                 idx += 1
 
-                value_list = self._copy_readonly_cells_to_value_list(row, self.__max_column)
+                value_list = self._copy_readonly_cells_to_value_list(row, self._max_column)
 
                 if idx > HEADER_ROW_INDEX:
                     filter_chain.reset_state()
-                    filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self.__q2c_mapping)
+                    filter_chain.do_filter({'idx': idx, 'row': row}, value_list, self._q2c_mapping)
 
                 if value_list.__len__() > 0:
                     out_ws.append(value_list)
