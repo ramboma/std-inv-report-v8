@@ -129,7 +129,7 @@ MAJOR_QUALITY_SUBJECT = {'I1-1-A': '专业知识', 'I1-1-B': '专业能力', 'I1
 
 DICT_REP = {'非男': '女', '非汉族': '少数民族', '非福建省': '省外'}
 SPECIAL_COLUMN = ('性别', '民族', '类别')
-PROVINCE = '福建省'
+PROVINCE_KEY = 'scholl_province'
 # 条件过滤的key值
 DICT_KEY = ('column', 'cond', 'oper')
 OPER = ('eq', 'noteq','in')
