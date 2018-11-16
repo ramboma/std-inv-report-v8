@@ -11,19 +11,21 @@ from data_cleansing.rule.abstract_rule import *
 from data_cleansing.utils import *
 from data_cleansing.clock import *
 from data_cleansing.filter.abstract_filter import *
+from data_cleansing.validation.cleanse_validator import *
 
-logger = get_logger(__name__)
+# logger = get_logger(__name__)
 
 
 class FilterResetColumnNames(Filter):
-    def __init__(self):
-        super().__init__('pre-process-1', 'set student info column name with _1~_N, set rest columns follow predefined rules, e.g. A1-A')
+    def __init__(self, log_handler=None):
+        super().__init__('pre-process-1', 'set student info column name with _1~_N, set rest columns follow predefined rules, e.g. A1-A', log_handler)
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
         if incoming['idx'] <= HEADER_ROW_INDEX:
             self._counter += 1
             # logger.info(self.__str__())
-            validate_question_id_header(outgoing)
+            question_id_header_validator = QuestionIdHeaderValidator()
+            question_id_header_validator.do_validate(outgoing)
             reset_column_names(outgoing, generate_excel_column_indexes(iter_cnt=2))
             build_question_to_column_mapping_v2(outgoing, q2c_mapping)
         else:
@@ -31,9 +33,9 @@ class FilterResetColumnNames(Filter):
 
 
 class FilterExcludeUnnecessaryHeaders(Filter):
-    def __init__(self, start_row=1, row_count=2, file_logger_handler=None):
+    def __init__(self, start_row=1, row_count=2, log_handler=None):
         super().__init__('pre-process-2', 'filter pre-process-2: removing unnecessary header rows start at {}, count {}'
-                         .format(HEADER_ROW_INDEX + start_row, row_count))
+                         .format(HEADER_ROW_INDEX + start_row, row_count), log_handler)
         self.__start_row = start_row
         self.__row_count = row_count
 
@@ -48,8 +50,8 @@ class FilterExcludeUnnecessaryHeaders(Filter):
 
 
 class FilterOnlyIncludeDegree(Filter):
-    def __init__(self, degree=None, filter_column='_12'):
-        super().__init__('pre-process-3', 'filter records with degree: {}'.format(degree))
+    def __init__(self, degree=None, filter_column='_12', log_handler=None):
+        super().__init__('pre-process-3', 'filter records with degree: {}'.format(degree), log_handler)
         self.__degree = degree
         self.__filter_column = filter_column
 
@@ -64,8 +66,8 @@ class FilterOnlyIncludeDegree(Filter):
 
 
 class FilterExcludeTestRecords(Filter):
-    def __init__(self, filter_column='_14', file_logger_handler=None):
-        super().__init__('1', 'remove test data, e.g. column {} (专业名称) with value {}'.format(filter_column, MAJOR_FILTER_LIST))
+    def __init__(self, filter_column='_14', log_handler=None):
+        super().__init__('1', 'remove test data, e.g. column {} (专业名称) with value {}'.format(filter_column, MAJOR_FILTER_LIST), log_handler)
         self.__filter_column = filter_column
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
@@ -79,8 +81,8 @@ class FilterExcludeTestRecords(Filter):
 
 
 class FilterExcludeRecordWithoutA2Answer(Filter):
-    def __init__(self, filter_column='A2', file_logger_handler=None):
-        super().__init__('2.1', 'remove un-qualified row, e.g. no answer for question {}'.format(filter_column))
+    def __init__(self, filter_column='A2', log_handler=None):
+        super().__init__('2.1', 'remove un-qualified row, e.g. no answer for question {}'.format(filter_column), log_handler)
         self.__filter_column = filter_column
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
@@ -94,8 +96,8 @@ class FilterExcludeRecordWithoutA2Answer(Filter):
 
 
 class FilterExcludeRecordWithoutSubmitTime(Filter):
-    def __init__(self, filter_column='_22', file_logger_handler=None):
-        super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time (column {}) exist'.format(filter_column))
+    def __init__(self, filter_column='_22', log_handler=None):
+        super().__init__('2.2', 'remove un-submitted row, e.g. no submit-time (column {}) exist'.format(filter_column), log_handler)
         self.__filter_column = filter_column
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
@@ -109,8 +111,8 @@ class FilterExcludeRecordWithoutSubmitTime(Filter):
 
 
 class FilterRinseIrrelevantAnswers(Filter):
-    def __init__(self, id, irrelevant_question_rules, file_logger_handler=None):
-        super().__init__(id, 'replace non-relevance answers(cell) with NaN against question-relevance rules')
+    def __init__(self, id, irrelevant_question_rules, log_handler=None):
+        super().__init__(id, 'replace non-relevance answers(cell) with NaN against question-relevance rules', log_handler)
         self.__irrelevant_question_rules = irrelevant_question_rules
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
@@ -141,8 +143,8 @@ class FilterRinseIrrelevantAnswers(Filter):
 
 
 class FilterRinseNcOptionValues(Filter):
-    def __init__(self, filter_columns=('H5-L', 'H6-H'), file_logger_handler=None):
-        super().__init__('4', 'replace values like "无法评价", "以上均不需要改进" with NaN')
+    def __init__(self, filter_columns=('H5-L', 'H6-H'), log_handler=None):
+        super().__init__('4', 'replace values like "无法评价", "以上均不需要改进" with NaN', log_handler)
         self.__filter_columns = filter_columns
         self._counter = [0, 0, 0]
 
@@ -166,8 +168,8 @@ class FilterRinseNcOptionValues(Filter):
 
 
 class FilterRinseInvalidAnswers(Filter):
-    def __init__(self, filter_column='G1', file_logger_handler=None):
-        super().__init__('5', 'replace invalid answers(cell) with NaN')
+    def __init__(self, filter_column='G1', log_handler=None):
+        super().__init__('5', 'replace invalid answers(cell) with NaN', log_handler)
         self.__filter_column = filter_column
 
     def do_filter(self, incoming, outgoing, chain, q2c_mapping):
@@ -180,8 +182,8 @@ class FilterRinseInvalidAnswers(Filter):
 
 
 class FilterRinseUnusualSalaryValues(Filter):
-    def __init__(self, salary_value_collector, filter_column='B6', file_logger_handler=None):
-        super().__init__('6', 'rinse salary < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV')
+    def __init__(self, salary_value_collector, filter_column='B6', log_handler=None):
+        super().__init__('6', 'rinse salary < 1000, top 0.3%, ABS(diff of MEAN) > 4 * STDEV', log_handler)
         self.__salary_value_collector = salary_value_collector
         self.__filter_column = filter_column
         self._counter = [0, 0, 0]

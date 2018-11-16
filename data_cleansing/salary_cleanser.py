@@ -9,11 +9,11 @@ import numpy as np
 
 from data_cleansing.config import *
 
-logger = get_logger(__name__)
+# logger = get_logger(__name__)
 
 
 class SalaryValueCollector:
-    def __init__(self):
+    def __init__(self, log_handler=None):
         self._value_list = []
         # self.__np_value_list = None
         self._top_n = 0
@@ -22,6 +22,8 @@ class SalaryValueCollector:
         self._stdev = 0
         self._stdev_4 = 0
         self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
+        if log_handler is not None:
+            self._logger.addHandler(log_handler)
 
     @property
     def logger(self):

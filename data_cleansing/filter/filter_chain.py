@@ -8,14 +8,16 @@ __author__ = 'Gary.Z'
 from data_cleansing.filter.abstract_filter import *
 from data_cleansing.config import *
 
-logger = get_logger(__name__)
+# logger = get_logger(__name__)
 
 
 class FilterChain:
-    def __init__(self):
+    def __init__(self, log_handler=None):
         self._filters = []
         self._index = 0
         self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
+        if log_handler is not None:
+            self._logger.addHandler(log_handler)
 
     @property
     def logger(self):

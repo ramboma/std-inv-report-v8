@@ -11,12 +11,14 @@ logger = get_logger(__name__)
 
 
 class Validator(object):
-    def __init__(self, v_id, v_title):
+    def __init__(self, v_id, v_title, log_handler=None):
         self._id = v_id
         self._title = v_title
         self._counter = 0
         self._debug_info = []
         self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
+        if log_handler is not None:
+            self._logger.addHandler(log_handler)
 
     @property
     def logger(self):

@@ -171,19 +171,18 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         super().__init__(input_file, output_file)
         self.__q2c_mapping = {}
         self.__max_column = 0
+        self._process_file_log_handler = get_file_log_handler(self._get_log_file(), logging.DEBUG)
+        self._logger.addHandler(self._process_file_log_handler)
 
     @clocking
     def run(self):
-
-        # process_file_log_handler = get_file_log_handler(self._get_log_file(), logging.DEBUG)
-        # self._logger.addHandler(process_file_log_handler)
 
         self._log_header()
         self._logger.info('** PROCESS MODE: STREAM **')
 
         temp_file = self._output_file + '.tmp'
 
-        salary_value_collector = SalaryValueCollector()
+        salary_value_collector = SalaryValueCollector(self._process_file_log_handler)
 
         try:
             with NamedTemporaryFile(suffix='.xlsx', delete=True) as tmp:
@@ -211,7 +210,7 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         in_ws = in_wb.worksheets[0]
         in_ws.calculate_dimension(force=True)
 
-        data_dimension_validator = DataDimensionValidator()
+        data_dimension_validator = DataDimensionValidator(log_handler=self._process_file_log_handler)
         data_dimension_validator.do_validate(in_ws)
 
         self.__max_column = in_ws.max_column
@@ -220,19 +219,19 @@ class DataCleanserStreamRunner(DataCleanserRunner):
         out_ws = out_wb.create_sheet()
 
         try:
-            filter_chain = FilterChain()
+            filter_chain = FilterChain(log_handler=self._process_file_log_handler)
 
-            filter_chain.add_filter(FilterResetColumnNames())
-            filter_chain.add_filter(FilterExcludeUnnecessaryHeaders())
-            filter_chain.add_filter(FilterOnlyIncludeDegree(self.degree_filter))
+            filter_chain.add_filter(FilterResetColumnNames(log_handler=self._process_file_log_handler))
+            filter_chain.add_filter(FilterExcludeUnnecessaryHeaders(log_handler=self._process_file_log_handler))
+            filter_chain.add_filter(FilterOnlyIncludeDegree(self.degree_filter, log_handler=self._process_file_log_handler))
 
-            filter_chain.add_filter(FilterExcludeTestRecords())
-            filter_chain.add_filter(FilterExcludeRecordWithoutA2Answer())
+            filter_chain.add_filter(FilterExcludeTestRecords(log_handler=self._process_file_log_handler))
+            filter_chain.add_filter(FilterExcludeRecordWithoutA2Answer(log_handler=self._process_file_log_handler))
             if self.with_rule_2_2:
-                filter_chain.add_filter(FilterExcludeRecordWithoutSubmitTime())
-            filter_chain.add_filter(FilterRinseIrrelevantAnswers(3, RINSE_RULE_IRRELEVANT_QUESTIONS))
-            filter_chain.add_filter(FilterRinseNcOptionValues())
-            filter_chain.add_filter(FilterRinseInvalidAnswers())
+                filter_chain.add_filter(FilterExcludeRecordWithoutSubmitTime(log_handler=self._process_file_log_handler))
+            filter_chain.add_filter(FilterRinseIrrelevantAnswers(3, RINSE_RULE_IRRELEVANT_QUESTIONS, log_handler=self._process_file_log_handler))
+            filter_chain.add_filter(FilterRinseNcOptionValues(log_handler=self._process_file_log_handler))
+            filter_chain.add_filter(FilterRinseInvalidAnswers(log_handler=self._process_file_log_handler))
 
             idx = 0
             for row in in_ws.rows:

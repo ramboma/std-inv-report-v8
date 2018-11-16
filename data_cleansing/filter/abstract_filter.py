@@ -7,16 +7,18 @@ __author__ = 'Gary.Z'
 
 from data_cleansing.config import *
 
-logger = get_logger(__name__)
+# logger = get_logger(__name__)
 
 
 class Filter(object):
-    def __init__(self, f_id, f_title):
+    def __init__(self, f_id, f_title, log_handler=None):
         self._id = f_id
         self._title = f_title
         self._counter = 0
         self._debug_info = []
         self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
+        if log_handler is not None:
+            self._logger.addHandler(log_handler)
 
     @property
     def logger(self):
