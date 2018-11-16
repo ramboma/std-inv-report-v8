@@ -19,13 +19,14 @@ class DataDimensionValidator(Validator):
 
     def do_validate(self, obj):
         """data dimension checking: row >=3 and col >= 231 """
-        work_sheet = obj
-        self._logger.info('validating data dimensions, cols: {}, rows: {}'.format(work_sheet.max_column, work_sheet.max_row))
-        if work_sheet.max_column <= 1 and work_sheet.max_row <= 1:
+        cols = obj[0]
+        rows = obj[1]
+        self._logger.info('validating data dimensions, cols: {}, rows: {}'.format(cols, rows))
+        if cols <= 1 and rows <= 1:
             raise Exception('only 1 cell detected, consider not supported excel file format, version must be >= Excel 2010')
-        if work_sheet.max_column < self._expect_cols:
+        if cols < self._expect_cols:
             raise Exception("column count must >= {}".format(self._expect_cols))
-        if work_sheet.max_row < 3:
+        if rows < 3:
             raise Exception("row count must >= {}".format(self._expect_rows))
 
 
