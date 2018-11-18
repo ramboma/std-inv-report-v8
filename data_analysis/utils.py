@@ -95,7 +95,6 @@ def answer_grp_period(data, arry_columns, array_groupby, array_periods):
     '''
     grp = pd.DataFrame(data, columns=arry_columns)
     peroids = pd.cut(grp, array_periods)
-    print(peroids)
     return peroids
 
 

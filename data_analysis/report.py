@@ -95,8 +95,8 @@ class Reporter:
         # 特殊人群
         run(special_gender_report, cleaned_data, self.output_fold, '不同性别')
         run(special_education_report, cleaned_data, self.output_fold, '教育行业和非教育行业')
-        run(special_origin_province_report, cleaned_data, self.output_fold, '省内省外生源',config_dict)
-        run(special_indurstry_province_report, cleaned_data, self.output_fold, '省内省外就业',config_dict)
+        run(special_origin_province_report, cleaned_data, self.output_fold, '省内省外生源', config_dict)
+        run(special_indurstry_province_report, cleaned_data, self.output_fold, '省内省外就业', config_dict)
         run(special_national_report, cleaned_data, self.output_fold, '汉族少数名族')
         run(special_medical_report, cleaned_data, self.output_fold, '医疗卫生职业')
         run(special_social_health_report, cleaned_data, self.output_fold, '卫生和社会工作')
@@ -120,6 +120,9 @@ def run(func, data, out_dir, file_name, conf={}):
     except Exception as e:
         logger.error("****{} error****".format(file_name))
         logger.error(str(e))
+        err_tip = out_dir + file_name + CONFIG.LOGGER_EXT
+        with open(err_tip, 'w') as f:
+            f.write('{} 报表生成是发生错误，请联系开发人员分析原因'.format(file_name))
 
 
 def employee_indurstry(data, filePath):
@@ -421,7 +424,6 @@ def build_period_name(start, step, period_n, max):
     key = '({}, {}]'.format(start + period_n * step, max)
     val = '{}元及以上'.format(start + period_n * step + 1)
     name[key] = val
-    print(name)
     return name
 
 
@@ -821,7 +823,6 @@ def report_combine_level(data, array_subject, metric_type, dict_subject,
                     df_init.loc[:, metric_cols].sum(axis=1) / len(array_subject)).round(CONFIG.DECIMALS6)
             df_init[CONFIG.TOTAL_COLUMN + '_' + focus_column[1]] = (df_init.loc[:, mean_cols].sum(axis=1) / len(
                 array_subject)).round(CONFIG.DECIMALS2)
-    print(df_init)
     df_init.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_init.columns])
     df_init.sort_values(by=(subject_name, CONFIG.MEAN_COLUMN[2]), ascending=False, inplace=True)
     return df_init
@@ -900,18 +901,13 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
         val1 = CONFIG.DICT_REP[CONFIG.OPER_NOT + val]
     else:
         val1 = CONFIG.OPER_NOT + val
-    print(df_data)
     df_emp_feature1 = special_employee_featured(df_data)
     df_emp_feature1.insert(0, title, val)
-    print(df_emp_feature1)
-    print(df_data1)
     df_emp_feature2 = special_employee_featured(df_data1)
     df_emp_feature2.insert(0, title, val1)
-    print(df_emp_feature1)
 
     df_emp_feature = special_employee_featured(data)
     df_emp_feature.insert(0, title, CONFIG.TOTAL_COLUMN)
-    print(df_emp_feature)
 
     df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
