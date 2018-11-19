@@ -58,7 +58,7 @@ class Reporter:
         run(employee_job, cleaned_data, self.output_fold, '就业职业分布')
         run(employee_industry_type, cleaned_data, self.output_fold, '就业单位分布')
         run(employee_industry_size, cleaned_data, self.output_fold, '就业单位分布')
-        run(employee_region_report, cleaned_data, self.output_fold, '就业地区分布', config_dict)
+        run(employee_region_report, cleaned_data, self.output_fold, '就业地区分布')
 
         # 求职过程与就业指导服务
         run(employee_difficult_report, cleaned_data, self.output_fold, '求职过程')
@@ -95,8 +95,8 @@ class Reporter:
         # 特殊人群
         run(special_gender_report, cleaned_data, self.output_fold, '不同性别')
         run(special_education_report, cleaned_data, self.output_fold, '教育行业和非教育行业')
-        run(special_origin_province_report, cleaned_data, self.output_fold, '省内省外生源', config_dict)
-        run(special_indurstry_province_report, cleaned_data, self.output_fold, '省内省外就业', config_dict)
+        run(special_origin_province_report, cleaned_data, self.output_fold, '省内省外生源')
+        run(special_indurstry_province_report, cleaned_data, self.output_fold, '省内省外就业')
         run(special_national_report, cleaned_data, self.output_fold, '汉族少数名族')
         run(special_medical_report, cleaned_data, self.output_fold, '医疗卫生职业')
         run(special_social_health_report, cleaned_data, self.output_fold, '卫生和社会工作')
@@ -217,13 +217,21 @@ def employee_industry_size(data, filePath):
 
     return
 
+def get_province(data):
+    subject='_6'
+    province=data.loc[0,subject]
+    print(province)
+    if pd.isnull(province) or len(str(province))==0:
+        raise Exception('未获取到学校所属省份')
+    else:
+        return province
 
-def employee_region_report(data, filePath, config_dict):
+def employee_region_report(data, filePath):
     '''就业地区分布'''
     df_value_count = formulas.answer_rate(data, 'B3-A')
     excelUtil.writeExcel(df_value_count, filePath, '总体就业省')
 
-    school_province = config_dict[CONFIG.PROVINCE_KEY]
+    school_province =get_province(data)
     # 构造福建省条件 {column:B3-A,cond:福建省,oper:eq}
     cond = {CONFIG.DICT_KEY[0]: 'B3-A', CONFIG.DICT_KEY[1]: school_province,
             CONFIG.DICT_KEY[2]: CONFIG.OPER[0]}
@@ -1245,13 +1253,13 @@ def special_national_report(data, filePath):
     return
 
 
-def special_origin_province_report(data, filePath, dict_config):
+def special_origin_province_report(data, filePath):
     '''特殊人群生源地报告'''
     subject = 'A1-A'
     suffix = '省内省外生源'
     # 类别
     title = CONFIG.SPECIAL_COLUMN[2]
-    where = dict_config[CONFIG.PROVINCE_KEY]
+    where = get_province(data)
 
     dict_where = {CONFIG.DICT_KEY[0]: subject,
                   CONFIG.DICT_KEY[1]: where,
@@ -1275,13 +1283,13 @@ def special_education_report(data, filePath):
     return
 
 
-def special_indurstry_province_report(data, filePath, conf_dict):
+def special_indurstry_province_report(data, filePath):
     '''特殊人群省内省外就业报告'''
     subject = 'B3-A'
     suffix = '省内省外就业'
     # 类别
     title = CONFIG.SPECIAL_COLUMN[2]
-    where = conf_dict[CONFIG.PROVINCE_KEY]
+    where = get_province(data)
 
     dict_where = {CONFIG.DICT_KEY[0]: subject,
                   CONFIG.DICT_KEY[1]: where,
