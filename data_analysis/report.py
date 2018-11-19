@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'py'
+'report.py'
 
 __author__ = 'kuoren'
 
@@ -111,7 +111,7 @@ class Reporter:
 def run(func, data, out_dir, file_name, conf={}):
     try:
         logger.info("****{} start****".format(file_name))
-        file_path = os.path.join(out_dir + file_name + CONFIG.EXCEL_EXT)
+        file_path = os.path.join(out_dir, file_name + CONFIG.EXCEL_EXT)
         if not conf:
             func(data, file_path)
         else:
@@ -120,9 +120,9 @@ def run(func, data, out_dir, file_name, conf={}):
     except Exception as e:
         logger.error("****{} error****".format(file_name))
         logger.error(str(e))
-        err_tip = out_dir + file_name + CONFIG.LOGGER_EXT
-        with open(err_tip, 'w') as f:
-            f.write('{} 报表生成是发生错误，请联系开发人员分析原因'.format(file_name))
+        tip_file = os.path.join(out_dir, file_name + CONFIG.LOGGER_EXT)
+        with open(tip_file, 'w') as f:
+            f.write('{} 报表生成是发生错误，产生错误原因:{}'.format(file_name, str(e)))
 
 
 def employee_indurstry(data, filePath):
@@ -217,21 +217,22 @@ def employee_industry_size(data, filePath):
 
     return
 
+
 def get_province(data):
-    subject='_6'
-    province=data.loc[0,subject]
-    print(province)
-    if pd.isnull(province) or len(str(province))==0:
+    subject = '_6'
+    province = data.loc[0, subject]
+    if pd.isnull(province) or len(str(province)) == 0:
         raise Exception('未获取到学校所属省份')
     else:
         return province
+
 
 def employee_region_report(data, filePath):
     '''就业地区分布'''
     df_value_count = formulas.answer_rate(data, 'B3-A')
     excelUtil.writeExcel(df_value_count, filePath, '总体就业省')
 
-    school_province =get_province(data)
+    school_province = get_province(data)
     # 构造福建省条件 {column:B3-A,cond:福建省,oper:eq}
     cond = {CONFIG.DICT_KEY[0]: 'B3-A', CONFIG.DICT_KEY[1]: school_province,
             CONFIG.DICT_KEY[2]: CONFIG.OPER[0]}
@@ -909,6 +910,12 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
         val1 = CONFIG.DICT_REP[CONFIG.OPER_NOT + val]
     else:
         val1 = CONFIG.OPER_NOT + val
+
+    if df_data.empty:
+        raise Exception("{}报表产生时，前提条件不满足，当条件为:{},数据不存在".format(suffix, val))
+    if data.empty:
+        raise Exception("{}报表产生时，前提条件不满足，条件(总体)信息不存在".format(suffix))
+
     df_emp_feature1 = special_employee_featured(df_data)
     df_emp_feature1.insert(0, title, val)
     df_emp_feature2 = special_employee_featured(df_data1)
