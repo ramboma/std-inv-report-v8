@@ -190,7 +190,7 @@ def employee_industry_size(data, filePath):
     '''就业单位规模'''
     subject = 'B2'
     measure_name = '就业单位规模分布'
-    order_cols = CONFIG.INDUSTRY_SIZE
+    order_cols = list(CONFIG.INDUSTRY_SIZE)
     order_cols.append(CONFIG.RATE_COLUMN[2])
     df_value_count = formulas.answer_rate(data, subject)
     df_t = formulas.rate_T(df_value_count)
