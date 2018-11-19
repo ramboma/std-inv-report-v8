@@ -18,14 +18,19 @@ class ExcelFileProcessor:
     def __init__(self, file):
         self._file = file
         self._xl_reader = None
+        self._logger = get_logger('{}${}'.format(self.__class__.__name__, id(self)))
 
     def try_load(self):
         self._xl_reader = ExcelFileOpenXLReader(self._file)
+        self._logger.debug('Try load excel file using ExcelFileOpenXLReader')
         if self._xl_reader.try_load():
+            self._logger.debug('done')
             return True
 
         self._xl_reader = ExcelFileXlrdReader(self._file)
+        self._logger.debug('Try load excel file using ExcelFileXlrdReader')
         if self._xl_reader.try_load():
+            self._logger.debug('done')
             return True
 
         raise Exception('failed to load excel file, all read methods failed')
