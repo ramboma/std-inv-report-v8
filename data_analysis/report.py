@@ -920,12 +920,12 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_emp_feature1.insert(0, title, val)
     df_emp_feature2 = special_employee_featured(df_data1)
     df_emp_feature2.insert(0, title, val1)
-
     df_emp_feature = special_employee_featured(data)
     df_emp_feature.insert(0, title, CONFIG.TOTAL_COLUMN)
 
     df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
+    logger.info("特殊人群{}产生成功".format(suffix + '就业特色'))
 
     df_emp_competitive1 = special_employee_competitive(df_data)
     df_emp_competitive1.insert(0, title, val)
@@ -935,6 +935,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_emp_competitive.insert(0, title, CONFIG.TOTAL_COLUMN)
     df_concat = pd.concat([df_emp_competitive1, df_emp_competitive2, df_emp_competitive], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业竞争力')
+    logger.info("特殊人群{}产生成功".format(suffix + '就业竞争力'))
 
     df_lesson1 = special_lesson(df_data)
     df_lesson1.insert(0, title, val)
@@ -1141,10 +1142,10 @@ def special_employee_competitive(data, dict_where={}):
     # 离职率
     subject = 'B10-1'
     change_times = formulas.answer_rate(data, subject)
-    no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])].loc[
-        0, CONFIG.RATE_COLUMN[-1]]
-    change_times.loc[:, '离职率'] = 1 - no_changes
-    change_times = change_times.loc[:, ['离职率', CONFIG.RATE_COLUMN[2]]]
+    no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])][CONFIG.RATE_COLUMN[-1]].head(1)
+    print(no_changes)
+    change_times['离职率'] = 1 - no_changes
+    change_times = change_times[['离职率', CONFIG.RATE_COLUMN[2]]]
     change_times.drop_duplicates(inplace=True)
 
     df_concat = pd.concat([df_income, df_salary, pd_init, change_times], axis=1)

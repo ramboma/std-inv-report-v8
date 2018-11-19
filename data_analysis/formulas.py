@@ -9,7 +9,9 @@ import pandas as pd
 import numpy as np
 import data_analysis.config as CONFIG
 import data_analysis.utils as Util
+from data_cleansing.logging import *
 
+logger = get_logger(__name__)
 
 def answer_rate(data, subject):
     '''
@@ -19,16 +21,21 @@ def answer_rate(data, subject):
     :param subject: 题号
     :return: '答案', '回答此答案人数', '答题总人数', '比例'
     '''
-    # 答题总人数
-    count = data[subject].count()
-    pd_value_count = data[subject].value_counts()
-    pd_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: pd_value_count.index,
-                              CONFIG.RATE_COLUMN[1]: pd_value_count.values})
-    pd_result[CONFIG.RATE_COLUMN[2]] = count
-    pd_result[CONFIG.RATE_COLUMN[3]] = (
-            pd_result[CONFIG.RATE_COLUMN[1]] / pd_result[CONFIG.RATE_COLUMN[2]]).round(decimals=CONFIG.DECIMALS6)
+    try:
+        # 答题总人数
+        count = data[subject].count()
+        pd_value_count = data[subject].value_counts()
+        pd_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: pd_value_count.index,
+                                  CONFIG.RATE_COLUMN[1]: pd_value_count.values})
+        pd_result[CONFIG.RATE_COLUMN[2]] = count
+        pd_result[CONFIG.RATE_COLUMN[3]] = (
+                pd_result[CONFIG.RATE_COLUMN[1]] / pd_result[CONFIG.RATE_COLUMN[2]]).round(decimals=CONFIG.DECIMALS6)
 
-    return pd_result
+        logger.info("{} answer_rate(答案占比)计算成功".format(subject))
+        return pd_result
+    except Exception as e:
+        logger.error("{} answer_rate 计算出现异常".format(subject))
+        logger.error(e)
 
 
 def answer_rate_condition(data, subject, dict_cond={}, array_order=[],
@@ -100,6 +107,7 @@ def formulas_employe_rate(data, dict_cond={}):
     # 就业率 答题总人数
     pd_result = pd.DataFrame({CONFIG.EMPLOYEE_RATE_COLUMN: [employee_rate],
                               CONFIG.RATE_COLUMN[2]: [count]})
+    logger.info("formulas_employe_rate(就业率) 计算成功")
     return pd_result
 
 
@@ -131,6 +139,7 @@ def formulas_college_employe_rate(data):
         decimals=CONFIG.DECIMALS6)
     df_left.drop(['unemployee'], axis='columns', inplace=True)
     df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+    logger.info("formulas_college_employe_rate(各学院就业率)计算成功")
 
     return df_left
 
@@ -169,7 +178,7 @@ def formulas_major_employe_rate(data):
         decimals=CONFIG.DECIMALS6)
     df_left.drop(['unemployee'], axis='columns', inplace=True)
     df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-
+    logger.info("formulas_major_employe_rate(各专业就业率)计算成功")
     return df_left
 
 
@@ -200,6 +209,7 @@ def formula_income_mean(data, dict_cond={}):
     # 均值 答题总人数
     pd_mean = pd.DataFrame({CONFIG.MEAN_COLUMN[2]: [count],
                             CONFIG.MEAN_COLUMN[-1]: [mean]})
+    logger.info("formula_income_mean(薪酬均值)计算成功")
     return pd_mean
 
 
