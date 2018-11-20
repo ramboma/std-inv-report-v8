@@ -98,8 +98,44 @@ class ExcelFileReader:
     def get_max_rows(self):
         return self._max_rows
 
+    def _calculate_valid_columns(self):
+        header_cells = self._get_header()
+
+        # if isinstance(header_cells, list):
+        #     raise Exception('header_cells must be list')
+
+        if header_cells.__len__() <= 0:
+            return header_cells.__len__()
+
+        empty_header_count = 0
+        for header_cell in header_cells[::-1]:
+            if header_cell is None or header_cell == '':
+                empty_header_count += 1
+            else:
+                break
+
+        return header_cells.__len__() - empty_header_count
+
+    def _get_header(self):
+        header_cells = []
+        ws = self._get_worksheet()
+        if ws.max_column >= 1:
+            for row in ws.rows:
+                header_cells = self._copy_row_as_values(row)
+                break
+        return header_cells
+
     def _copy_row_as_values(self, row):
-        raise Exception('not implement')
+        value_list = []
+        for i in range(0, self._max_cols):
+            if i < row.__len__():
+                value = row[i].value
+                if value == '':
+                    value = None
+            else:
+                value = None
+            value_list.append(value)
+        return value_list
 
     def close(self):
         raise Exception('not implement')
@@ -119,6 +155,8 @@ class ExcelFileOpenXLReader(ExcelFileReader):
         ws = self._get_worksheet()
         # ws.calculate_dimension(True)
         self._max_cols = ws.max_column
+        calculated_cols = self._calculate_valid_columns()
+        self._max_cols = calculated_cols
         self._max_rows = ws.max_row
 
         if ws.max_column <= 1 and ws.max_row <= 1:
@@ -138,18 +176,6 @@ class ExcelFileOpenXLReader(ExcelFileReader):
 
         return row_num
 
-    def _copy_row_as_values(self, row):
-        value_list = []
-        for i in range(0, self._max_cols):
-            if i < row.__len__():
-                value = row[i].value
-                if value == '':
-                    value = None
-            else:
-                value = None
-            value_list.append(value)
-        return value_list
-
     def close(self):
         self._workbook.close()
 
@@ -168,6 +194,8 @@ class ExcelFileXlrdReader(ExcelFileReader):
         ws = self._get_worksheet()
 
         self._max_cols = ws.ncols
+        calculated_cols = self._calculate_valid_columns()
+        self._max_cols = calculated_cols
         self._max_rows = ws.nrows
 
         if ws.ncols <= 1 and ws.nrows <= 1:
@@ -184,18 +212,6 @@ class ExcelFileXlrdReader(ExcelFileReader):
         # report_progress(row_num)
 
         return ws.nrows
-
-    def _copy_row_as_values(self, row):
-        value_list = []
-        for i in range(0, self._max_cols):
-            if i < row.__len__():
-                value = row[i].value
-                if value == '':
-                    value = None
-            else:
-                value = None
-            value_list.append(value)
-        return value_list
 
     def close(self):
         self._workbook.release_resources()
