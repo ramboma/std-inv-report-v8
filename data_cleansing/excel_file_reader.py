@@ -117,7 +117,7 @@ class ExcelFileOpenXLReader(ExcelFileReader):
 
     def _validate_worksheet(self):
         ws = self._get_worksheet()
-
+        # ws.calculate_dimension(True)
         self._max_cols = ws.max_column
         self._max_rows = ws.max_row
 
