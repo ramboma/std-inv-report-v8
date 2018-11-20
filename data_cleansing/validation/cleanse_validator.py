@@ -43,5 +43,5 @@ class QuestionIdHeaderValidator(Validator):
             matches = re.match(self._id_pattern, value)
             if matches is None:
                 raise Exception('invalid question id: {}, consider missing question id header'.format(value))
-        if values.__len__() > 0 and (values[-1] is None or values[-1] == ''):
-            raise Exception('last column header cannot be empty')
+        # if values.__len__() > 0 and (values[-1] is None or values[-1] == ''):
+        #     raise Exception('last column header cannot be empty')

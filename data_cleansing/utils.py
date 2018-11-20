@@ -81,6 +81,10 @@ def reset_column_names(header_cells, excel_column_indexes):
 
         next_header_name = header_cells[i + 1]
 
+        if i >= header_cells.__len__() - 2:
+            a = 1
+            pass
+
         if header_name is not None and next_header_name is None:
             flag2 = True
             prefix = header_name
@@ -99,6 +103,10 @@ def reset_column_names(header_cells, excel_column_indexes):
             flag2 = False
             prefix = ''
             option = 1
+
+    if next_header_name is None:
+        new_header_name = '{}-{}'.format(prefix, excel_column_indexes[option])
+        header_cells[-1] = new_header_name
 
 
 def build_question_to_column_mapping_v2(column_names, mapping):

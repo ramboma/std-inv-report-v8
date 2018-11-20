@@ -155,8 +155,8 @@ class ExcelFileOpenXLReader(ExcelFileReader):
         ws = self._get_worksheet()
         # ws.calculate_dimension(True)
         self._max_cols = ws.max_column
-        calculated_cols = self._calculate_valid_columns()
-        self._max_cols = calculated_cols
+        # calculated_cols = self._calculate_valid_columns()
+        # self._max_cols = calculated_cols
         self._max_rows = ws.max_row
 
         if ws.max_column <= 1 and ws.max_row <= 1:
@@ -194,8 +194,8 @@ class ExcelFileXlrdReader(ExcelFileReader):
         ws = self._get_worksheet()
 
         self._max_cols = ws.ncols
-        calculated_cols = self._calculate_valid_columns()
-        self._max_cols = calculated_cols
+        # calculated_cols = self._calculate_valid_columns()
+        # self._max_cols = calculated_cols
         self._max_rows = ws.nrows
 
         if ws.ncols <= 1 and ws.nrows <= 1:
