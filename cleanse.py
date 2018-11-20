@@ -23,8 +23,9 @@ logger = get_logger(__name__)
 @click.option('--degree', '-d', default=None, help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
 @click.option('--stream-mode', '-sm', is_flag=True, type=bool, help='Use stream mode to process data, or by default in memory')
 @click.option('--concurrent-mode', '-cm', is_flag=True, type=bool, help='Use multi-process to process data, or by default in serial')
+@click.option('--chinese-naming', '-cn', is_flag=True, type=bool, help='Use chinese naming file name')
 @click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
-def main(input_file, output_folder, analysis, internal, batch, degree, stream_mode, concurrent_mode, trace_mode):
+def main(input_file, output_folder, analysis, internal, batch, degree, stream_mode, concurrent_mode, chinese_naming, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_file):
@@ -61,6 +62,9 @@ def main(input_file, output_folder, analysis, internal, batch, degree, stream_mo
     if concurrent_mode is None:
         concurrent_mode = False
 
+    if chinese_naming is None:
+        chinese_naming = False
+
     tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
 
     setting_groups = []
@@ -68,7 +72,7 @@ def main(input_file, output_folder, analysis, internal, batch, degree, stream_mo
         setting_groups.append(
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, internal, analysis, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, internal, analysis, tag, degree, chinese_naming),
                 'internal': internal, 'analysis': analysis,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
              }
@@ -79,28 +83,28 @@ def main(input_file, output_folder, analysis, internal, batch, degree, stream_mo
             # internal, analysis
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree, chinese_naming),
                 'internal': True, 'analysis': True,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
             # internal, customer
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree, chinese_naming),
                 'internal': True, 'analysis': False,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
             # public, analysis
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree, chinese_naming),
                 'internal': False, 'analysis': True,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
             # public, customer
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree, chinese_naming),
                 'internal': False, 'analysis': False,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },

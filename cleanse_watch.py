@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 
 class InputFileMatchingEventHandler(FileSystemEventHandler):
 
-    def __init__(self, batch_cleansing_handler, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
+    def __init__(self, batch_cleansing_handler, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, cn_mode=False, trace_mode=False):
         super().__init__()
 
         self._batch_cleansing_handler = batch_cleansing_handler
@@ -30,6 +30,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         self._stream_mode = stream_mode
         self._concurrent_mode = concurrent_mode
         self._pool = pool
+        self._cn_mode = cn_mode
 
     def on_moved(self, event):
         # super(LoggingEventHandler, self).on_moved(event)
@@ -49,7 +50,7 @@ class InputFileMatchingEventHandler(FileSystemEventHandler):
         if ext == '.xlsx':
             logger.info('input file {} detected'.format(event.src_path))
             self._batch_cleansing_handler(event.src_path, self._output_folder, self._degree,
-                                          self._stream_mode, self._concurrent_mode, self._pool, self._trace_mode)
+                                          self._stream_mode, self._concurrent_mode, self._pool, self._cn_mode, self._trace_mode)
         pass
 
     def on_deleted(self, event):
@@ -84,12 +85,12 @@ def try_move_file(src, dst, max_retry=20, retry_interval=3):
             raise Exception('file is locked by another process and exceeded waiting time limit: {} secs'.format(retry_interval * max_retry))
 
 
-def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, trace_mode=False):
+def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, concurrent_mode=False, pool=None, cn_mode=False, trace_mode=False):
     filename = os.path.basename(input_file)
     name, ext = os.path.splitext(filename)
 
     tag = time.strftime('%Y%m%d%H%M%S', time.localtime())
-    output_folder = get_output_folder(output_folder, name, tag, degree)
+    output_folder = get_output_folder(output_folder, name, tag, degree, cn_mode)
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -105,28 +106,28 @@ def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, c
             # internal, analysis
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, True, True, tag, degree, cn_mode),
                 'internal': True, 'analysis': True,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
             # internal, customer
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, True, False, tag, degree, cn_mode),
                 'internal': True, 'analysis': False,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
             # public, analysis
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, False, True, tag, degree, cn_mode),
                 'internal': False, 'analysis': True,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
             # public, customer
             {
                 'input_file': input_file,
-                'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree),
+                'output_file': get_output_filename(dirpath, name, ext, False, False, tag, degree, cn_mode),
                 'internal': False, 'analysis': False,
                 'tag': tag, 'trace_mode': trace_mode, 'degree': degree,
             },
@@ -149,10 +150,11 @@ def batch_cleansing(input_file, output_folder, degree=None, stream_mode=False, c
 @click.option('--input-folder', '-i', required=True, help='Input file path')
 @click.option('--output-folder', '-o', required=False, help='Output folder path')
 @click.option('--degree', '-d', help='Specify educational background, e.g. "本科毕业生"， "专科毕业生"')
-@click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
 @click.option('--stream-mode', '-sm', is_flag=True, type=bool, help='Use stream mode to process data, or by default in memory')
 @click.option('--concurrent-mode', '-cm', is_flag=True, type=bool, help='Use multi-process to process data, or by default in serial')
-def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trace_mode):
+@click.option('--chinese-naming', '-cn', is_flag=True, type=bool, help='Use chinese naming file name')
+@click.option('--trace-mode', '-t', is_flag=True, type=bool, help='Trace mode will add additional comments for each rinsed cell')
+def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, chinese_naming, trace_mode):
     """This script cleansing raw data into cleaned data."""
 
     if not os.path.exists(input_folder):
@@ -185,6 +187,9 @@ def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trac
     if concurrent_mode is None:
         concurrent_mode = False
 
+    if chinese_naming is None:
+        chinese_naming = False
+
     logger.info('program is running in watching mode, watch path \'{}\', press Control-C to stop'.format(input_folder))
 
     pool = None
@@ -194,7 +199,7 @@ def main(input_folder, output_folder, degree, stream_mode, concurrent_mode, trac
         pool = multiprocessing.Pool(max_count)
         logger.info('{} processes initialed'.format(max_count))
 
-    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, stream_mode, concurrent_mode, pool, trace_mode)
+    event_handler = InputFileMatchingEventHandler(batch_cleansing, output_folder, degree, stream_mode, concurrent_mode, pool, chinese_naming, trace_mode)
     observer = Observer()
     observer.schedule(event_handler, input_folder, recursive=False)
     observer.start()

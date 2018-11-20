@@ -390,27 +390,45 @@ def run_concurrent(setting_groups, stream_mode=False, pool=None):
             runner.join()
 
 
-def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None):
-    if internal:
-        target = 'internal'
+def get_output_filename(dirpath, name, ext, internal, analysis, tag, degree=None, cn_mode=False):
+    if cn_mode:
+        if internal:
+            if analysis:
+                file_name = '{}_对内分析_无自由职业_用于对内或对内+对外报告{}'.format(name, ext)
+            else:
+                file_name = '{}_对内客户_含自由职业{}'.format(name, ext)
+        else:
+            if analysis:
+                file_name = '{}_对外分析_无自由职业_用于对外报告{}'.format(name, ext)
+            else:
+                file_name = '{}_对外客户_含自由职业{}'.format(name, ext)
+        return os.path.join(dirpath, file_name)
     else:
-        target = 'public'
-    if analysis:
-        scope = 'analysis'
+        if internal:
+            target = 'internal'
+        else:
+            target = 'public'
+        if analysis:
+            scope = 'analysis'
+        else:
+            scope = 'customer'
+
+        if degree is None:
+            return os.path.join(dirpath, '{}_cleaned_{}_{}_{}{}'.format(name, target, scope, tag, ext))
+        else:
+            return os.path.join(dirpath, '{}_cleaned_{}_{}_{}_{}{}'.format(name, degree, target, scope, tag, ext))
+
+
+def get_output_folder(dirpath, name, tag, degree=None, cn_mode=False):
+    if cn_mode:
+        cleaned_str = '清洗结果'
     else:
-        scope = 'customer'
+        cleaned_str = 'cleaned'
 
     if degree is None:
-        return os.path.join(dirpath, '{}_cleaned_{}_{}_{}{}'.format(name, target, scope, tag, ext))
+        return os.path.join(dirpath, '{}_{}_{}'.format(name, cleaned_str, tag))
     else:
-        return os.path.join(dirpath, '{}_cleaned_{}_{}_{}_{}{}'.format(name, degree, target, scope, tag, ext))
-
-
-def get_output_folder(dirpath, name, tag, degree=None):
-    if degree is None:
-        return os.path.join(dirpath, '{}_cleaned_{}'.format(name, tag))
-    else:
-        return os.path.join(dirpath, '{}_cleaned_{}_{}'.format(name, degree, tag))
+        return os.path.join(dirpath, '{}_{}_{}_{}'.format(name, cleaned_str, degree, tag))
 
 
 def get_log_file(dirpath, name):
