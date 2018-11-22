@@ -18,7 +18,7 @@ class DataCleanser:
         self._work_sheet = work_sheet
         self._trace_mode = False
         self._question_to_column_mapping = {}
-        self._excel_column_indexes = generate_excel_column_indexes(iter_cnt=2)
+        self._excel_column_indexes = generate_excel_column_indexes(iter_cnt=3)
 
     @property
     def trace_mode(self):

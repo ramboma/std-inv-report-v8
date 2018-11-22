@@ -26,7 +26,7 @@ class FilterResetColumnNames(Filter):
             # logger.info(self.__str__())
             question_id_header_validator = QuestionIdHeaderValidator()
             question_id_header_validator.do_validate(outgoing)
-            reset_column_names(outgoing, generate_excel_column_indexes(iter_cnt=2))
+            reset_column_names(outgoing, generate_excel_column_indexes(iter_cnt=3))
             build_question_to_column_mapping_v2(outgoing, q2c_mapping)
         else:
             chain.do_filter(incoming, outgoing, q2c_mapping)

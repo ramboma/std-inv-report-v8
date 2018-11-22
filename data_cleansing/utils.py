@@ -81,9 +81,9 @@ def reset_column_names(header_cells, excel_column_indexes):
 
         next_header_name = header_cells[i + 1]
 
-        if i >= header_cells.__len__() - 2:
-            a = 1
-            pass
+        # if i >= header_cells.__len__() - 2:
+        #     a = 1
+        #     pass
 
         if header_name is not None and next_header_name is None:
             flag2 = True
