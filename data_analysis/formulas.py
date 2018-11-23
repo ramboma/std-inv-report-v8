@@ -13,6 +13,7 @@ from data_cleansing.logging import *
 
 logger = get_logger(__name__)
 
+
 def answer_rate(data, subject):
     '''
 
@@ -79,108 +80,51 @@ def answer_rate_condition(data, subject, dict_cond={}, array_order=[],
     return df_result
 
 
-def formulas_employe_rate(data, dict_cond={}):
+def formulas_employe_rate(data):
     '''
 
-    Employe rate:就业率，支持条件过滤
+    Employe rate:就业率
     公式：（就业人数-未就业人数）/答题总人数
     :param data:
-    :param dict_cond:
     :return: 就业率 答题总人数
     '''
     subject = 'A2'
-
-    # 条件过滤
-    if not dict_cond:
-        df_data = data
-    else:
-        col_cond = str(dict_cond[CONFIG.DICT_KEY[0]])
-        df_data = data[data[col_cond] == dict_cond[CONFIG.DICT_KEY[1]]]
 
     # step1:答题总人数
     count = data[subject].count()
 
     # step2:回答"未就业"人数
-    unemployee_count = data.loc[data[subject] == CONFIG.A2_ANSWER[-1]][subject].count()
+    unemployee_count = data[data[subject] == CONFIG.A2_ANSWER[-1]][subject].count()
 
     employee_rate = ((count - unemployee_count) / count).round(decimals=CONFIG.DECIMALS6)
     # 就业率 答题总人数
     pd_result = pd.DataFrame({CONFIG.EMPLOYEE_RATE_COLUMN: [employee_rate],
                               CONFIG.RATE_COLUMN[2]: [count]})
-    logger.info("formulas_employe_rate(就业率) 计算成功")
+    print(pd_result)
     return pd_result
 
 
-def formulas_college_employe_rate(data):
-    '''
-
-    Employe rate:各学院就业率
-    公式：（就业人数-未就业人数）/答题总人数
+def formulas_employe_rate_grp(data, array_grps):
+    """
+    Employe rate:各学院\专业\其他分组 就业率
     :param data:
-    :param dict_cond:
-    :return: 就业率 答题总人数
-    '''
+    :param array_grps: 分组
+    :return:
+    """
     subject = 'A2'
 
-    # step1:各学院答题总人数
-    df_count = Util.answer_grp_count(data, [CONFIG.BASE_COLUMN[0], subject], [CONFIG.BASE_COLUMN[0]])
-    df_count.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[2]]
-    # step2:各学院回答"未就业"人数
-    df_unemployee = Util.answer_of_subject_count_grp(data, [CONFIG.BASE_COLUMN[0], subject],
-                                                     [CONFIG.BASE_COLUMN[0]], subject,
-                                                     CONFIG.A2_ANSWER[-1])
-    df_unemployee.columns = [CONFIG.GROUP_COLUMN[0], 'unemployee']
-
-    df_left = pd.merge(df_count, df_unemployee, how='left', on=CONFIG.GROUP_COLUMN[0])
-    df_left.fillna(0, inplace=True)
+    # step1:各分组 答题总人数
+    df_count = data.groupby(array_grps)[subject].count()
+    # step2:各分组 回答"未就业"人数
+    df_unemployee = data[data[subject] == CONFIG.A2_ANSWER[-1]].groupby(array_grps)[subject].count()
+    df_rate = (df_count - df_unemployee) / df_count
     # 就业率 答题总人数
-    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = (
-            (df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]]).round(
-        decimals=CONFIG.DECIMALS6)
-    df_left.drop(['unemployee'], axis='columns', inplace=True)
-    df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-    logger.info("formulas_college_employe_rate(各学院就业率)计算成功")
-
-    return df_left
-
-
-def formulas_major_employe_rate(data):
-    '''
-
-    Employe rate:各学院就业率
-    公式：（就业人数-未就业人数）/答题总人数
-    :param data:
-    :param dict_cond:
-    :return: 就业率 答题总人数
-    '''
-    subject = 'A2'
-
-    # step1:各学院答题总人数
-    df_count = Util.answer_grp_count(data,
-                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
-                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]])
-    df_count.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[2]]
-    # step2:各学院回答"未就业"人数
-    df_unemployee = Util.answer_of_subject_count_grp(data,
-                                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1], subject],
-                                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                     subject,
-                                                     CONFIG.A2_ANSWER[-1])
-    df_unemployee.columns = [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], 'unemployee']
-
-    df_left = pd.merge(df_count, df_unemployee,
-                       how='left',
-                       on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
-    df_left.fillna(0, inplace=True)
-    # 就业率 答题总人数
-    df_left[CONFIG.EMPLOYEE_RATE_COLUMN] = (
-            (df_left[CONFIG.RATE_COLUMN[2]] - df_left['unemployee']) / df_left[CONFIG.RATE_COLUMN[2]]).round(
-        decimals=CONFIG.DECIMALS6)
-    df_left.drop(['unemployee'], axis='columns', inplace=True)
-    df_left.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-    logger.info("formulas_major_employe_rate(各专业就业率)计算成功")
-    return df_left
-
+    df_merge = pd.DataFrame({CONFIG.EMPLOYEE_RATE_COLUMN: df_rate,
+                             CONFIG.RATE_COLUMN[2]: df_count})
+    df_merge.fillna(0, inplace=True)
+    df_merge.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+    print(df_merge)
+    return df_merge
 
 def formula_income_mean(data, dict_cond={}):
     '''
@@ -419,7 +363,6 @@ def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG
 
 
 ##################公式部分
-
 
 
 def answer_mean(data, subject):
