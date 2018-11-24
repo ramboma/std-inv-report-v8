@@ -15,10 +15,8 @@ from data_analysis.reports.employ_rate import *
 
 def main(file):
     data = excelUtil.read_excel(file)
-
-    empRep=EmpRateReport(CONFIG.REPORT_FOLDER,data,'')
-    empRep.emp_rate_degree(has_summary=True)
-
+    df_rate=fml.formulas_five_rate_grp(data,'G2',['_10'],CONFIG.ANSWER_TYPE_RELATIVE)
+    #fml.formate_rate_t(df_rate)
     #fml.formulas_employe_rate(data)
     #fml.formulas_employe_rate_grp(data,['_10','_14'])
 
