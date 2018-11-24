@@ -21,12 +21,14 @@ class OverallDataCalculator(DataCalculator):
         super().__init__(df, target_col, styler)
 
     def calculate(self):
+        # main calculation
         option = formulas.answer_rate(self._df, self._tgt_col)
         rate_t = formulas.rate_T(option)
 
         df_concat = pd.concat([rate_t, rate_t], sort=False)
         df_concat.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
 
+        # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
             self._styler.prettify(df_concat)
 

@@ -42,6 +42,7 @@ class Reporter:
         config_dict = config_loader.config_dict
 
         # 就业率和就业状态
+
         run(work_option_report, cleaned_data, self.output_fold, '就业机会')
         run(non_employee_report, cleaned_data, self.output_fold, '未就业分析')
         run(employee_report, cleaned_data, self.output_fold, '就业率及就业就业状态')
