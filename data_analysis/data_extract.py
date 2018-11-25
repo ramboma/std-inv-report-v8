@@ -7,6 +7,7 @@ class DataExtractor(object):
     def extract_by_col_indexes(self, col_list):
         # raise Exception('method not implement')
         df_metrics = self._df.loc[:, col_list]
+        return df_metrics
 
 
 

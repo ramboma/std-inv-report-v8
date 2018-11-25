@@ -57,6 +57,7 @@ def formula_rate_grp(data, subject, grp):
     df_rate[CONFIG.RATE_COLUMN[2]] = df_count
     df_rate.fillna(0, inplace=True)
     df_rate.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+    df_rate.reset_index(inplace=True)
     return df_rate
 
 
@@ -121,7 +122,7 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     df_sub[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
     df_sub.fillna(0, inplace=True)
     df_sub.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-    print(df_sub)
+    df_sub.reset_index(inplace=True)
     return df_sub
 
 

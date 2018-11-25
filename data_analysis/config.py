@@ -5,7 +5,7 @@
 
 __author__ = 'kuoren'
 
-BASE_COLUMN = ('_10', '_14', 'A2')
+BASE_COLUMN = ('_10', '_14', 'A2', '_12')
 
 A2_ANSWER = ['在国内工作', '自主创业', '自由职业', '在国内求学', '出国/出境', '未就业']
 EXCEPTED_ANSWER = '无法评价'

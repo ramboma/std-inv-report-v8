@@ -23,6 +23,7 @@ class AnalyzeRunner(object):
             # log error message to log file
             # write user friendly error file
             # normal exit for next analyzer running
+            print(e)
             pass
         finally:
             pass

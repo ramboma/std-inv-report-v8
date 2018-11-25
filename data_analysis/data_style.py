@@ -1,18 +1,18 @@
-
+import pandas as pd
 class AnalysisResultStyler(object):
     def __init__(self):
         pass
 
     @staticmethod
-    def prettify(df):
+    def prettify(base,append,axis=0):
         raise Exception('method not implement')
 
 
-class LookingAStyler(AnalysisResultStyler):
+class AppendOverall(AnalysisResultStyler):
 
     @staticmethod
-    def prettify(df):
-        pass
+    def prettify(base,append,axis=0):
+        base=pd.concat([base,append], ignore_index=True, sort=True, axis=axis)
 
 
 class LookingBStyler(AnalysisResultStyler):
