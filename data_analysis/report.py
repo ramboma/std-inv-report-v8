@@ -12,13 +12,11 @@ import data_analysis.read_excel_util as excelUtil
 import data_analysis.config as CONFIG
 import data_analysis.formulas as formulas
 import data_analysis.template as template
-from data_analysis.cleaned_loader import *
-from data_analysis.config_loader import *
+from data_analysis.file_loader import *
 from data_cleansing.logging import *
 from data_cleansing.clock import *
 
 logger = get_logger(__name__)
-
 
 class Reporter:
     def __init__(self, source_file, output_fold, config_path):
@@ -31,15 +29,15 @@ class Reporter:
 
     @clocking
     def do_report(self):
-        cleaned_loader = CleanedLoader(self.source_file)
-        cleaned_data = cleaned_loader.cleaned_data
+        loader = ExcelLoader(self.source_file)
+        cleaned_data = loader.load_data
 
         if cleaned_data is None:
             logger.error('************read cleaned file error')
             return
 
-        config_loader = ConfigLoader(self.config_path)
-        config_dict = config_loader.config_dict
+        loader = ExcelLoader(self.config_path)
+        config_dict = resolve_config(loader.load_data)
 
         # 就业率和就业状态
 
@@ -125,6 +123,12 @@ def run(func, data, out_dir, file_name, conf={}):
         with open(tip_file, 'w') as f:
             f.write('{} 报表生成是发生错误，产生错误原因:{}'.format(file_name, str(e)))
 
+def resolve_config(data):
+    if data is None:
+        return None
+    config_dict = {row['subject']: row['content'] for index, row in data.iterrows()}
+    logger.info('resolve config success: {}', config_dict)
+    return config_dict
 
 def employee_indurstry(data, filePath):
     '''就业行业分布'''
