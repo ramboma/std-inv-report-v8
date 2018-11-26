@@ -92,7 +92,7 @@ def tdl_five_rate(df_data, subject, measure_type, file_path, sheet_name):
 
     value_rate = formulas.answer_five_rate(df_metrics, subject, measure_type)
     rate_t = formulas.rate_T(value_rate, array_focus)
-    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0)]
+    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, origin_columns=rate_t.columns)]
     rate_t.fillna(0, inplace=True)
     rate_combin = pd.concat([rate_t, rate_t])
     rate_combin.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)

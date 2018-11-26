@@ -36,6 +36,7 @@ def answer_rate(data, subject):
     except Exception as e:
         logger.error("{} answer_rate 计算出现异常".format(subject))
         logger.error(e)
+        raise ("{} answer_rate 计算出现异常".format(subject))
 
 
 def answer_rate_condition(data, subject, dict_cond={}, array_order=[],
@@ -693,7 +694,7 @@ def percent(df_data):
     return df_data
 
 
-def rebuild_five_columns(measure_type, level=0, minus=0):
+def rebuild_five_columns(measure_type, level=0, minus=0, origin_columns=[]):
     '''
     重排五维占比列的顺序
     :param measure_type:
@@ -720,6 +721,13 @@ def rebuild_five_columns(measure_type, level=0, minus=0):
         order_column.append(metric_name)
         order_column.append(CONFIG.MEAN_COLUMN[-1])
     order_column.append(CONFIG.MEAN_COLUMN[2])
+
+    #剔除多余列
+    if len(origin_columns)>0:
+        for col in order_column.copy():
+            if col not in origin_columns:
+                order_column.remove(col)
+
     return order_column
 
 

@@ -25,6 +25,8 @@ def read_excel(filePath):
 
 
 def writeExcel(dataFrame, filePath, sheetName):
+    if dataFrame is None or dataFrame.empty:
+        return
     writer = pd.ExcelWriter(filePath)
     if os.path.exists(filePath) != True:
         dataFrame.to_excel(writer, sheetName, index=None)
@@ -40,6 +42,9 @@ def writeExcel(dataFrame, filePath, sheetName):
     formate_percent(filePath,sheetName,percent_cols)
 
 def writeExcelWithIndex(dataFrame, filePath, sheetName):
+    if dataFrame is None or dataFrame.empty:
+        return
+
     writer = pd.ExcelWriter(filePath)
     if os.path.exists(filePath) != True:
         dataFrame.to_excel(writer, sheetName, index=True)

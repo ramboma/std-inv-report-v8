@@ -15,9 +15,8 @@ from data_analysis.config_loader import *
 def main(file):
     data = excelUtil.read_excel(file)
     cofigL=ConfigLoader('config.xlsx')
+    further.work_stability_report(data, CONFIG.REPORT_FOLDER + '工作稳定性.xlsx')
 
-    further.special_medical_report(data, CONFIG.REPORT_FOLDER + '医疗卫生职业.xlsx')
-    further.special_social_health_report(data, CONFIG.REPORT_FOLDER + '卫生和社会工作.xlsx')
 
 
 
