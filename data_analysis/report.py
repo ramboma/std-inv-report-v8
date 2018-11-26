@@ -1104,7 +1104,8 @@ def special_employee_competitive_grp(data, level):
         college_t = formulas.college_rate_pivot(college_changes)
         college_t.loc[:, '离职率'] = 0
         for cal_num in CONFIG.DIMISSION_COLUMNS:
-            college_t.loc[:, '离职率'] = college_t.loc[:, '离职率'] + college_t.loc[:, cal_num]
+            if cal_num in college_t.columns:
+                college_t.loc[:, '离职率'] = college_t.loc[:, '离职率'] + college_t.loc[:, cal_num]
         change_times = college_t.loc[:, [CONFIG.GROUP_COLUMN[0], '离职率', CONFIG.RATE_COLUMN[2]]]
 
     if level == 2:
@@ -1114,7 +1115,8 @@ def special_employee_competitive_grp(data, level):
         major_t = formulas.major_rate_pivot(major_changes)
         major_t.loc[:, '离职率'] = 0
         for cal_num in CONFIG.DIMISSION_COLUMNS:
-            major_t.loc[:, '离职率'] = major_t.loc[:, '离职率'] + major_t.loc[:, cal_num]
+            if cal_num in major_t.columns:
+                major_t.loc[:, '离职率'] = major_t.loc[:, '离职率'] + major_t.loc[:, cal_num]
         change_times = major_t.loc[:, [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], '离职率', CONFIG.RATE_COLUMN[2]]]
     change_times.rename(columns={CONFIG.RATE_COLUMN[2]: '离职率' + CONFIG.RATE_COLUMN[2]}, inplace=True)
     pd_join = pd.merge(pd_join, change_times, how='left', on=join_on)
@@ -1379,7 +1381,7 @@ def five_rate_t(data, subject, measure_type):
 
     value_rate = formulas.answer_five_rate(df_metrics, subject, measure_type)
     rate_t = formulas.rate_T(value_rate, array_focus)
-    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, rate_t.columns)]
+    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, origin_columns=rate_t.columns)]
     return rate_t
 
 
@@ -1526,7 +1528,6 @@ def report_value_rate(df_data, subject, title, filePath, add_name='', add_column
 
     option = formulas.answer_rate(df_metrics, subject)
     rate_t = formulas.rate_T(option)
-    print(rate_t.columns)
     # 转置之后追加列，根据转置后的结果计算
     if add_name:
         rate_t.loc[:, add_name] = 0

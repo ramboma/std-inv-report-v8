@@ -64,6 +64,7 @@
     # 学习效果
     further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')
     further.basic_quality_report(data, CONFIG.REPORT_FOLDER + '基础素质.xlsx')
+    further.report_summary(data, CONFIG.REPORT_FOLDER + '一览表.xlsx')
 
 
 # unstack方式转置，不限定类型为number但是会造成列名合并（'比例 一般'）
