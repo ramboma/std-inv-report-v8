@@ -45,7 +45,6 @@ def formula_rate_grp(data, subject, grp):
     :param grp:
     :return:
     """
-
     # 分组算总数
     df_count = data.groupby(grp)[subject].count()
     # 分组算各答案分布
@@ -78,11 +77,12 @@ def formula_five_rate(data, subject, measure_type):
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
     # 列重排
-    df_t = df_t[ls_measure[0:5]]
+    # df_t = df_t[ls_measure[0:5]]
     # step3: 度量值
     measure_rate = 0
     for measure in ls_measure[0:3]:
-        measure_rate = measure_rate + df_t[measure]
+        if measure in df_t.columns:
+            measure_rate = measure_rate + df_t[measure]
     df_t[measure_name] = measure_rate
 
     # step4: 均值
@@ -109,21 +109,22 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
     # 列重排
-    df_sub = df_rate[ls_measure[0:5]]
+    #df_sub = df_rate[ls_measure[0:5]]
     # step3: 度量值
     measure_rate = 0
     for measure in ls_measure[0:3]:
-        measure_rate = measure_rate + df_rate[measure]
-    df_sub[measure_name] = measure_rate
+        if measure in df_rate.columns:
+            measure_rate = measure_rate + df_rate[measure]
+    df_rate[measure_name] = measure_rate
 
     data["measure_score"] = data[subject].map(dict_measure_score)
     df_mean = data.groupby(grp)["measure_score"].mean()
-    df_sub[CONFIG.MEAN_COLUMN[-1]] = df_mean
-    df_sub[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
-    df_sub.fillna(0, inplace=True)
-    df_sub.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-    df_sub.reset_index(inplace=True)
-    return df_sub
+    df_rate[CONFIG.MEAN_COLUMN[-1]] = df_mean
+    #df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
+    df_rate.fillna(0, inplace=True)
+    df_rate.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+    df_rate.reset_index(inplace=True)
+    return df_rate
 
 
 def formula_employe_rate(data):
