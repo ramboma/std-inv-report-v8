@@ -30,7 +30,9 @@ class ValueRateDataAnalyzer(DataAnalyzer):
         # calculator 1
         result[CONFIG.TOTAL_COLUMN] = OverallRateCalculator(df,
                                                             self._question_col,
-                                                            self._degree_col).calculate()
+                                                            self._degree_col,
+                                                            styler=OverallProvotStyler).calculate()
+
         # calculator 2
         result[CONFIG.GROUP_COLUMN[0]] = GrpRateCalculator(df, self._question_col,
                                                            [CONFIG.BASE_COLUMN[0]]).calculate()
