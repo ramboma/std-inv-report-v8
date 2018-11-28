@@ -136,7 +136,7 @@ def test():
     # analyze 1
     # analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
 
-    # analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df)
+    analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df)
     # analyze 2
     analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
     # ... analyze N

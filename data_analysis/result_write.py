@@ -5,9 +5,8 @@ from openpyxl.styles import numbers as numStyle
 
 
 class AnalysisResultWriter(object):
-    def __init__(self, folder, index=None):
+    def __init__(self, folder):
         self._folder = folder
-        self._index=index
 
     @property
     def folder(self):
@@ -22,11 +21,11 @@ class AnalysisResultWriter(object):
             file = os.path.join(self.folder, book_name)
             writer = pd.ExcelWriter(file)
             if not os.path.exists(file):
-                df.to_excel(writer, sheet_name, index=self._index)
+                df.to_excel(writer, sheet_name, index=isinstance(df.columns, pd.MultiIndex))
             else:
                 book = xl.load_workbook(writer.path)
                 writer.book = book
-                df.to_excel(excel_writer=writer, sheet_name=sheet_name, index=None)
+                df.to_excel(excel_writer=writer, sheet_name=sheet_name, index=isinstance(df.columns, pd.MultiIndex))
             writer.save()
         except Exception as e:
             raise ("文件写入时，发生异常，异常：{}".format(e.__str__()))
