@@ -7,8 +7,9 @@ from data_analysis.analyze_run import *
 
 
 class DataAnalyzer(object):
-    def __init__(self, df):
+    def __init__(self, df, dict_config=None):
         self._df = df
+        self._dict_config = dict_config
         self._degree_col = '_12'
         pass
 
@@ -16,22 +17,49 @@ class DataAnalyzer(object):
         raise Exception('method not implement')
 
 
+class OverallAnswerIndexDataAnalyzer(DataAnalyzer):
+    """只包含总体，且以答案为索引"""
+
+    def __init__(self, df, question_cols, dict_config=None):
+        super().__init__(df, dict_config)
+        self._question_cols = question_cols
+
+    def analyse(self):
+        # find out necessary data columns
+        if self._dict_config is None:
+            raise ("缺少配置文件，无法解析sheet name")
+        de = DataExtractor(self._df, self._question_cols)
+        df = de.extract_ref_cols()
+        result = dict()
+        style=AnswerIndexStyler()
+        if isinstance(self._question_cols, list):
+            for question_col in self._question_cols:
+                sheet_name = self._dict_config[question_col]
+                result[sheet_name] = OverallRateCalculator(df, question_col,
+                                                           self._degree_col,
+                                                           styler=style).calculate()
+        else:
+            raise ("当前只支持列表类型")
+        return result
+
+
 class ValueRateDataAnalyzer(DataAnalyzer):
-    def __init__(self, df, question_col):
-        super().__init__(df)
+    def __init__(self, df, question_col, dict_config=None):
+        super().__init__(df, dict_config)
         self._question_col = question_col
 
     def analyse(self):
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col, self._degree_col])
+        de = DataExtractor(self._df, self._question_col)
         df = de.extract_ref_cols()
 
         result = dict()
         # calculator 1
+        style=DegreeIndexStyler()
         result[CONFIG.TOTAL_COLUMN] = OverallRateCalculator(df,
                                                             self._question_col,
                                                             self._degree_col,
-                                                            styler=OverallProvotStyler).calculate()
+                                                            styler=style).calculate()
 
         # calculator 2
         result[CONFIG.GROUP_COLUMN[0]] = GrpRateCalculator(df, self._question_col,
@@ -44,36 +72,35 @@ class ValueRateDataAnalyzer(DataAnalyzer):
 
 
 class WorkOptionDataAnalyzer(ValueRateDataAnalyzer):
-    def __init__(self, df):
-        super().__init__(df, 'A3', '_12')
+    def __init__(self, df,dict_config=None):
+        super().__init__(df, 'A3', dict_config)
 
 
-class NonEmployeeDataAnalyzer(ValueRateDataAnalyzer):
-    def __init__(self, df):
-        super().__init__(df, 'C1')
-        raise Exception('method not implement')
+class NonEmployeeDataAnalyzer(OverallAnswerIndexDataAnalyzer):
+    def __init__(self, df, dic_config=None):
+        super().__init__(df, ['C1', 'C2'], dic_config)
 
 
 class EmpRateAndEmpStatus(DataAnalyzer):
     """就业率和就业状态"""
 
-    def __init__(self, df):
-        super().__init__(df)
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, dict_config)
         self._question_col = 'A2'
 
     def analyse(self):
-        de = DataExtractor(self._df, [self._question_col, self._])
+        de = DataExtractor(self._df, [self._question_col, self._degree_col])
         df = de.extract_ref_cols()
 
         result = dict()
         # 总体就业率
-        dict["总体就业率"] = OveralEmpRate(df, self._question_col, self._degree_col).calculate()
+        dict['总体就业率'] = OveralEmpRate(df, self._question_col, self._degree_col).calculate()
 
         dict["总体毕业去向"] = OverallRateCalculator(df, self._question_col).calculate()
 
         # 筛选出学历 如果为多学历需要计算总体
         ls_metric = list(set(df[self._degree_col]))
-        if len(ls_metric)>1:
+        if len(ls_metric) > 1:
             dict["总体毕业生各学院就业率"] = GrpEmpRate(df, self._question_col, [CONFIG.BASE_COLUMN[0]]).calculate()
             dict["总体毕业生各专业就业率"] = GrpEmpRate(df, self._question_col,
                                              [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]).calculate()
@@ -90,11 +117,16 @@ class EmpRateAndEmpStatus(DataAnalyzer):
                                                          [CONFIG.BASE_COLUMN[0]]).calculate()
             dict[metric + "各专业毕业去向"] = GrpRateCalculator(df_filter, self._question_col,
                                                          [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]).calculate()
+        return result
+
 
 def test():
     # read excel as df
     file_loader = ExcelLoader("../test-data/san-ming/cleaned/cleaned.xlsx")
     df = file_loader.load_data
+    config_loader = ExcelLoader("config.xlsx")
+    dic_config = config_loader.dict_data
+
     # init a result writer
     writer = AnalysisResultWriter(CONFIG.REPORT_FOLDER)
     runner = AnalyzeRunner(writer)
@@ -102,9 +134,11 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # analyze 1
-    analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df)
+    # analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
+
+    # analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df)
     # analyze 2
-    # analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df)
+    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
     # ... analyze N
 
     runner.run_batch(analyzer_collection)

@@ -5,8 +5,9 @@ from openpyxl.styles import numbers as numStyle
 
 
 class AnalysisResultWriter(object):
-    def __init__(self, folder):
+    def __init__(self, folder, index=None):
         self._folder = folder
+        self._index=index
 
     @property
     def folder(self):
@@ -21,7 +22,7 @@ class AnalysisResultWriter(object):
             file = os.path.join(self.folder, book_name)
             writer = pd.ExcelWriter(file)
             if not os.path.exists(file):
-                df.to_excel(writer, sheet_name, index=None)
+                df.to_excel(writer, sheet_name, index=self._index)
             else:
                 book = xl.load_workbook(writer.path)
                 writer.book = book

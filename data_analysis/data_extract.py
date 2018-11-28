@@ -11,7 +11,10 @@ class DataExtractor(object):
         if self._df.empty:
             raise ('结果集为空')
         relative_cols = list(CONFIG.BASE_COLUMN)
-        relative_cols.extend(self._answer_cols)
+        if isinstance(self._answer_cols, list):
+            relative_cols.extend(self._answer_cols)
+        else:
+            relative_cols.append(self._answer_cols)
         # 去重
         relative_cols = list(set(relative_cols))
         # 列是否在结果集中

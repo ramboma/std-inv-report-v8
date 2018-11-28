@@ -97,7 +97,7 @@ class OverallRateCalculator(DataCalculator):
 
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
-            self._styler.prettify(df_ret)
+            df_ret=self._styler.prettify(df_ret)
         print(df_ret)
         return df_ret
 
