@@ -99,6 +99,7 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     :param data:
     :param subject:
     :param grp:
+    :param measure_type:
     :return:
     """
 
@@ -109,7 +110,7 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
     # 列重排
-    #df_sub = df_rate[ls_measure[0:5]]
+    # df_sub = df_rate[ls_measure[0:5]]
     # step3: 度量值
     measure_rate = 0
     for measure in ls_measure[0:3]:
@@ -119,8 +120,14 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
 
     data["measure_score"] = data[subject].map(dict_measure_score)
     df_mean = data.groupby(grp)["measure_score"].mean()
+    print(df_rate)
+    df_rate.set_index(grp)
+    print(df_rate)
+
     df_rate[CONFIG.MEAN_COLUMN[-1]] = df_mean
-    #df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
+    print(df_rate)
+
+    # df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
     df_rate.fillna(0, inplace=True)
     df_rate.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
     df_rate.reset_index(inplace=True)
@@ -280,7 +287,6 @@ def college_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_nam
     df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=CONFIG.GROUP_COLUMN[0])
     df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
     return df_result
-
 
 
 def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
