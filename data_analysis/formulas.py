@@ -32,7 +32,6 @@ def formula_rate(data, subject):
                             CONFIG.RATE_COLUMN[-1]: df_rate.values / count
                             })
     df_rate[CONFIG.RATE_COLUMN[2]] = count
-    print(df_rate)
     return df_rate
 
 
@@ -118,14 +117,11 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
             measure_rate = measure_rate + df_rate[measure]
     df_rate[measure_name] = measure_rate
 
-    data["measure_score"] = data[subject].map(dict_measure_score)
+    data.loc[:, "measure_score"] = data.loc[:, subject].map(dict_measure_score)
     df_mean = data.groupby(grp)["measure_score"].mean()
-    print(df_rate)
-    df_rate.set_index(grp)
-    print(df_rate)
-
+    # **必须要设置index，否则无法设置mean值
+    df_rate=df_rate.set_index(grp)
     df_rate[CONFIG.MEAN_COLUMN[-1]] = df_mean
-    print(df_rate)
 
     # df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
     df_rate.fillna(0, inplace=True)
@@ -177,7 +173,7 @@ def formula_employe_rate_grp(data, array_grps):
                              CONFIG.RATE_COLUMN[2]: df_count})
     df_merge.fillna(0, inplace=True)
     df_merge.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-    print(df_merge)
+    df_merge.reset_index(inplace=True)
     return df_merge
 
 
@@ -213,6 +209,8 @@ def formula_mean_grp(data, subject, grp):
     df_result = pd.DataFrame({CONFIG.MEAN_COLUMN[-1]: df_mean,
                               CONFIG.MEAN_COLUMN[2]: df_count})
     df_result.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+    df_result.fillna(0,inplace=True)
+    df_result.reset_index(inplace=True)
     return df_result
 
 
@@ -227,7 +225,6 @@ def formate_rate_t(df_data):
     df_t = df_data.pivot_table(CONFIG.RATE_COLUMN[-1], index=None,
                                columns=CONFIG.RATE_COLUMN[0])
     df_t[CONFIG.RATE_COLUMN[2]] = count
-    print(df_t)
     return df_t
 
 

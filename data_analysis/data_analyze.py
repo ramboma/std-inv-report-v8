@@ -138,7 +138,9 @@ class EmpRateAndEmpStatus(DataAnalyzer):
         # 总体就业率
         result['总体就业率'] = OveralEmpRate(df, self._question_col, self._degree_col).calculate()
 
-        result["总体毕业去向"] = OverallRateCalculator(df, self._question_col, self._degree_col, ).calculate()
+        style = DegreeIndexStyler()
+        result["总体毕业去向"] = OverallRateCalculator(df, self._question_col,
+                                                 self._degree_col, styler=style).calculate()
 
         # 筛选出学历 如果为多学历需要计算总体
         ls_metric = list(set(df[self._degree_col]))
@@ -267,7 +269,22 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
+    # analyze 1
+    analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
 
+    analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df, dic_config)
+    # analyze 2
+    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
+    # analyze 2
+    analyzer_collection['专业相关度'] = MajorRelativeAnalyzer(df, dic_config)
+    analyzer_collection['就业满意度'] = JobSatisfyAnalyzer(df, dic_config)
+    analyzer_collection['职业期待吻合度'] = JobMeetAnalyzer(df, dic_config)
+    analyzer_collection['工作稳定性'] = WorkStabilityAnalyzer(df, dic_config)
+    # ... analyze N
+    analyzer_collection['任课教师'] = EvelutionH4_PAnalyzer(df, dic_config)
+    analyzer_collection['社团活动'] = EvelutionH4_RAnalyzer(df, dic_config)
+    analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
+    analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
     analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
