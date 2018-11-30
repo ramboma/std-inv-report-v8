@@ -15,7 +15,7 @@ from data_analysis.config_loader import *
 def main(file):
     data = excelUtil.read_excel(file)
     cofigL=ConfigLoader('config.xlsx')
-    further.report_summary(data, CONFIG.REPORT_FOLDER + '一览表.xlsx')
+    further.special_education_report(data, CONFIG.REPORT_FOLDER + '教育行业和非教育行业.xlsx')
 
 if __name__ == '__main__':
     main("../test-data/san-ming/cleaned/cleaned.xlsx")

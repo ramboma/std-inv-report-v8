@@ -770,12 +770,13 @@ def report_combine_value_five_rate(data, array_subject, metric_type, metric_name
     if not array_subject:
         return data
 
-    df_init = pd.DataFrame() # 创建一个空的dataframe
+    df_init = []  # 创建一个空的dataframe
 
     for subject in array_subject:
         df_t = five_rate_t(data, subject, metric_type)
-        df_t.loc[:, metric_name] = subject
-        df_init = pd.concat([df_init, df_t], sort=False)
+        df_t.insert(0, metric_name, subject)
+        df_init.append(df_t)
+    df_init = pd.concat(df_init, sort=False)
     df_init.loc[:, metric_name] = df_init.loc[:, metric_name].map(dict_subject)
     df_init.fillna(0, inplace=True)
     return df_init
@@ -927,12 +928,16 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
 
     df_emp_feature1 = special_employee_featured(df_data)
     df_emp_feature1.insert(0, title, val)
+    print(df_emp_feature1.columns)
     df_emp_feature2 = special_employee_featured(df_data1)
     df_emp_feature2.insert(0, title, val1)
+    print(df_emp_feature2.columns)
     df_emp_feature = special_employee_featured(data)
     df_emp_feature.insert(0, title, CONFIG.TOTAL_COLUMN)
+    print(df_emp_feature.columns)
 
-    df_concat = pd.concat([df_emp_feature1, df_emp_feature2, df_emp_feature], sort=False)
+    df_concat = pd.concat([df_emp_feature1, df_emp_feature2,df_emp_feature],sort=False)
+
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业特色')
     logger.info("特殊人群{}产生成功".format(suffix + '就业特色'))
 
@@ -952,7 +957,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_lesson2.insert(0, title, val1)
     df_lesson = special_lesson(data)
     df_lesson.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_lesson1, df_lesson2, df_lesson])
+    df_concat = pd.concat([df_lesson1, df_lesson2, df_lesson],sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业课堂教学')
 
     df_practice1 = special_practice(df_data)
@@ -961,7 +966,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_practice2.insert(0, title, val1)
     df_practice = special_practice(data)
     df_practice.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_practice1, df_practice2, df_practice])
+    df_concat = pd.concat([df_practice1, df_practice2, df_practice], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '实践教学')
 
     df_teacher1 = special_teacher(df_data)
@@ -970,7 +975,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_teacher2.insert(0, title, val1)
     df_teacher = special_teacher(data)
     df_teacher.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_teacher1, df_teacher2, df_teacher])
+    df_concat = pd.concat([df_teacher1, df_teacher2, df_teacher], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '教师评价')
 
     df_school1 = special_school(df_data)
@@ -1052,8 +1057,10 @@ def special_employee_featured(data):
     for demension in array_demensions:
         df_indurstry = formulas.answer_rate_condition(data, demension, {}, [CONFIG.RATE_COLUMN[-1]], [0], 5)
         demension_name = CONFIG.DICT_SUBJECT[demension]
-        df_combine = formulas.row_combine(df_indurstry, combin_name=demension_name)
-        df_init = pd.concat([df_init, df_combine], axis=1, sort=False)
+        if not df_indurstry.empty:
+            df_combine = formulas.row_combine(df_indurstry, combin_name=demension_name)
+            df_combine.rename(columns={CONFIG.RATE_COLUMN[2]:demension_name+CONFIG.RATE_COLUMN[2]}, inplace=True)
+            df_init = pd.concat([df_init, df_combine], axis=1, sort=False)
     return df_init
 
 
@@ -1153,12 +1160,10 @@ def special_employee_competitive(data, dict_where={}):
     # 离职率
     subject = 'B10-1'
     change_times = formulas.answer_rate(data, subject)
-    no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])][CONFIG.RATE_COLUMN[-1]].head(1)
-    print(no_changes)
-    change_times['离职率'] = 1 - no_changes
-    change_times = change_times[['离职率', CONFIG.RATE_COLUMN[2]]]
-    change_times.drop_duplicates(inplace=True)
-
+    df_no_changes = change_times[change_times[CONFIG.RATE_COLUMN[0]].isin([CONFIG.B10_1_ANSWER[0]])]
+    changes = 1 - df_no_changes[CONFIG.RATE_COLUMN[-1]]
+    change_times = pd.DataFrame({"离职率": changes,
+                                 CONFIG.RATE_COLUMN[2]: df_no_changes[CONFIG.RATE_COLUMN[2]]})
     df_concat = pd.concat([df_income, df_salary, pd_init, change_times], axis=1)
     return df_concat
 
@@ -1173,7 +1178,6 @@ def special_lesson(data):
     df_mean = df_mean.loc[df_mean.index == 'mean']
     pd_concat = pd.concat([df_summary, df_mean], sort=False)
     pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
-    pd_concat.iloc[-1, -1] = ''
 
     return pd_concat
 
@@ -1188,7 +1192,6 @@ def special_practice(data, dict_where={}):
     df_mean = df_mean.loc[df_mean.index == 'mean']
     pd_concat = pd.concat([df_summary, df_mean], sort=False)
     pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
-    pd_concat.iloc[-1, -1] = ''
 
     return pd_concat
 
@@ -1207,13 +1210,11 @@ def special_teacher(data):
     df_mean_pri = df_mean_pri.loc[df_mean_pri.index == 'mean']
     pd_concat1 = pd.concat([df_private, df_mean_pri], sort=False)
     pd_concat1.iloc[-1, 0] = '专业' + CONFIG.TOTAL_COLUMN
-    pd_concat1.iloc[-1, -1] = ''
 
     df_mean_pub = df_public.describe()
     df_mean_pub = df_mean_pub.loc[df_mean_pub.index == 'mean']
     pd_concat2 = pd.concat([df_public, df_mean_pub], sort=False)
     pd_concat2.iloc[-1, 0] = '公共' + CONFIG.TOTAL_COLUMN
-    pd_concat2.iloc[-1, -1] = ''
 
     df_sum_mean = pd.concat([df_mean_pri, df_mean_pub], sort=False)
     df_sum_mean = df_sum_mean.describe()
@@ -1221,7 +1222,6 @@ def special_teacher(data):
 
     pd_concat = pd.concat([pd_concat1, pd_concat2, df_sum_mean], sort=False)
     pd_concat.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
-    pd_concat.iloc[-1, -1] = ''
 
     return pd_concat
 
@@ -1411,7 +1411,7 @@ def five_rate_single_t(data, subject, measure_type, grp_subject=CONFIG.BASE_COLU
     college_t = formulas.college_rate_pivot(five_rate, array_focus, grp_subject)
     college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
     college_t = college_t.loc[:, formulas.rebuild_five_columns(measure_type, level
-                                                               ,origin_columns=college_t.columns)]
+                                                               , origin_columns=college_t.columns)]
     return college_t
 
 
@@ -1432,7 +1432,7 @@ def five_rate_major_t(data, subject, measure_type):
     major_t = formulas.major_rate_pivot(major_changes,
                                         array_focus)
     major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2,origin_columns=major_t.columns)]
+    major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2, origin_columns=major_t.columns)]
     return major_t
 
 
@@ -1494,7 +1494,7 @@ def report_five_rate(data, subject, measure_type, measure_name, file_path):
 
     value_rate = formulas.answer_five_rate(df_metrics, subject, measure_type)
     rate_t = formulas.rate_T(value_rate, array_focus)
-    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0,origin_columns=rate_t.columns)]
+    rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, origin_columns=rate_t.columns)]
     rate_combin = pd.concat([rate_t, rate_t])
     rate_combin.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
     excelUtil.writeExcel(rate_combin, file_path, CONFIG.TOTAL_COLUMN + measure_name)
@@ -1504,7 +1504,7 @@ def report_five_rate(data, subject, measure_type, measure_name, file_path):
     college_t = formulas.college_rate_pivot(college_changes,
                                             array_focus)
     college_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    college_t = college_t.loc[:, formulas.rebuild_five_columns(measure_type, 1,origin_columns=college_t.columns)]
+    college_t = college_t.loc[:, formulas.rebuild_five_columns(measure_type, 1, origin_columns=college_t.columns)]
     college_combine = pd.concat([college_t, rate_t], sort=False)
     college_combine.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
     excelUtil.writeExcel(college_combine, file_path, CONFIG.GROUP_COLUMN[0] + measure_name)
@@ -1513,7 +1513,7 @@ def report_five_rate(data, subject, measure_type, measure_name, file_path):
     major_t = formulas.major_rate_pivot(major_changes,
                                         array_focus)
     major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
-    major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2,origin_columns=major_t.columns)]
+    major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2, origin_columns=major_t.columns)]
     major_conbine = pd.concat([major_t, rate_t], sort=False)
     major_conbine.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
     excelUtil.writeExcel(major_conbine, file_path, CONFIG.GROUP_COLUMN[1] + measure_name)
@@ -1535,7 +1535,7 @@ def report_value_rate(df_data, subject, title, filePath, add_name='', add_column
             if cal_num in rate_t.columns:
                 rate_t.loc[:, add_name] = rate_t.loc[:, add_name] + rate_t.loc[:, cal_num]
     if measure_type:
-        rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, 1,origin_columns=rate_t.columns)]
+        rate_t = rate_t.loc[:, formulas.rebuild_five_columns(measure_type, 0, 1, origin_columns=rate_t.columns)]
     df_concat = pd.concat([rate_t, rate_t], sort=False)
     df_concat.insert(0, CONFIG.TOTAL_COLUMN, CONFIG.TOTAL_COLUMN)
     excelUtil.writeExcel(df_concat, filePath, CONFIG.TOTAL_COLUMN + title)
@@ -1551,7 +1551,8 @@ def report_value_rate(df_data, subject, title, filePath, add_name='', add_column
             if cal_num in college_t.columns:
                 college_t.loc[:, add_name] = college_t.loc[:, add_name] + college_t.loc[:, cal_num]
     if measure_type:
-        college_t = college_t.loc[:, formulas.rebuild_five_columns(measure_type, 1, 1, origin_columns=college_t.columns)]
+        college_t = college_t.loc[:,
+                    formulas.rebuild_five_columns(measure_type, 1, 1, origin_columns=college_t.columns)]
     college_t = pd.concat([college_t, rate_t], sort=False)
     college_t.iloc[-1, 0] = CONFIG.TOTAL_COLUMN
     excelUtil.writeExcel(college_t, filePath, CONFIG.GROUP_COLUMN[0] + title)
@@ -1566,7 +1567,7 @@ def report_value_rate(df_data, subject, title, filePath, add_name='', add_column
             if cal_num in major_t.columns:
                 major_t.loc[:, add_name] = major_t.loc[:, add_name] + major_t.loc[:, cal_num]
     if measure_type:
-        major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2, 1,origin_columns=major_t.columns)]
+        major_t = major_t.loc[:, formulas.rebuild_five_columns(measure_type, 2, 1, origin_columns=major_t.columns)]
     major_t.sort_values([CONFIG.RATE_COLUMN[2]], ascending=[0], inplace=True)
     major_t = pd.concat([major_t, rate_t], sort=False)
     major_t.iloc[-1, 0:2] = CONFIG.TOTAL_COLUMN
