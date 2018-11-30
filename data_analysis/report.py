@@ -928,13 +928,10 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
 
     df_emp_feature1 = special_employee_featured(df_data)
     df_emp_feature1.insert(0, title, val)
-    print(df_emp_feature1.columns)
     df_emp_feature2 = special_employee_featured(df_data1)
     df_emp_feature2.insert(0, title, val1)
-    print(df_emp_feature2.columns)
     df_emp_feature = special_employee_featured(data)
     df_emp_feature.insert(0, title, CONFIG.TOTAL_COLUMN)
-    print(df_emp_feature.columns)
 
     df_concat = pd.concat([df_emp_feature1, df_emp_feature2,df_emp_feature],sort=False)
 
@@ -957,7 +954,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_lesson2.insert(0, title, val1)
     df_lesson = special_lesson(data)
     df_lesson.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_lesson1, df_lesson2, df_lesson],sort=False)
+    df_concat = pd.concat([df_lesson,df_lesson1, df_lesson2],sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '就业课堂教学')
 
     df_practice1 = special_practice(df_data)
@@ -966,7 +963,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_practice2.insert(0, title, val1)
     df_practice = special_practice(data)
     df_practice.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_practice1, df_practice2, df_practice], sort=False)
+    df_concat = pd.concat([df_practice,df_practice1, df_practice2], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '实践教学')
 
     df_teacher1 = special_teacher(df_data)
@@ -975,7 +972,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_teacher2.insert(0, title, val1)
     df_teacher = special_teacher(data)
     df_teacher.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_teacher1, df_teacher2, df_teacher], sort=False)
+    df_concat = pd.concat([df_teacher,df_teacher1, df_teacher2], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '教师评价')
 
     df_school1 = special_school(df_data)
@@ -984,7 +981,7 @@ def special_common_report(data, subject, filePath, suffix, dict_where, title):
     df_school2.insert(0, title, val1)
     df_school = special_school(data)
     df_school.insert(0, title, CONFIG.TOTAL_COLUMN)
-    df_concat = pd.concat([df_school1, df_school2, df_school])
+    df_concat = pd.concat([df_school, df_school1, df_school2], sort=False)
     excelUtil.writeExcel(df_concat, filePath, suffix + '母校综合评价')
 
     return
