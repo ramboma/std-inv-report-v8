@@ -16,14 +16,6 @@ class AnalyzeRunner(object):
             self.run(analyzer_collection[name], name)
 
     def run(self, analyzer, name):
-        try:
-            result = analyzer.analyse()
-            self._write.write_new_book('{}.xlsx'.format(name), result)
-        except Exception as e:
-            # log error message to log file
-            # write user friendly error file
-            # normal exit for next analyzer running
-            print(e)
-            pass
-        finally:
-            pass
+        result = analyzer.analyse()
+        self._write.write_new_book('{}.xlsx'.format(name), result)
+

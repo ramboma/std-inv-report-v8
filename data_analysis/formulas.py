@@ -117,10 +117,10 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
             measure_rate = measure_rate + df_rate[measure]
     df_rate[measure_name] = measure_rate
 
-    data.loc[:, "measure_score"] = data.loc[:, subject].map(dict_measure_score)
+    data["measure_score"] = data.loc[:, subject].map(dict_measure_score)
     df_mean = data.groupby(grp)["measure_score"].mean()
     # **必须要设置index，否则无法设置mean值
-    df_rate=df_rate.set_index(grp)
+    df_rate = df_rate.set_index(grp)
     df_rate[CONFIG.MEAN_COLUMN[-1]] = df_mean
 
     # df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
@@ -150,7 +150,7 @@ def formula_employe_rate(data):
     # 就业率 答题总人数
     pd_result = pd.DataFrame({CONFIG.EMPLOYEE_RATE_COLUMN: [employee_rate],
                               CONFIG.RATE_COLUMN[2]: [count]})
-    print(pd_result)
+
     return pd_result
 
 
@@ -168,6 +168,8 @@ def formula_employe_rate_grp(data, array_grps):
     # step2:各分组 回答"未就业"人数
     df_unemployee = data[data[subject] == CONFIG.A2_ANSWER[-1]].groupby(array_grps)[subject].count()
     df_rate = (df_count - df_unemployee) / df_count
+    # 当未就业不存在时，就业率为100
+    df_rate.fillna(1, inplace=True)
     # 就业率 答题总人数
     df_merge = pd.DataFrame({CONFIG.EMPLOYEE_RATE_COLUMN: df_rate,
                              CONFIG.RATE_COLUMN[2]: df_count})
@@ -177,22 +179,16 @@ def formula_employe_rate_grp(data, array_grps):
     return df_merge
 
 
-def formula_income_mean(data):
+def formula_mean(data, subject):
     '''
-
-    Income mean:薪酬均值
-    ****此公式包含默认的前提：A2=在国内工作
-    公式：薪酬总和/答题总人数
+    计算某一题均值
     :param data:
+    :param subject:
     :return: 均值 答题总人数
     '''
-    subject = 'B6'
-    # 前提要素
-    df_primise = data[data['A2'] == CONFIG.A2_ANSWER[0]]
-
     # 均值 答题总人数
-    df_mean = pd.DataFrame({CONFIG.MEAN_COLUMN[-1]: [df_primise[subject].mean()],
-                            CONFIG.MEAN_COLUMN[2]: [df_primise[subject].count()]})
+    df_mean = pd.DataFrame({CONFIG.MEAN_COLUMN[-1]: [data[subject].mean()],
+                            CONFIG.MEAN_COLUMN[2]: [data[subject].count()]})
     return df_mean
 
 
@@ -202,16 +198,54 @@ def formula_mean_grp(data, subject, grp):
     :param data:
     :param subject:
     :param grp:
-    :return: 均值、答题总人数
+    :return:分组列、 均值、答题总人数
     """
     df_count = data.groupby(grp)[subject].count()
     df_mean = data.groupby(grp)[subject].mean()
     df_result = pd.DataFrame({CONFIG.MEAN_COLUMN[-1]: df_mean,
                               CONFIG.MEAN_COLUMN[2]: df_count})
     df_result.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
-    df_result.fillna(0,inplace=True)
+    df_result.fillna(0, inplace=True)
     df_result.reset_index(inplace=True)
     return df_result
+
+
+def formula_answer_period(data, subject, start, period_num, step, max=100000):
+    """
+    统计答案区间占比
+    :param data:
+    :param subject: 题目
+    :param start: 最小值
+    :param period_num: 区间数
+    :param step: 步长
+    :param max: 不规则部分 ，end～max
+    :return: 各区间、答题人数、比率、答题总人数
+    """
+    end = start + period_num * step
+    # list 边界 [x,y)
+    ls_period = list(range(start, end + step, step))
+    # 0-start
+    ls_period.insert(0, 0)
+    # end-max
+    ls_period.append(max)
+
+    df_answer = data[subject]
+    counts = df_answer.count()
+    period = pd.cut(df_answer.values, ls_period)
+    period_counts = period.value_counts()
+    pd_period = pd.DataFrame({CONFIG.RATE_COLUMN[0]: period_counts.index,
+                              CONFIG.RATE_COLUMN[1]: period_counts.values})
+    pd_period[CONFIG.RATE_COLUMN[-1]] = (pd_period[CONFIG.RATE_COLUMN[1]] / counts).round(decimals=CONFIG.DECIMALS6)
+    pd_period[CONFIG.RATE_COLUMN[2]] = counts
+    # 格式化区间名称
+    period_name = build_period_name(start, step, period_num, max)
+    pd_period[CONFIG.RATE_COLUMN[0]] = pd_period.loc[:, CONFIG.RATE_COLUMN[0]].astype('str').map(period_name)
+    # 转置
+    df_t = formate_rate_t(pd_period)
+    # 追加均值
+    df_mean = formula_mean(data, subject)
+    df_t[CONFIG.MEAN_COLUMN[-1]] = df_mean.loc[0, CONFIG.MEAN_COLUMN[-1]]
+    return df_t
 
 
 def formate_rate_t(df_data):
@@ -308,24 +342,6 @@ def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG
     return df_duplicate
 
 
-def answer_period(data, subject, start, end, step):
-    ind_500 = list(range(start, end + step, step))
-
-    ind_500.insert(0, 0)
-    ind_500.append(100000)
-
-    income = data['B6']
-    counts = income.count()
-    period = pd.cut(income.values, ind_500)
-    period_counts = period.value_counts()
-    pd_period = pd.DataFrame({CONFIG.RATE_COLUMN[0]: period_counts.index,
-                              CONFIG.RATE_COLUMN[1]: period_counts.values})
-    pd_period[CONFIG.RATE_COLUMN[-1]] = (pd_period[CONFIG.RATE_COLUMN[1]] / counts).round(decimals=CONFIG.DECIMALS6)
-    pd_period[CONFIG.RATE_COLUMN[2]] = counts
-
-    return pd_period
-
-
 def percent(df_data):
     if df_data.empty:
         return df_data
@@ -405,3 +421,17 @@ def parse_measure_score(measure_type):
         return CONFIG.ANSWER_SCORE_DICT_FEEL
     elif CONFIG.ANSWER_TYPE_NUM == measure_type:
         return CONFIG.ANSWER_SCORE_DICT_NUM
+
+
+def build_period_name(start, step, period_n, max=100000):
+    key = '(0, {}]'.format(start)
+    val = '{}元及以下'.format(start)
+    name = {key: val}
+    for i in range(0, period_n):
+        key = '({}, {}]'.format(start + i * step, start + (i + 1) * step)
+        val = '{}-{}元'.format(start + i * step, start + (i + 1) * step)
+        name[key] = val
+    key = '({}, {}]'.format(start + period_n * step, max)
+    val = '{}元及以上'.format(start + period_n * step + 1)
+    name[key] = val
+    return name

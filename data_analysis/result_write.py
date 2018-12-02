@@ -33,8 +33,9 @@ class AnalysisResultWriter(object):
             writer.close()
 
     def write_new_book(self, book_name, df_dict):
-        for sheet_name in df_dict:
-            self.write_new_sheet(book_name, sheet_name, df_dict[sheet_name])
+        if df_dict:
+            for sheet_name in df_dict:
+                self.write_new_sheet(book_name, sheet_name, df_dict[sheet_name])
 
     def formate_percent(self, file_path, sheet_name, percent_cols, head=1):
         wbook = xl.load_workbook(file_path)

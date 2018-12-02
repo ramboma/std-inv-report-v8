@@ -15,8 +15,10 @@ from data_analysis.reports.employ_rate import *
 
 def main(file):
     data = excelUtil.read_excel(file)
-    #formula_mean_grp(data,'B6',['_10'])
-    #fml.formula_five_rate_grp(data,'G2',['_10'],CONFIG.ANSWER_TYPE_RELATIVE)
+    #df_rate=formula_mean_grp(data,'B6',['_10'])
+    #df_rate=formula_answer_period(data,'B6',2000,4,500)
+    data=data[data["_12"]=="博士毕业生"]
+    #df_rate=fml.formula_five_rate_grp(data,'G2',['_10'],CONFIG.ANSWER_TYPE_RELATIVE)
     #fml.formate_rate_t(df_rate)
     df_rate =fml.formula_employe_rate_grp(data,['_10'])
     #fml.formula_five_rate_grp(data,['_10','_14'])
