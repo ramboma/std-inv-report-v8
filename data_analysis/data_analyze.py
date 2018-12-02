@@ -52,8 +52,8 @@ def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
     if len(ls_metric) > 1:
         if dic_grp:
             for key in dic_grp:
-                result["总体毕业生"+key + sheet_name] = class_name(df, question_col,
-                                                             list(dic_grp[key])).calculate()
+                result["总体毕业生" + key + sheet_name] = class_name(df, question_col,
+                                                                list(dic_grp[key])).calculate()
         else:
             result["总体毕业生各学院" + sheet_name] = class_name(df, question_col,
                                                          [CONFIG.BASE_COLUMN[0]]).calculate()
@@ -67,7 +67,7 @@ def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
             if dic_grp:
                 for key in dic_grp:
                     result[metric + key + sheet_name] = class_name(df_filter, question_col,
-                                                                     list(dic_grp[key])).calculate()
+                                                                   list(dic_grp[key])).calculate()
             else:
                 result[metric + "各学院" + sheet_name] = class_name(df_filter, question_col,
                                                                  [CONFIG.BASE_COLUMN[0]]).calculate()
@@ -75,6 +75,7 @@ def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
                                                                  [CONFIG.BASE_COLUMN[0],
                                                                   CONFIG.BASE_COLUMN[1]]).calculate()
     return result
+
 
 class ValueRateDataAnalyzer(DataAnalyzer):
     def __init__(self, df, question_col, dict_config=None):
@@ -100,12 +101,14 @@ class ValueRateDataAnalyzer(DataAnalyzer):
         result.update(df_grp)
         return result
 
+
 class SimpleValueRateDataAnalyzer(DataAnalyzer):
     """单独计算答案占比，结果集不合并多学历"""
+
     def __init__(self, df, question_col, dict_config=None, do_combine=False):
         super().__init__(df, dict_config)
         self._question_col = question_col
-        self._do_combine=do_combine
+        self._do_combine = do_combine
 
     def analyse(self):
         if self._dict_config is None:
@@ -117,23 +120,26 @@ class SimpleValueRateDataAnalyzer(DataAnalyzer):
 
         result = dict()
         ls_metric = list(set(df[self._degree_col]))
-        result["总体毕业生"+sheet_name]=AnswerRateCalculator(df, self._question_col).calculate()
+        result["总体毕业生" + sheet_name] = AnswerRateCalculator(df, self._question_col).calculate()
         if len(ls_metric) > 1:
             if self._do_combine:
-                result["总体毕业生各学院" + sheet_name]=GrpTopNCalculator(df, self._question_col,
-                                                                  [CONFIG.BASE_COLUMN[0]]).calculate()
-                result["总体毕业生各专业" + sheet_name]=GrpTopNCalculator(df, self._question_col,
-                                                                  [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]]).calculate()
+                result["总体毕业生各学院" + sheet_name] = GrpTopNCalculator(df, self._question_col,
+                                                                    [CONFIG.BASE_COLUMN[0]]).calculate()
+                result["总体毕业生各专业" + sheet_name] = GrpTopNCalculator(df, self._question_col,
+                                                                    [CONFIG.BASE_COLUMN[0],
+                                                                     CONFIG.BASE_COLUMN[1]]).calculate()
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
             result[metric + sheet_name] = AnswerRateCalculator(df_filter,
                                                                self._question_col).calculate()
 
-            result[metric+"各学院" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
-                                                                [CONFIG.BASE_COLUMN[0]]).calculate()
-            result[metric+"各专业" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
-                                                                [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]]).calculate()
+            result[metric + "各学院" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
+                                                                    [CONFIG.BASE_COLUMN[0]]).calculate()
+            result[metric + "各专业" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
+                                                                    [CONFIG.BASE_COLUMN[0],
+                                                                     CONFIG.BASE_COLUMN[1]]).calculate()
         return result
+
 
 class FiveRateDataAnalyzer(DataAnalyzer):
     def __init__(self, df, question_col, metric_type, dict_config=None):
@@ -155,18 +161,18 @@ class FiveRateDataAnalyzer(DataAnalyzer):
                                                              self._degree_col,
                                                              self._metric_type,
                                                              styler=None).calculate()
-        dict_college=self.degree_five_analysis({"学院":[CONFIG.BASE_COLUMN[0]]}, sheet_name)
+        dict_college = self.degree_five_analysis({"学院": [CONFIG.BASE_COLUMN[0]]}, sheet_name)
         result.update(dict_college)
-        dict_major=self.degree_five_analysis({"专业":[CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]]}, sheet_name)
+        dict_major = self.degree_five_analysis({"专业": [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]}, sheet_name)
         result.update(dict_major)
         return result
 
     def degree_five_analysis(self, dict_grp, sheet_name):
         if dict_grp:
-            result={}
+            result = {}
             for key in dict_grp:
                 # find out necessary data columns
-                rel_cols=list(dict_grp[key])
+                rel_cols = list(dict_grp[key])
                 rel_cols.append(self._question_col)
                 de = DataExtractor(self._df, rel_cols)
                 df = de.extract_ref_cols()
@@ -175,19 +181,17 @@ class FiveRateDataAnalyzer(DataAnalyzer):
                 ls_metric = list(set(df[self._degree_col]))
                 if len(ls_metric) > 1:
                     result["总体毕业生各" + key + sheet_name] = GrpFiveCalculator(df, self._question_col,
-                                                                           dict_grp[key],
-                                                                           self._metric_type).calculate()
+                                                                            dict_grp[key],
+                                                                            self._metric_type).calculate()
                 for metric in ls_metric:
                     df_filter = df[df[self._degree_col] == metric]
                     if not df_filter.empty:
                         result[metric + key + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
-                                                                               dict_grp[key],
-                                                                               self._metric_type).calculate()
+                                                                              dict_grp[key],
+                                                                              self._metric_type).calculate()
             return result
         else:
             pass
-
-
 
 
 ########### 就业率及就业状态 start
@@ -373,12 +377,12 @@ class EmpJobAnalyzer(SimpleValueRateDataAnalyzer):
 
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col,'B6','B9-1','B7-1'])
+        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'])
         df = de.extract_ref_cols()
         # 职业均值
-        dic_grp={"就业职业":['B4-B']}
+        dic_grp = {"就业职业": ['B4-B']}
         df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
-                                    "月均收入",dic_grp)
+                                    "月均收入", dic_grp)
         result.update(df_grp)
         # 专业相关度差异分析
         df_grp = FiveRateDataAnalyzer(df,
@@ -397,7 +401,127 @@ class EmpJobAnalyzer(SimpleValueRateDataAnalyzer):
         return result
 
 
+class EmpIndurstryAnalyzer(SimpleValueRateDataAnalyzer):
+    """就业行业分布"""
 
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, 'B5-B', dict_config, do_combine=True)
+
+    def analyse(self):
+        # 就业行业比例
+        result = super().analyse()
+
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'])
+        df = de.extract_ref_cols()
+        # 收入均值
+        dic_grp = {"就业行业": ['B5-B']}
+        df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
+                                    "月均收入", dic_grp)
+        result.update(df_grp)
+        # 专业相关度差异分析
+        df_grp = FiveRateDataAnalyzer(df,
+                                      'B9-1',
+                                      CONFIG.ANSWER_TYPE_RELATIVE,
+                                      None).degree_five_analysis(dic_grp, "专业相关度差异分析")
+        result.update(df_grp)
+
+        # 就业满意度差异分析
+        df_grp = FiveRateDataAnalyzer(df,
+                                      'B7-1',
+                                      CONFIG.ANSWER_TYPE_SATISFY,
+                                      None).degree_five_analysis(dic_grp, "就业满意度差异分析")
+        result.update(df_grp)
+
+        return result
+
+
+class EmpRegionAnalyzer(SimpleValueRateDataAnalyzer):
+    """就业地区分布"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, 'B3-A', dict_config, do_combine=True)
+
+    def analyse(self):
+        # 地区答题比例
+        result = super().analyse()
+
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        de = DataExtractor(self._df, [self._question_col,'_6', 'B6', 'B9-1', 'B7-1', 'B3-B', 'A1-A'])
+        df = de.extract_ref_cols()
+        # 职业均值
+        dic_grp = {"就业地区": ['B3-B']}
+        df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
+                                    "月均收入", dic_grp)
+        result.update(df_grp)
+
+        # 省内就业城市
+        province = get_province(df)
+        df_city = df[df['B3-A'] == province]
+        df_province = SimpleValueRateDataAnalyzer(df_city, 'B3-B',
+                                                  self._dict_config, True).analyse()
+        result.update(df_province)
+        # 省内就业城市月均收入
+        df_province_income = common_grp_anaysis(df_city, 'B6', GrpMeanCalculator, "月均收入", dic_grp)
+        result.update(df_province_income)
+
+        # 省内生源就业地区流向
+        result["省内生源就业地区流向"]=ProvinceRate(df, self._question_col,
+                                          province, self._degree_col).calculate()
+
+        # 省外生源就业地区流向
+        result["省外生源就业地区流向"]=OtherProvinceRate(df, self._question_col,
+                                               province, self._degree_col).calculate()
+
+        return result
+
+class EmpIndurstryTypeSizeAnalyzer(SimpleValueRateDataAnalyzer):
+    """就业单位类型和规模"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, 'B1', dict_config, do_combine=True)
+
+    def analyse(self):
+        # 就业行业比例
+        result = super().analyse()
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'])
+        df = de.extract_ref_cols()
+        # 收入均值
+        dic_grp = {"就业单位类型": ['B1']}
+        df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
+                                    "月均收入", dic_grp)
+        result.update(df_grp)
+        # 专业相关度差异分析
+        df_grp = FiveRateDataAnalyzer(df,
+                                      'B9-1',
+                                      CONFIG.ANSWER_TYPE_RELATIVE,
+                                      None).degree_five_analysis(dic_grp, "专业相关度差异分析")
+        result.update(df_grp)
+
+        # 就业满意度差异分析
+        df_grp = FiveRateDataAnalyzer(df,
+                                      'B7-1',
+                                      CONFIG.ANSWER_TYPE_SATISFY,
+                                      None).degree_five_analysis(dic_grp, "就业满意度差异分析")
+        result.update(df_grp)
+
+        # 就业单位规模
+        dict_size=ValueRateDataAnalyzer(self._df,'B2',self._dict_config).analyse()
+        result.update(dict_size)
+
+        return result
+
+def get_province(data):
+    subject = '_6'
+    province = data.loc[0, subject]
+    if pd.isnull(province) or len(str(province)) == 0:
+        raise Exception('未获取到学校所属省份')
+    else:
+        return province
 
 
 ########### 就业分布 end
@@ -460,7 +584,9 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # analyze 1
-    analyzer_collection['就业职业分布'] = EmpJobAnalyzer(df, dic_config)
+
+    analyzer_collection['就业地区分布'] = EmpRegionAnalyzer(df, dic_config)
+    # analyzer_collection['就业单位分布'] = EmpIndurstryTypeSizeAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 

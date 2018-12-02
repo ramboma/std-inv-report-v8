@@ -342,8 +342,8 @@ class AnswerPeriodCalculator(DataCalculator):
 
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
-            df_ret = self._styler.prettify(df_combines)
-        return df_ret
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines
 
 class AnswerRateCalculator(DataCalculator):
     def __init__(self, df, target_col, styler=None):
@@ -351,6 +351,104 @@ class AnswerRateCalculator(DataCalculator):
     def calculate(self):
         df_overal = formula_rate(self._df, self._tgt_col)
         return df_overal
+
+class OtherProvinceRate(DataCalculator):
+    """外省就业流向"""
+    def __init__(self, df, target_col, province, metric_col, styler=None):
+        super().__init__(df, target_col, styler)
+        self._province=province
+        self._metric_col=metric_col
+
+    def calculate(self):
+        # step1：筛选出指标中的值
+        ls_metric = list(set(self._df[self._metric_col]))
+        df_combines = []
+        # step2：循环值进行计算
+        for where in ls_metric:
+            df_where = self._df[self._df[self._metric_col] == where]
+            print(df_where)
+            df_rate = self.other_province(df_where)
+            df_rate.insert(0, self._metric_col, where)
+            df_combines.append(df_rate)
+        # Concatenate everything into a single DataFrame
+        df_combines = pd.concat(df_combines, sort=False)
+        df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+        # combine overal
+        df_overal = self.other_province(self._df)
+        df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
+        df_combines = df_combines.append(df_overal)
+
+        # if styler object be set, apply style
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines
+
+    def other_province(self, df):
+        # 外地生源数据
+        df_other_prov = df[df['A1-A'] != self._province]
+        # 答题总人数
+        not_birth_count = df_other_prov[self._tgt_col].count()
+        print(not_birth_count)
+        # 外地生源本地就业人数 省内就业
+        not_birth_local_count = df_other_prov[df_other_prov[self._tgt_col] == self._province][self._tgt_col].count()
+        not_birth_local_rate = (not_birth_local_count / not_birth_count).round(decimals=CONFIG.DECIMALS6)
+
+        # 外地生源回生源地就业人数 回生源所在地就业
+        not_birth_birth_count = df_other_prov[df_other_prov['A1-A'] == df_other_prov[self._tgt_col]][self._tgt_col].count()
+        not_birth_birth_rate = (not_birth_birth_count / not_birth_count).round(decimals=CONFIG.DECIMALS6)
+
+        df_rate = pd.DataFrame({'回生源所在地就业': [not_birth_birth_rate],
+                                '其他省份就业': [1 - not_birth_local_rate - not_birth_birth_rate],
+                                '省内就业': [not_birth_local_rate],
+                                CONFIG.RATE_COLUMN[2]: not_birth_count})
+        return df_rate
+
+class ProvinceRate(DataCalculator):
+    """省内就业流向"""
+    def __init__(self, df, target_col, province, metric_col, styler=None):
+        super().__init__(df, target_col, styler)
+        self._province=province
+        self._metric_col=metric_col
+
+    def calculate(self):
+        # step1：筛选出指标中的值
+        ls_metric = list(set(self._df[self._metric_col]))
+        df_combines = []
+        # step2：循环值进行计算
+        for where in ls_metric:
+            df_where = self._df[self._df[self._metric_col] == where]
+            df_rate = self.province(df_where)
+            df_rate.insert(0, self._metric_col, where)
+            df_combines.append(df_rate)
+        # Concatenate everything into a single DataFrame
+        df_combines = pd.concat(df_combines, sort=False)
+        df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+        # combine overal
+        df_overal = self.province(self._df)
+        df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
+        df_combines = df_combines.append(df_overal)
+
+        # if styler object be set, apply style
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines
+
+    def province(self, df):
+        # 外地生源数据
+        df_prov = df[df['A1-A'] == self._province]
+        # 答题总人数
+        birth_count = df_prov[self._tgt_col].count()
+        # 生源地在本地就业人数
+        birth_value_count = df_prov[df_prov[self._tgt_col]==self._province][self._tgt_col].count()
+        # 生源地当地比
+        birth_value_rate = (birth_value_count / birth_count).round(CONFIG.DECIMALS6)
+        df_rate = pd.DataFrame({'省内就业': [birth_value_rate],
+                                '省外就业': [1 - birth_value_rate],
+                                CONFIG.RATE_COLUMN[2]: birth_count})
+        return df_rate
+
 
 class GrpTopNCalculator(DataCalculator):
     def __init__(self, df, target_col, grp_cols, top=5, styler=None):
