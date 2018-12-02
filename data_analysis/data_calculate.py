@@ -136,6 +136,71 @@ class GrpRateCalculator(DataCalculator):
             self._styler.prettify(df_ret)
         return df_ret
 
+class OverallThreeCalculator():
+    """三维总体答案占比 """
+    def __init__(self, df, metric_col, metric_type, dict_extra={}, styler=None):
+        self._df=df
+        self._styler=styler
+        self._metric_col = metric_col
+        self._metric_type = metric_type
+        self._dict_extra=dict_extra
+
+    def calculate(self):
+        # 各学历下的三维占比
+        measure_name = parse_measure_name(self._metric_type)
+        forcus_cols=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
+        forcus_cols.append(self._metric_col)
+        for key in self._dict_extra.keys():
+            df_combines=[]
+            for col in self._dict_extra[key]:
+                df_five = OverallFiveCalculator(self._df, col, self._metric_col,
+                                                self._metric_type, self._styler).calculate()
+                df_three=df_five[forcus_cols]
+                df_three.insert(0,key,col)
+                df_combines.append(df_three)
+
+            df_combines = pd.concat(df_combines, sort=False)
+            df_t = df_combines.pivot_table(index=key,
+                                        columns='_12',
+                                        values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+            df_t.fillna(0, inplace=True)
+            df_t.reset_index(inplace=True)
+            return df_t
+
+
+class GrpThreeCalculator():
+    """三维分组答案占比"""
+
+    def __init__(self, df, grp_cols, metric_type, dict_extra={}, styler=None):
+        self._df = df
+        self._styler = styler
+        self._grp_cols = grp_cols
+        self._metric_type = metric_type
+        self._dict_extra = dict_extra
+        self
+
+    def calculate(self):
+        measure_name = parse_measure_name(self._metric_type)
+        forcus_cols=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
+        forcus_cols.extend(self._grp_cols)
+        for key in self._dict_extra.keys():
+            df_combines = []
+            for col in self._dict_extra[key]:
+                df_grp = GrpFiveCalculator(self._df, col, self._grp_cols,
+                                           self._metric_type, self._styler).calculate()
+                df_three = df_grp[forcus_cols]
+                df_three.insert(0,key,col)
+                df_combines.append(df_three)
+
+            df_combines = pd.concat(df_combines, sort=False)
+
+            df_t = df_combines.pivot_table(index=self._grp_cols,
+                                        columns=key,
+                                        values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+            df_t.fillna(0, inplace=True)
+            df_t.reset_index(inplace=True)
+            return df_t
+
 
 class OverallFiveCalculator(DataCalculator):
     """五维总体答案占比"""
@@ -163,11 +228,12 @@ class OverallFiveCalculator(DataCalculator):
         df_overal = formula_five_rate(self._df, self._tgt_col, self._metric_type)
         df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
         df_combines=df_combines.append(df_overal)
+        df_combines.fillna(0, inplace=True)
 
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
-            df_ret = self._styler.prettify(df_combines)
-        return df_ret
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines
 
 
 class GrpFiveCalculator(DataCalculator):

@@ -117,7 +117,8 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
             measure_rate = measure_rate + df_rate[measure]
     df_rate[measure_name] = measure_rate
 
-    data["measure_score"] = data.loc[:, subject].map(dict_measure_score)
+    data.loc[:, "measure_score"] = data[subject]
+    data.loc[:, "measure_score"] = data.loc[:, "measure_score"].map(dict_measure_score)
     df_mean = data.groupby(grp)["measure_score"].mean()
     # **必须要设置index，否则无法设置mean值
     df_rate = df_rate.set_index(grp)

@@ -100,10 +100,10 @@ class FiveRateDataAnalyzer(DataAnalyzer):
 
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
-            result[metric + "各学院毕业去向"] = GrpFiveCalculator(df_filter, self._question_col,
+            result[metric+"各学院" + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
                                                            [CONFIG.BASE_COLUMN[0]],
                                                            self._metric_type).calculate()
-            result[metric + "各专业毕业去向"] = GrpFiveCalculator(df_filter, self._question_col,
+            result[metric+"各专业" + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
                                                            [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                            self._metric_type).calculate()
         return result
@@ -175,16 +175,55 @@ class JobSatisfyAnalyzer(FiveRateDataAnalyzer):
     """就业满意度"""
 
     def __init__(self, df, dict_config=None):
-        super().__init__(df, 'B7-1', CONFIG.JOB_SATISFY_SUBJECT, dict_config)
-    # TODO 对工作各方面满意情况，三维拼接
+        super().__init__(df, 'B7-1', CONFIG.ANSWER_TYPE_SATISFY, dict_config)
+    def analyse(self):
+        result=super().analyse()
 
+        # 添加三维拼接
+        array_subj = ['B7' + '-' + str(sub) for sub in range(1, 5)]
+        sheet_name="对工作各方面满意情况"
+
+        de = DataExtractor(self._df, array_subj)
+        df = de.extract_ref_cols()
+
+        result["总体毕业生"+sheet_name]=OverallThreeCalculator(df,
+                                                          self._degree_col,
+                                                          CONFIG.ANSWER_TYPE_SATISFY,
+                                                          {sheet_name:array_subj}).calculate()
+        # 筛选出学历 如果为多学历需要计算总体
+        ls_metric = list(set(df[self._degree_col]))
+        if len(ls_metric) > 1:
+            result["总体毕业生各学院" + sheet_name] = GrpThreeCalculator(df, [CONFIG.BASE_COLUMN[0]],
+                                                                 self._metric_type,
+                                                                 {sheet_name: array_subj}).calculate()
+            result["总体毕业生各专业" + sheet_name] = GrpThreeCalculator(df,
+                                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                                                self._metric_type,
+                                                                {sheet_name: array_subj}).calculate()
+
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric +"各学院"+ sheet_name] = GrpThreeCalculator(df_filter, [CONFIG.BASE_COLUMN[0]],
+                                                                 self._metric_type,
+                                                                 {sheet_name: array_subj}).calculate()
+            result[metric +"各专业"+ sheet_name] = GrpThreeCalculator(df_filter,
+                                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                                                self._metric_type,
+                                                                {sheet_name: array_subj}).calculate()
+        return result
 
 class MajorRelativeAnalyzer(FiveRateDataAnalyzer):
     """专业相关度"""
 
     def __init__(self, df, dict_config=None):
         super().__init__(df, 'B9-1', CONFIG.ANSWER_TYPE_RELATIVE, dict_config)
-    # TODO B9-2
+    def analyse(self):
+        result=super().analyse()
+
+        # add B9-2
+        dict_append=OverallAnswerIndexDataAnalyzer(self._df, ['B9-2'], self._dict_config).analyse()
+        result.update(dict_append)
+        return result
 
 
 class IncomeAnalyzer(DataAnalyzer):
@@ -275,8 +314,7 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # analyze 1
-    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
-
+    analyzer_collection['就业满意度'] = JobSatisfyAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 
