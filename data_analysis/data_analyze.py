@@ -156,13 +156,30 @@ class NonEmployeeDataAnalyzer(OverallAnswerIndexDataAnalyzer):
 
 
 ############# 就业竞争力 start
-class WorkStabilityAnalyzer(ValueRateDataAnalyzer):
+class WorkStabilityAnalyzer(DataAnalyzer):
     """工作稳定性"""
 
     def __init__(self, df, dict_config=None):
-        super().__init__(df, 'B10-1', dict_config)
-    # TODO 追加离职率计算
+        super().__init__(df, dict_config)
+        self._question_col = 'B10-1'
 
+    def analyse(self):
+        de = DataExtractor(self._df, [self._question_col, self._degree_col])
+        df = de.extract_ref_cols()
+
+        if self._dict_config is None:
+            raise ("缺少配置文件，无法解析sheet name")
+        sheet_name = self._dict_config[self._question_col]
+        result = dict()
+        result["总体"+sheet_name] = OverallRateCalculator(df, self._question_col,
+                                                 self._degree_col, do_t=True,
+                                                 extra={"离职率": ["1次", "2次", "3次及以上"]}
+                                                 ).calculate()
+        result.update(common_grp_anaysis(df,self._question_col,GrpRateCalculator,sheet_name))
+
+        #更换工作原因
+        result.update(OverallAnswerIndexDataAnalyzer(self._df, ["B10-2"], self._dict_config).analyse())
+        return result
 
 class JobMeetAnalyzer(FiveRateDataAnalyzer):
     """职业期待吻合度"""
@@ -314,7 +331,7 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # analyze 1
-    analyzer_collection['就业满意度'] = JobSatisfyAnalyzer(df, dic_config)
+    analyzer_collection['工作稳定性'] = WorkStabilityAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 

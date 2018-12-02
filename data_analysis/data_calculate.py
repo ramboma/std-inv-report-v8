@@ -102,6 +102,7 @@ class OverallRateCalculator(DataCalculator):
 
         df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
         df_combines=df_combines.append(df_overal)
+        df_combines.fillna(0, inplace=True)
 
         if self._do_t and self._extra:
             for key in self._extra.keys():
@@ -109,7 +110,6 @@ class OverallRateCalculator(DataCalculator):
                 for col in self._extra[key]:
                     if col in df_combines.columns:
                         df_combines.loc[:,key]=df_combines.loc[:,key]+df_combines.loc[:,col]
-        df_combines.fillna(0, inplace=True)
 
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
