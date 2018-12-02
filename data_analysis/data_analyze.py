@@ -43,6 +43,39 @@ class OverallAnswerIndexDataAnalyzer(DataAnalyzer):
         return result
 
 
+def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
+    degree_col = "_12"
+    result = dict()
+
+    # 筛选出学历 如果为多学历需要计算总体
+    ls_metric = list(set(df[degree_col]))
+    if len(ls_metric) > 1:
+        if dic_grp:
+            for key in dic_grp:
+                result["总体毕业生"+key + sheet_name] = class_name(df, question_col,
+                                                             list(dic_grp[key])).calculate()
+        else:
+            result["总体毕业生各学院" + sheet_name] = class_name(df, question_col,
+                                                         [CONFIG.BASE_COLUMN[0]]).calculate()
+            result["总体毕业生各专业" + sheet_name] = class_name(df, question_col,
+                                                         [CONFIG.BASE_COLUMN[0],
+                                                          CONFIG.BASE_COLUMN[1]]).calculate()
+
+    for metric in ls_metric:
+        df_filter = df[df[degree_col] == metric]
+        if not df_filter.empty:
+            if dic_grp:
+                for key in dic_grp:
+                    result[metric + key + sheet_name] = class_name(df_filter, question_col,
+                                                                     list(dic_grp[key])).calculate()
+            else:
+                result[metric + "各学院" + sheet_name] = class_name(df_filter, question_col,
+                                                                 [CONFIG.BASE_COLUMN[0]]).calculate()
+                result[metric + "各专业" + sheet_name] = class_name(df_filter, question_col,
+                                                                 [CONFIG.BASE_COLUMN[0],
+                                                                  CONFIG.BASE_COLUMN[1]]).calculate()
+    return result
+
 class ValueRateDataAnalyzer(DataAnalyzer):
     def __init__(self, df, question_col, dict_config=None):
         super().__init__(df, dict_config)
@@ -67,6 +100,40 @@ class ValueRateDataAnalyzer(DataAnalyzer):
         result.update(df_grp)
         return result
 
+class SimpleValueRateDataAnalyzer(DataAnalyzer):
+    """单独计算答案占比，结果集不合并多学历"""
+    def __init__(self, df, question_col, dict_config=None, do_combine=False):
+        super().__init__(df, dict_config)
+        self._question_col = question_col
+        self._do_combine=do_combine
+
+    def analyse(self):
+        if self._dict_config is None:
+            raise ("缺少配置文件，无法解析sheet name")
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        de = DataExtractor(self._df, self._question_col)
+        df = de.extract_ref_cols()
+
+        result = dict()
+        ls_metric = list(set(df[self._degree_col]))
+        result["总体毕业生"+sheet_name]=AnswerRateCalculator(df, self._question_col).calculate()
+        if len(ls_metric) > 1:
+            if self._do_combine:
+                result["总体毕业生各学院" + sheet_name]=GrpTopNCalculator(df, self._question_col,
+                                                                  [CONFIG.BASE_COLUMN[0]]).calculate()
+                result["总体毕业生各专业" + sheet_name]=GrpTopNCalculator(df, self._question_col,
+                                                                  [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]]).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + sheet_name] = AnswerRateCalculator(df_filter,
+                                                               self._question_col).calculate()
+
+            result[metric+"各学院" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
+                                                                [CONFIG.BASE_COLUMN[0]]).calculate()
+            result[metric+"各专业" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
+                                                                [CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]]).calculate()
+        return result
 
 class FiveRateDataAnalyzer(DataAnalyzer):
     def __init__(self, df, question_col, metric_type, dict_config=None):
@@ -88,25 +155,39 @@ class FiveRateDataAnalyzer(DataAnalyzer):
                                                              self._degree_col,
                                                              self._metric_type,
                                                              styler=None).calculate()
-        # 筛选出学历 如果为多学历需要计算总体
-        ls_metric = list(set(df[self._degree_col]))
-        if len(ls_metric) > 1:
-            result["总体毕业生各学院" + sheet_name] = GrpFiveCalculator(df, self._question_col,
-                                                                [CONFIG.BASE_COLUMN[0]],
-                                                                self._metric_type).calculate()
-            result["总体毕业生各专业" + sheet_name] = GrpFiveCalculator(df, self._question_col,
-                                                                [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                                self._metric_type).calculate()
-
-        for metric in ls_metric:
-            df_filter = df[df[self._degree_col] == metric]
-            result[metric+"各学院" + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
-                                                           [CONFIG.BASE_COLUMN[0]],
-                                                           self._metric_type).calculate()
-            result[metric+"各专业" + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
-                                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                           self._metric_type).calculate()
+        dict_college=self.degree_five_analysis({"学院":[CONFIG.BASE_COLUMN[0]]}, sheet_name)
+        result.update(dict_college)
+        dict_major=self.degree_five_analysis({"专业":[CONFIG.BASE_COLUMN[0],CONFIG.BASE_COLUMN[1]]}, sheet_name)
+        result.update(dict_major)
         return result
+
+    def degree_five_analysis(self, dict_grp, sheet_name):
+        if dict_grp:
+            result={}
+            for key in dict_grp:
+                # find out necessary data columns
+                rel_cols=list(dict_grp[key])
+                rel_cols.append(self._question_col)
+                de = DataExtractor(self._df, rel_cols)
+                df = de.extract_ref_cols()
+
+                # 筛选出学历 如果为多学历需要计算总体
+                ls_metric = list(set(df[self._degree_col]))
+                if len(ls_metric) > 1:
+                    result["总体毕业生各" + key + sheet_name] = GrpFiveCalculator(df, self._question_col,
+                                                                           dict_grp[key],
+                                                                           self._metric_type).calculate()
+                for metric in ls_metric:
+                    df_filter = df[df[self._degree_col] == metric]
+                    if not df_filter.empty:
+                        result[metric + key + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
+                                                                               dict_grp[key],
+                                                                               self._metric_type).calculate()
+            return result
+        else:
+            pass
+
+
 
 
 ########### 就业率及就业状态 start
@@ -128,7 +209,7 @@ class EmpRateAndEmpStatus(DataAnalyzer):
         style = DegreeIndexStyler()
         result["总体毕业去向"] = OverallRateCalculator(df, self._question_col,
                                                  self._degree_col, do_t=True,
-                                                 extra={"灵活就业":["自主创业","自由职业"]}
+                                                 extra={"灵活就业": ["自主创业", "自由职业"]}
                                                  ).calculate()
 
         dict_grp_emp_rate = common_grp_anaysis(df, self._question_col, GrpEmpRate, "就业率")
@@ -171,15 +252,16 @@ class WorkStabilityAnalyzer(DataAnalyzer):
             raise ("缺少配置文件，无法解析sheet name")
         sheet_name = self._dict_config[self._question_col]
         result = dict()
-        result["总体"+sheet_name] = OverallRateCalculator(df, self._question_col,
-                                                 self._degree_col, do_t=True,
-                                                 extra={"离职率": ["1次", "2次", "3次及以上"]}
-                                                 ).calculate()
-        result.update(common_grp_anaysis(df,self._question_col,GrpRateCalculator,sheet_name))
+        result["总体" + sheet_name] = OverallRateCalculator(df, self._question_col,
+                                                          self._degree_col, do_t=True,
+                                                          extra={"离职率": ["1次", "2次", "3次及以上"]}
+                                                          ).calculate()
+        result.update(common_grp_anaysis(df, self._question_col, GrpRateCalculator, sheet_name))
 
-        #更换工作原因
+        # 更换工作原因
         result.update(OverallAnswerIndexDataAnalyzer(self._df, ["B10-2"], self._dict_config).analyse())
         return result
+
 
 class JobMeetAnalyzer(FiveRateDataAnalyzer):
     """职业期待吻合度"""
@@ -193,20 +275,21 @@ class JobSatisfyAnalyzer(FiveRateDataAnalyzer):
 
     def __init__(self, df, dict_config=None):
         super().__init__(df, 'B7-1', CONFIG.ANSWER_TYPE_SATISFY, dict_config)
+
     def analyse(self):
-        result=super().analyse()
+        result = super().analyse()
 
         # 添加三维拼接
         array_subj = ['B7' + '-' + str(sub) for sub in range(1, 5)]
-        sheet_name="对工作各方面满意情况"
+        sheet_name = "对工作各方面满意情况"
 
         de = DataExtractor(self._df, array_subj)
         df = de.extract_ref_cols()
 
-        result["总体毕业生"+sheet_name]=OverallThreeCalculator(df,
-                                                          self._degree_col,
-                                                          CONFIG.ANSWER_TYPE_SATISFY,
-                                                          {sheet_name:array_subj}).calculate()
+        result["总体毕业生" + sheet_name] = OverallThreeCalculator(df,
+                                                              self._degree_col,
+                                                              CONFIG.ANSWER_TYPE_SATISFY,
+                                                              {sheet_name: array_subj}).calculate()
         # 筛选出学历 如果为多学历需要计算总体
         ls_metric = list(set(df[self._degree_col]))
         if len(ls_metric) > 1:
@@ -215,30 +298,32 @@ class JobSatisfyAnalyzer(FiveRateDataAnalyzer):
                                                                  {sheet_name: array_subj}).calculate()
             result["总体毕业生各专业" + sheet_name] = GrpThreeCalculator(df,
                                                                  [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                                self._metric_type,
-                                                                {sheet_name: array_subj}).calculate()
+                                                                 self._metric_type,
+                                                                 {sheet_name: array_subj}).calculate()
 
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
-            result[metric +"各学院"+ sheet_name] = GrpThreeCalculator(df_filter, [CONFIG.BASE_COLUMN[0]],
-                                                                 self._metric_type,
-                                                                 {sheet_name: array_subj}).calculate()
-            result[metric +"各专业"+ sheet_name] = GrpThreeCalculator(df_filter,
-                                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                                self._metric_type,
-                                                                {sheet_name: array_subj}).calculate()
+            result[metric + "各学院" + sheet_name] = GrpThreeCalculator(df_filter, [CONFIG.BASE_COLUMN[0]],
+                                                                     self._metric_type,
+                                                                     {sheet_name: array_subj}).calculate()
+            result[metric + "各专业" + sheet_name] = GrpThreeCalculator(df_filter,
+                                                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                                                     self._metric_type,
+                                                                     {sheet_name: array_subj}).calculate()
         return result
+
 
 class MajorRelativeAnalyzer(FiveRateDataAnalyzer):
     """专业相关度"""
 
     def __init__(self, df, dict_config=None):
         super().__init__(df, 'B9-1', CONFIG.ANSWER_TYPE_RELATIVE, dict_config)
+
     def analyse(self):
-        result=super().analyse()
+        result = super().analyse()
 
         # add B9-2
-        dict_append=OverallAnswerIndexDataAnalyzer(self._df, ['B9-2'], self._dict_config).analyse()
+        dict_append = OverallAnswerIndexDataAnalyzer(self._df, ['B9-2'], self._dict_config).analyse()
         result.update(dict_append)
         return result
 
@@ -266,12 +351,56 @@ class IncomeAnalyzer(DataAnalyzer):
             raise ("缺少配置文件，无法解析sheet name")
         sheet_name = self._dict_config[self._question_col]
 
-        df_grp = common_grp_anaysis(df, self._question_col, GrpMeanCalculator, sheet_name)
+        df_grp = common_grp_anaysis(df, self._question_col, GrpMeanCalculator, "就业职业月均收入")
         result.update(df_grp)
         return result
 
 
 ########### 就业竞争力 end
+
+
+########### 就业分布 start
+
+class EmpJobAnalyzer(SimpleValueRateDataAnalyzer):
+    """就业职业分布"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, 'B4-B', dict_config, do_combine=True)
+
+    def analyse(self):
+        # 职业答题比例
+        result = super().analyse()
+
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        de = DataExtractor(self._df, [self._question_col,'B6','B9-1','B7-1'])
+        df = de.extract_ref_cols()
+        # 职业均值
+        dic_grp={"就业职业":['B4-B']}
+        df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
+                                    "月均收入",dic_grp)
+        result.update(df_grp)
+        # 专业相关度差异分析
+        df_grp = FiveRateDataAnalyzer(df,
+                                      'B9-1',
+                                      CONFIG.ANSWER_TYPE_RELATIVE,
+                                      None).degree_five_analysis(dic_grp, "专业相关度差异分析")
+        result.update(df_grp)
+
+        # 就业满意度差异分析
+        df_grp = FiveRateDataAnalyzer(df,
+                                      'B7-1',
+                                      CONFIG.ANSWER_TYPE_SATISFY,
+                                      None).degree_five_analysis(dic_grp, "就业满意度差异分析")
+        result.update(df_grp)
+
+        return result
+
+
+
+
+
+########### 就业分布 end
 
 
 class EvelutionH4_EAnalyzer(FiveRateDataAnalyzer):
@@ -331,35 +460,11 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # analyze 1
-    analyzer_collection['工作稳定性'] = WorkStabilityAnalyzer(df, dic_config)
+    analyzer_collection['就业职业分布'] = EmpJobAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 
     pass
-
-
-def common_grp_anaysis(df, question_col, class_name, sheet_name):
-    degree_col = "_12"
-    result = dict()
-
-    # 筛选出学历 如果为多学历需要计算总体
-    ls_metric = list(set(df[degree_col]))
-    if len(ls_metric) > 1:
-        result["总体毕业生各学院" + sheet_name] = class_name(df, question_col,
-                                                     [CONFIG.BASE_COLUMN[0]]).calculate()
-        result["总体毕业生各专业" + sheet_name] = class_name(df, question_col,
-                                                     [CONFIG.BASE_COLUMN[0],
-                                                      CONFIG.BASE_COLUMN[1]]).calculate()
-
-    for metric in ls_metric:
-        df_filter = df[df[degree_col] == metric]
-        if not df_filter.empty:
-            result[metric + "各学院" + sheet_name] = class_name(df_filter, question_col,
-                                                             [CONFIG.BASE_COLUMN[0]]).calculate()
-            result[metric + "各专业" + sheet_name] = class_name(df_filter, question_col,
-                                                             [CONFIG.BASE_COLUMN[0],
-                                                              CONFIG.BASE_COLUMN[1]]).calculate()
-    return result
 
 
 if __name__ == '__main__':

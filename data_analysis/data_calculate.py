@@ -344,3 +344,23 @@ class AnswerPeriodCalculator(DataCalculator):
         if isinstance(self._styler, AnalysisResultStyler):
             df_ret = self._styler.prettify(df_combines)
         return df_ret
+
+class AnswerRateCalculator(DataCalculator):
+    def __init__(self, df, target_col, styler=None):
+        super().__init__(df, target_col, styler)
+    def calculate(self):
+        df_overal = formula_rate(self._df, self._tgt_col)
+        return df_overal
+
+class GrpTopNCalculator(DataCalculator):
+    def __init__(self, df, target_col, grp_cols, top=5, styler=None):
+        super().__init__(df, target_col, styler)
+        self._grp_cols=grp_cols
+        self._top=top
+
+    def calculate(self):
+        df_grp_rate=formula_rate_grp_top(self._df, self._tgt_col, self._grp_cols, self._top)
+        combine_name=CONFIG.DICT_SUBJECT[self._tgt_col]
+        df_combine=formate_grp_row_combine(df_grp_rate,array_grps=self._grp_cols,
+                                           combin_name=combine_name)
+        return df_combine

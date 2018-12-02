@@ -35,6 +35,35 @@ def formula_rate(data, subject):
     return df_rate
 
 
+def formula_rate_grp_top(data, subject, grp, top=5):
+    """
+    分组取top n
+    """
+    # 分组算总数
+    df_count = data.groupby(grp)[subject].count()
+    df_count = df_count.to_frame(name=CONFIG.RATE_COLUMN[2])
+    df_count.reset_index(inplace=True)
+    # 分组算各答案分布
+    sub_grp = grp.copy()
+    sub_grp.append(subject)
+    df_rate = data.groupby(sub_grp)[subject].count()
+    df_rate = df_rate.to_frame(name=CONFIG.RATE_COLUMN[1])
+    df_rate.reset_index(inplace=True)
+    df_merge = pd.merge(df_rate, df_count, how='left', on=grp)
+    print(df_merge)
+
+    # 计算比例
+    df_merge[CONFIG.RATE_COLUMN[-1]] = df_merge[CONFIG.RATE_COLUMN[1]] / df_merge[CONFIG.RATE_COLUMN[2]]
+    df_merge.rename(columns={subject: CONFIG.RATE_COLUMN[0]}, inplace=True)
+    df_merge.fillna(0, inplace=True)
+
+    if top:
+        df_merge.sort_values(CONFIG.RATE_COLUMN[-1], ascending=0, inplace=True)
+        df_merge = df_merge.groupby(grp, as_index=False).head(top)
+
+    return df_merge
+
+
 def formula_rate_grp(data, subject, grp):
     """
 
@@ -263,65 +292,9 @@ def formate_rate_t(df_data):
     return df_t
 
 
-def major_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
-    if df_data.empty:
-        return df_data
-
-    # 非合并列 学院、专业、答题总人数
-    ls_focus = array_focus.copy()
-    ls_focus.append(CONFIG.GROUP_COLUMN[0])
-    ls_focus.append(CONFIG.GROUP_COLUMN[1])
-    df_summary = df_data.loc[:, ls_focus]
-    df_duplicate = df_summary.drop_duplicates()
-
-    # 多列合并单列
-    df_combine = df_data.loc[:,
-                 [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
-    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + (df_combine[
-                                                                                           CONFIG.RATE_COLUMN[
-                                                                                               -1]] * 100).map(
-        lambda x: '%.2f%%' % x) + ')'
-    df_combined = df_combine.loc[:, [CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], 'answer_rate']]
-    df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
-    df_row_combine = df_combined.groupby([CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]],
-                                         as_index=False).aggregate(
-        lambda x: ';'.join(list(x)))
-    # 转置合并 ';'.join(list(df_combined.loc[:, combin_name]))
-    df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=[CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1]])
-    df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
-
-    return df_result
-
-
-def college_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
-    if df_data.empty:
-        return df_data
-
-    # 非合并列 学院、答题总人数
-    ls_focus = array_focus.copy()
-    ls_focus.append(CONFIG.GROUP_COLUMN[0])
-    df_summary = df_data.loc[:, ls_focus]
-    df_duplicate = df_summary.drop_duplicates()
-
-    # 多列合并单列
-    df_combine = df_data.loc[:,
-                 [CONFIG.GROUP_COLUMN[0], CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]]
-    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + (df_combine[
-                                                                                           CONFIG.RATE_COLUMN[
-                                                                                               -1]] * 100).map(
-        lambda x: '%.2f%%' % x) + ')'
-    df_combined = df_combine.loc[:, [CONFIG.GROUP_COLUMN[0], 'answer_rate']]
-    df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
-    df_row_combine = df_combined.groupby(CONFIG.GROUP_COLUMN[0],
-                                         as_index=False).aggregate(
-        lambda x: ';'.join(list(x)))
-    # 转置合并
-    df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=CONFIG.GROUP_COLUMN[0])
-    df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
-    return df_result
-
-
-def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG.COMBINE_RATE):
+def formate_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]],
+                        combin_name=CONFIG.COMBINE_RATE):
+    """合并的前提，已经计算出结果"""
     if df_data.empty:
         return df_data
 
@@ -341,6 +314,38 @@ def row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]], combin_name=CONFIG
     row_combine = ';'.join(list(df_combined.loc[:, combin_name]))
     df_duplicate.insert(0, combin_name, row_combine)
     return df_duplicate
+
+
+def formate_grp_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]],
+                            combin_name=CONFIG.COMBINE_RATE, array_grps=[]):
+    """分组合并"""
+    if df_data.empty:
+        return df_data
+
+    # 非合并列 学院、专业、答题总人数
+    ls_focus = array_focus.copy()
+    ls_focus.extend(array_grps)
+    df_summary = df_data.loc[:, ls_focus]
+    df_duplicate = df_summary.drop_duplicates()
+
+    # 多列合并单列
+    combine_cols = [CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1]]
+    combine_cols.extend(array_grps)
+    df_combine = df_data.loc[:, combine_cols]
+    df_combine['answer_rate'] = df_combine[CONFIG.RATE_COLUMN[0]].astype(str) + '(' + (df_combine[
+                                                                                           CONFIG.RATE_COLUMN[
+                                                                                               -1]] * 100).map(
+        lambda x: '%.2f%%' % x) + ')'
+    combine_after_cols = ['answer_rate']
+    combine_after_cols.extend(array_grps)
+    df_combined = df_combine.loc[:, combine_after_cols]
+    df_combined.rename(columns={'answer_rate': combin_name}, inplace=True)
+    df_row_combine = df_combined.groupby(array_grps, as_index=False).aggregate(lambda x: ';'.join(list(x)))
+    # 转置合并 ';'.join(list(df_combined.loc[:, combin_name]))
+    df_result = pd.merge(df_row_combine, df_duplicate, how='left', on=array_grps)
+    df_result.sort_values(CONFIG.MEAN_COLUMN[2], ascending=0, inplace=True)
+
+    return df_result
 
 
 def percent(df_data):

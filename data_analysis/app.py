@@ -19,8 +19,11 @@ def main(file):
     #df_rate=formula_answer_period(data,'B6',2000,4,500)
     data=data[data["_12"]=="博士毕业生"]
     #df_rate=fml.formula_five_rate_grp(data,'G2',['_10'],CONFIG.ANSWER_TYPE_RELATIVE)
-    #fml.formate_rate_t(df_rate)
-    df_rate =fml.formula_employe_rate_grp(data,['_10'])
+    df_rate =fml.formula_rate_grp_top(data,'B4-B',['_10', '_14'])
+    #print(df_rate)
+    df_combin=fml.formate_grp_row_combine(df_rate,array_grps=['_10','_14'])
+    print(df_combin)
+    #df_rate =fml.formula_employe_rate_grp(data,['_10'])
     #fml.formula_five_rate_grp(data,['_10','_14'])
     print(df_rate)
 
