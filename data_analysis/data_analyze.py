@@ -58,11 +58,10 @@ class ValueRateDataAnalyzer(DataAnalyzer):
 
         result = dict()
         # calculator 1
-        style = DegreeIndexStyler()
         result["总体毕业生" + sheet_name] = OverallRateCalculator(df,
                                                              self._question_col,
                                                              self._degree_col,
-                                                             styler=style).calculate()
+                                                             do_t=True).calculate()
         # 筛选出学历 如果为多学历需要计算总体
         df_grp = common_grp_anaysis(df, self._question_col, GrpRateCalculator, sheet_name)
         result.update(df_grp)
@@ -276,7 +275,7 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # analyze 1
-    analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
+    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
 
 
     runner.run_batch(analyzer_collection)
