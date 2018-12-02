@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import openpyxl as xl
 from openpyxl.styles import numbers as numStyle
+import data_analysis.config as CONFIG
 
 
 class AnalysisResultWriter(object):
@@ -37,24 +38,38 @@ class AnalysisResultWriter(object):
             for sheet_name in df_dict:
                 self.write_new_sheet(book_name, sheet_name, df_dict[sheet_name])
 
-    def formate_percent(self, file_path, sheet_name, percent_cols, head=1):
-        wbook = xl.load_workbook(file_path)
-        sheet = wbook[sheet_name]
-        max_row = sheet.max_row
-        max_col = sheet.max_column
+            self.formate_percent(book_name)
 
-        for i in range(1, max_col + 1):
-            colTag = xl.utils.get_column_letter(i)
-            sheet.column_dimensions[colTag].width = 10
+    def formate_percent(self, book_name):
+        try:
+            file = os.path.join(self.folder, book_name)
+            elimite_cols = [CONFIG.MEAN_COLUMN[2], CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[1],
+                            CONFIG.MEAN_COLUMN[0], CONFIG.ABILITY_COLUMN, CONFIG.GROUP_COLUMN[2],
+                            CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1],
+                            CONFIG.GROUP_COLUMN[0], CONFIG.GROUP_COLUMN[1], CONFIG.TOTAL_COLUMN]
+            wbook = xl.load_workbook(file)
+            sheet_names = wbook.sheetnames
+            for sheet_name in sheet_names:
+                sheet = wbook[sheet_name]
+                max_row = sheet.max_row
+                max_col = sheet.max_column
 
-            if sheet.cell(row=head, column=i).value in percent_cols:
-                sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_PERCENTAGE_00
-                for j in range(head + 1, max_row + 1):
-                    sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_PERCENTAGE_00
-            elif str(sheet.cell(row=head, column=i).value).find("均值")>0:
-                sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_NUMBER_00
-                for j in range(head + 1, max_row + 1):
-                    sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_NUMBER_00
+                for i in range(1, max_col + 1):
+                    colTag = xl.utils.get_column_letter(i)
+                    sheet.column_dimensions[colTag].width = 10
 
-        wbook.save(file_path)
-        wbook.close()
+                    if (sheet.cell(row=1, column=i).value not in elimite_cols) \
+                            or (str(sheet.cell(row=1, column=i).value).find("比例") > 0):
+                        sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_PERCENTAGE_00
+                        for j in range(1 + 1, max_row + 1):
+                            sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_PERCENTAGE_00
+                    elif str(sheet.cell(row=1, column=i).value).find("均值") > 0:
+                        sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_NUMBER_00
+                        for j in range(1 + 1, max_row + 1):
+                            sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_NUMBER_00
+
+                wbook.save(file)
+        except:
+            pass
+        finally:
+            wbook.close()

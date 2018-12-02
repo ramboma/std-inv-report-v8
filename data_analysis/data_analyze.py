@@ -585,8 +585,13 @@ def test():
     analyzer_collection = dict()
     # analyze 1
 
-    analyzer_collection['就业地区分布'] = EmpRegionAnalyzer(df, dic_config)
-    # analyzer_collection['就业单位分布'] = EmpIndurstryTypeSizeAnalyzer(df, dic_config)
+    #analyzer_collection['社团活动'] = EvelutionH4_RAnalyzer(df, dic_config)
+    #analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
+    #analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
+    #analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
+    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
+
+
 
     runner.run_batch(analyzer_collection)
 

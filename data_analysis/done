@@ -96,6 +96,8 @@ df_metrics = pd.pivot_table(df_data,
 
     analyzer_collection['就业职业分布'] = EmpJobAnalyzer(df, dic_config)
     analyzer_collection['就业行业分布'] = EmpIndurstryAnalyzer(df, dic_config)
+    analyzer_collection['就业地区分布'] = EmpRegionAnalyzer(df, dic_config)
+    analyzer_collection['就业单位分布'] = EmpIndurstryTypeSizeAnalyzer(df, dic_config)
     # ... analyze N
     analyzer_collection['任课教师'] = EvelutionH4_PAnalyzer(df, dic_config)
     analyzer_collection['社团活动'] = EvelutionH4_RAnalyzer(df, dic_config)
