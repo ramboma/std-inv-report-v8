@@ -32,6 +32,8 @@ def formula_rate(data, subject):
                             CONFIG.RATE_COLUMN[-1]: df_rate.values / count
                             })
     df_rate[CONFIG.RATE_COLUMN[2]] = count
+    # 答题总人数为0时，出现NaN值
+    df_rate.fillna(0, inplace=True)
     return df_rate
 
 
@@ -116,7 +118,10 @@ def formula_five_rate(data, subject, measure_type):
     # step4: 均值
     mean = data[subject].map(dict_measure_score).mean()
     df_t[CONFIG.MEAN_COLUMN[-1]] = mean
-    df_t[CONFIG.MEAN_COLUMN[2]] = df_rate.loc[0, CONFIG.RATE_COLUMN[2]]
+    if df_rate.empty:
+        df_t[CONFIG.MEAN_COLUMN[2]]=0
+    else:
+        df_t[CONFIG.MEAN_COLUMN[2]] = df_rate.loc[0, CONFIG.RATE_COLUMN[2]]
 
     return df_t
 

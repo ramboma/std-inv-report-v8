@@ -21,12 +21,17 @@ class AnalysisResultWriter(object):
         try:
             file = os.path.join(self.folder, book_name)
             writer = pd.ExcelWriter(file)
+            if isinstance(df.columns, pd.MultiIndex):
+                index=True
+                #df=df.swaplevel(0, 1, axis=1)
+            else:
+                index=False
             if not os.path.exists(file):
-                df.to_excel(writer, sheet_name, index=isinstance(df.columns, pd.MultiIndex))
+                df.to_excel(writer, sheet_name, index=index)
             else:
                 book = xl.load_workbook(writer.path)
                 writer.book = book
-                df.to_excel(excel_writer=writer, sheet_name=sheet_name, index=isinstance(df.columns, pd.MultiIndex))
+                df.to_excel(excel_writer=writer, sheet_name=sheet_name, index=index)
             writer.save()
         except Exception as e:
             raise ("文件写入时，发生异常，异常：{}".format(e.__str__()))

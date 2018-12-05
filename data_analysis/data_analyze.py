@@ -541,7 +541,7 @@ class EmpDifficultAnalyzer(DataAnalyzer):
         # find out necessary data columns
         de = DataExtractor(self._df, [self._question_col, 'D1'])
         df = de.extract_ref_cols()
-        result[sheet_name]=OverallAnswerIndexDataAnalyzer(self._df, [self._question_col], self._dict_config).analyse()
+        result.update(OverallAnswerIndexDataAnalyzer(self._df, [self._question_col], self._dict_config).analyse())
         # 筛选出学历 如果为多学历需要计算总体
         ls_metric = list(set(self._df[self._degree_col]))
         if len(ls_metric) > 1:
@@ -556,7 +556,7 @@ class EmpDifficultAnalyzer(DataAnalyzer):
                                                                      [CONFIG.BASE_COLUMN[0],
                                                                       CONFIG.BASE_COLUMN[1]]).calculate()
         sheet_name1=self._dict_config['D1']
-        result[sheet_name1]=OverallAnswerIndexDataAnalyzer(self._df, ['D1'], self._dict_config).analyse()
+        result.update(OverallAnswerIndexDataAnalyzer(self._df, ['D1'], self._dict_config).analyse())
         return result
 #######求职过程 end
 
@@ -569,13 +569,13 @@ class SelfEmpAnalyzer(DataAnalyzer):
 
     def analyse(self):
         result = {}
-        df_a2=AnswerRateCalculator(self._df,'A2').calculate()
+        df_a2=OverallRateCalculator(self._df,'A2',self._degree_col).calculate()
         result['自主创业比例']=df_a2[df_a2[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
 
         style=AnswerIndexStyler()
-        result['创业原因']=MultiRateCalculator(self._df,'G3',style).degree_cal()
-        result['创业资金来源']=MultiRateCalculator(self._df,'G4',style).degree_cal()
-        result['创业困难']=MultiRateCalculator(self._df,'G5',style).degree_cal()
+        result['创业原因']=MultiRateCalculator(self._df,'G3',self._degree_col,style,self._dict_config).degree_cal()
+        result['创业资金来源']=MultiRateCalculator(self._df,'G4',self._degree_col,style,self._dict_config).degree_cal()
+        result['创业困难']=MultiRateCalculator(self._df,'G5',self._degree_col,style,self._dict_config).degree_cal()
         result['创业行业与所学专业相关度']=OverallFiveCalculator(self._df,'G2',
                                                      self._degree_col,
                                                      CONFIG.ANSWER_TYPE_RELATIVE).calculate()

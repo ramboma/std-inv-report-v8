@@ -464,12 +464,12 @@ class GrpTopNCalculator(DataCalculator):
         return df_combine
 
 class MultiRateCalculator(DataCalculator):
-    def __init__(self, df, target_col, styler=None):
+    def __init__(self, df, target_col,metric_col, styler=None, dict_config=None):
         super().__init__(df, target_col, styler)
+        self._metric_col=metric_col
+        self._dict_config=dict_config
 
     def calculate(self):
-        df_overal = formula_rate(self._df, self._tgt_col)
-        return df_overal
 
         # step1 答题总人数
         answer_count = multi_answer_count(self._df, self._tgt_col)
@@ -486,8 +486,11 @@ class MultiRateCalculator(DataCalculator):
         df_result[CONFIG.RATE_COLUMN[2]] = answer_count
         df_result[CONFIG.RATE_COLUMN[-1]] = (df_result[CONFIG.RATE_COLUMN[1]] / df_result[CONFIG.RATE_COLUMN[2]]).round(
             decimals=CONFIG.DECIMALS6)
+        df_result.fillna(0,inplace=True)
         df_result.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
-        df_result.loc[:, CONFIG.RATE_COLUMN[0]] = df_result.loc[:, CONFIG.RATE_COLUMN[0]].map(dict_config)
+        df_result.loc[:, CONFIG.RATE_COLUMN[0]] = df_result.loc[:, CONFIG.RATE_COLUMN[0]].map(self._dict_config)
+
+        print(df_result)
         return df_result
 
     def degree_cal(self):
@@ -497,12 +500,19 @@ class MultiRateCalculator(DataCalculator):
         # step2：循环值进行计算
         for where in ls_metric:
             df_where = self._df[self._df[self._metric_col] == where]
-            df_rate = MultiRateCalculator(df_where,self._tgt_col).calculate()
+            df_rate = MultiRateCalculator(df_where,self._tgt_col, self._metric_col,
+                                          dict_config=self._dict_config).calculate()
             df_rate.insert(0, self._metric_col, where)
             df_combines.append(df_rate)
         # Concatenate everything into a single DataFrame
         df_combines = pd.concat(df_combines, sort=False)
         df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+        # combine overal
+        df_overal = MultiRateCalculator(self._df,self._tgt_col, self._metric_col,
+                                        dict_config=self._dict_config).calculate()
+        df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
+        df_combines = df_combines.append(df_overal)
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
             df_combines = self._styler.prettify(df_combines)
