@@ -347,6 +347,27 @@ def formate_grp_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]],
 
     return df_result
 
+def multi_answer_count(data, subject):
+    """多选题 答题人数统计"""
+    multi_column = multi_columns(data, subject)
+    df_answer = data.loc[:,multi_column]
+    df_answer.dropna(how='all', inplace=True)
+    df_answer.fillna(0, inplace=True)
+    answer_count = df_answer.loc[:,multi_column[0]].count()
+    return answer_count
+
+def multi_columns(data, subject, max_times=0):
+    """多选题的选项列"""
+    multi_column = []
+    for col in data.columns:
+        if subject in str(col):
+            multi_column.append(col)
+
+    if max_times:
+        multi_column = multi_column[0:max_times]
+
+    return multi_column
+
 
 def percent(df_data):
     if df_data.empty:

@@ -462,3 +462,48 @@ class GrpTopNCalculator(DataCalculator):
         df_combine=formate_grp_row_combine(df_grp_rate,array_grps=self._grp_cols,
                                            combin_name=combine_name)
         return df_combine
+
+class MultiRateCalculator(DataCalculator):
+    def __init__(self, df, target_col, styler=None):
+        super().__init__(df, target_col, styler)
+
+    def calculate(self):
+        df_overal = formula_rate(self._df, self._tgt_col)
+        return df_overal
+
+        # step1 答题总人数
+        answer_count = multi_answer_count(self._df, self._tgt_col)
+        # step2 结果集
+        multi_column = multi_columns(self._df, self._tgt_col)
+        df_relative = self._df[multi_column]
+        key = []
+        result = []
+        for col in df_relative.columns:
+            key.append(col)
+            result.append(df_relative[col].count())
+        df_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: key,
+                                  CONFIG.RATE_COLUMN[1]: result})
+        df_result[CONFIG.RATE_COLUMN[2]] = answer_count
+        df_result[CONFIG.RATE_COLUMN[-1]] = (df_result[CONFIG.RATE_COLUMN[1]] / df_result[CONFIG.RATE_COLUMN[2]]).round(
+            decimals=CONFIG.DECIMALS6)
+        df_result.sort_values([CONFIG.RATE_COLUMN[-1]], ascending=[0], inplace=True)
+        df_result.loc[:, CONFIG.RATE_COLUMN[0]] = df_result.loc[:, CONFIG.RATE_COLUMN[0]].map(dict_config)
+        return df_result
+
+    def degree_cal(self):
+        # step1：筛选出指标中的值
+        ls_metric = list(set(self._df[self._metric_col]))
+        df_combines = []
+        # step2：循环值进行计算
+        for where in ls_metric:
+            df_where = self._df[self._df[self._metric_col] == where]
+            df_rate = MultiRateCalculator(df_where,self._tgt_col).calculate()
+            df_rate.insert(0, self._metric_col, where)
+            df_combines.append(df_rate)
+        # Concatenate everything into a single DataFrame
+        df_combines = pd.concat(df_combines, sort=False)
+        df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+        # if styler object be set, apply style
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines

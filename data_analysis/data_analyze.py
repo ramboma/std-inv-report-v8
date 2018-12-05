@@ -78,6 +78,7 @@ def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
 
 
 class ValueRateDataAnalyzer(DataAnalyzer):
+    """答案占比，行专利 包含 总体、各学历的学院、专业 答案占比"""
     def __init__(self, df, question_col, dict_config=None):
         super().__init__(df, dict_config)
         self._question_col = question_col
@@ -103,7 +104,7 @@ class ValueRateDataAnalyzer(DataAnalyzer):
 
 
 class SimpleValueRateDataAnalyzer(DataAnalyzer):
-    """单独计算答案占比，结果集不合并多学历"""
+    """单独计算答案占比，结果集不合并多学历(参考就业分布模板)"""
 
     def __init__(self, df, question_col, dict_config=None, do_combine=False):
         super().__init__(df, dict_config)
@@ -526,6 +527,72 @@ def get_province(data):
 
 ########### 就业分布 end
 
+#######求职过程 start
+class EmpDifficultAnalyzer(DataAnalyzer):
+    """求职过程"""
+    def __init__(self, df, dict_config=None):
+        df_filter = df[df['A2'].isin([CONFIG.A2_ANSWER[0], CONFIG.A2_ANSWER[2]])]
+        super().__init__(df_filter, dict_config)
+        self._question_col ='D2'
+
+    def analyse(self):
+        result = {}
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        de = DataExtractor(self._df, [self._question_col, 'D1'])
+        df = de.extract_ref_cols()
+        result[sheet_name]=OverallAnswerIndexDataAnalyzer(self._df, [self._question_col], self._dict_config).analyse()
+        # 筛选出学历 如果为多学历需要计算总体
+        ls_metric = list(set(self._df[self._degree_col]))
+        if len(ls_metric) > 1:
+            result["总体毕业生各专业" + sheet_name] = GrpTopNCalculator(self._df, self._question_col,
+                                                              [CONFIG.BASE_COLUMN[0],
+                                                              CONFIG.BASE_COLUMN[1]]).calculate()
+
+        for metric in ls_metric:
+            df_filter = self._df[self._df[self._degree_col] == metric]
+            if not df_filter.empty:
+                result[metric + "各专业" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
+                                                                     [CONFIG.BASE_COLUMN[0],
+                                                                      CONFIG.BASE_COLUMN[1]]).calculate()
+        sheet_name1=self._dict_config['D1']
+        result[sheet_name1]=OverallAnswerIndexDataAnalyzer(self._df, ['D1'], self._dict_config).analyse()
+        return result
+#######求职过程 end
+
+
+#######自主创业报告 start
+class SelfEmpAnalyzer(DataAnalyzer):
+    """自主创业报告"""
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, dict_config)
+
+    def analyse(self):
+        result = {}
+        df_a2=AnswerRateCalculator(self._df,'A2').calculate()
+        result['自主创业比例']=df_a2[df_a2[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
+
+        style=AnswerIndexStyler()
+        result['创业原因']=MultiRateCalculator(self._df,'G3',style).degree_cal()
+        result['创业资金来源']=MultiRateCalculator(self._df,'G4',style).degree_cal()
+        result['创业困难']=MultiRateCalculator(self._df,'G5',style).degree_cal()
+        result['创业行业与所学专业相关度']=OverallFiveCalculator(self._df,'G2',
+                                                     self._degree_col,
+                                                     CONFIG.ANSWER_TYPE_RELATIVE).calculate()
+        sheet_name='创业行业'
+        ls_metric = list(set(self._df[self._degree_col]))
+        if len(ls_metric) > 1:
+            result["总体毕业生" + sheet_name] = AnswerRateCalculator(self._df, 'G1-B').calculate()
+
+        for metric in ls_metric:
+            df_filter = self._df[self._df[self._degree_col] == metric]
+            if not df_filter.empty:
+                result[metric + sheet_name] = AnswerRateCalculator(df_filter, 'G1-B').calculate()
+        return result
+
+#######自主创业报告 end
+
+
 
 class EvelutionH4_EAnalyzer(FiveRateDataAnalyzer):
     '''母校任课教师总体报告'''
@@ -589,9 +656,9 @@ def test():
     #analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
     #analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
     #analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
-    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
-
-
+    #analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
+    analyzer_collection['自主创业']=SelfEmpAnalyzer(df,dic_config)
+    analyzer_collection['求职过程']=EmpDifficultAnalyzer(df,dic_config)
 
     runner.run_batch(analyzer_collection)
 
