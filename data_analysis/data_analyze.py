@@ -524,7 +524,6 @@ def get_province(data):
     else:
         return province
 
-
 ########### 就业分布 end
 
 #######求职过程 start
@@ -592,8 +591,24 @@ class SelfEmpAnalyzer(DataAnalyzer):
 
 #######自主创业报告 end
 
+#######母校综合评价 start
+class SchoolSatisfyAnalyzer(FiveRateDataAnalyzer):
+    """母校满意度"""
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, 'H7', CONFIG.ANSWER_TYPE_SATISFY, dict_config)
 
+class SchoolRecommedAnalyzer(ValueRateDataAnalyzer):
+    """母校推荐度"""
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, 'H8', dict_config)
 
+#######母校综合评价 end
+
+####### 学生指导与服务 start
+
+####### 学生指导与服务 end
+
+####### 附加题 start
 class EvelutionH4_EAnalyzer(FiveRateDataAnalyzer):
     '''母校任课教师总体报告'''
 
@@ -636,6 +651,8 @@ class EvelutionH4_PAnalyzer(FiveRateDataAnalyzer):
         super().__init__(df, 'H4-P', CONFIG.ANSWER_TYPE_SATISFY, dict_config)
     # TODO H5
 
+####### 附加题 end
+
 
 def test():
     # read excel as df
@@ -657,8 +674,10 @@ def test():
     #analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
     #analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
     #analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
-    analyzer_collection['自主创业']=SelfEmpAnalyzer(df,dic_config)
-    analyzer_collection['求职过程']=EmpDifficultAnalyzer(df,dic_config)
+    #analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
+    #analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
+
+
 
     runner.run_batch(analyzer_collection)
 

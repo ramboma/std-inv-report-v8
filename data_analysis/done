@@ -104,7 +104,12 @@ df_metrics = pd.pivot_table(df_data,
     analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
     analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
     analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
-
+    #...
+    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
+    analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
+    #... 母校满意度
+    analyzer_collection['母校满意度'] = SchoolSatisfyAnalyzer(df, dic_config)
+    analyzer_collection['母校推荐度'] = SchoolRecommedAnalyzer(df, dic_config)
 
     # 求职过程与就业指导服务
     further.employee_difficult_report(data, CONFIG.REPORT_FOLDER + '求职过程.xlsx')
@@ -118,6 +123,7 @@ df_metrics = pd.pivot_table(df_data,
     further.evelution_H4_P_report(data, CONFIG.REPORT_FOLDER + '对学生管理工作的评价.xlsx')
     further.evelution_H4_F_K_report(data, CONFIG.REPORT_FOLDER + '对就业教育服务的评价.xlsx')
     further.evelution_H4_L_O_report(data, CONFIG.REPORT_FOLDER + '对创业教育服务的反馈.xlsx')
+
 
     def run(self, analyzer, name):
         try:
