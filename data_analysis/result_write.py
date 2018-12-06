@@ -56,19 +56,25 @@ class AnalysisResultWriter(object):
             sheet_names = wbook.sheetnames
             for sheet_name in sheet_names:
                 sheet = wbook[sheet_name]
+                merg_cells=sheet.merged_cells
+
                 max_row = sheet.max_row
                 max_col = sheet.max_column
 
                 for i in range(1, max_col + 1):
                     colTag = xl.utils.get_column_letter(i)
                     sheet.column_dimensions[colTag].width = 10
-
-                    if (sheet.cell(row=1, column=i).value not in elimite_cols) \
-                            or (str(sheet.cell(row=1, column=i).value).find("比例") > 0):
+                    if sheet.cell(row=1, column=i) in merg_cells:
+                        print(merg_cells)
+                        pass
+                    else:
+                        cell_v=sheet.cell(row=1, column=i).value
+                    if (cell_v not in elimite_cols) \
+                            or (str(cell_v).find("比例") > 0):
                         sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_PERCENTAGE_00
                         for j in range(1 + 1, max_row + 1):
                             sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_PERCENTAGE_00
-                    elif str(sheet.cell(row=1, column=i).value).find("均值") > 0:
+                    elif str(cell_v).find("均值") > 0:
                         sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_NUMBER_00
                         for j in range(1 + 1, max_row + 1):
                             sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_NUMBER_00
