@@ -78,7 +78,7 @@ def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
 
 
 class ValueRateDataAnalyzer(DataAnalyzer):
-    """答案占比，行专利 包含 总体、各学历的学院、专业 答案占比"""
+    """答案占比，行转列 包含 总体、各学历的学院、专业 答案占比"""
 
     def __init__(self, df, question_col, dict_config=None):
         super().__init__(df, dict_config)
@@ -215,25 +215,27 @@ class FiveRateDataAnalyzer(DataAnalyzer):
                                                                     self._metric_type).multi_calculate(multi_cols,
                                                                                                        sheet_name,
                                                                                                        self._dict_config)
-        return  result
+        return result
+
 
 class ThreeMultiRateAnayze(DataAnalyzer):
     """三维多选择比例分析"""
+
     def __init__(self, df, multi_cols, metric_type, sheet_name, dict_config=None):
         super().__init__(df, dict_config)
         self._multi_cols = multi_cols
         self._metric_type = metric_type
-        self._sheet_name=sheet_name
+        self._sheet_name = sheet_name
 
     def analyse(self):
         de = DataExtractor(self._df, self._multi_cols)
         df = de.extract_ref_cols()
-        result={}
+        result = {}
 
         result["总体毕业生" + self._sheet_name] = OverallThreeCalculator(df,
-                                                              self._degree_col,
-                                                              CONFIG.ANSWER_TYPE_SATISFY,
-                                                              {self._sheet_name: self._multi_cols},
+                                                                    self._degree_col,
+                                                                    CONFIG.ANSWER_TYPE_SATISFY,
+                                                                    {self._sheet_name: self._multi_cols},
                                                                     dict_config=self._dict_config).calculate()
         # 筛选出学历 如果为多学历需要计算总体
         ls_metric = list(set(df[self._degree_col]))
@@ -244,7 +246,7 @@ class ThreeMultiRateAnayze(DataAnalyzer):
                                                                        dict_config=self._dict_config).calculate()
 
             result["总体毕业生各专业" + self._sheet_name] = GrpThreeCalculator(df,
-                                                                 [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                                                       [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                                        self._metric_type,
                                                                        {self._sheet_name: self._multi_cols},
                                                                        dict_config=self._dict_config).calculate()
@@ -256,12 +258,14 @@ class ThreeMultiRateAnayze(DataAnalyzer):
                                                                            {self._sheet_name: self._multi_cols},
                                                                            dict_config=self._dict_config).calculate()
             result[metric + "各专业" + self._sheet_name] = GrpThreeCalculator(df_filter,
-                                                                           [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                                                           [CONFIG.BASE_COLUMN[0],
+                                                                            CONFIG.BASE_COLUMN[1]],
                                                                            self._metric_type,
                                                                            {self._sheet_name: self._multi_cols},
                                                                            dict_config=self._dict_config).calculate()
 
-        return  result
+        return result
+
 
 ########### 就业率及就业状态 start
 class EmpRateAndEmpStatus(DataAnalyzer):
@@ -723,36 +727,39 @@ class EvelutionH4_F_KAnalyzer(FiveRateDataAnalyzer):
 
     def analyse(self):
         sheet_name = '对母校就业教育的评价'
-        result={}
+        result = {}
         result.update(super().degree_multi_five(self._multi_cols, sheet_name))
 
-        df_grp=ThreeMultiRateAnayze(self._df, self._multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
-                                    sheet_name, self._dict_config).analyse()
+        df_grp = ThreeMultiRateAnayze(self._df, self._multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
+                                      sheet_name, self._dict_config).analyse()
         result.update(df_grp)
         return result
 
 
 class Evelution_H4_L_OAnalyzer(DataAnalyzer):
     """对创业教育服务的反馈"""
+
     def __init__(self, df, dict_config=None):
         super().__init__(df, dict_config)
+
     def analyse(self):
-        result={}
+        result = {}
 
         # H4-L~H4-O
-        sheet_name='对母校创业教育的满意度评价'
+        sheet_name = '对母校创业教育的满意度评价'
         multi_cols = ['H4-' + chr(i) for i in range(76, 80)]
-        dict_three=ThreeMultiRateAnayze(self._df, multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
-                                     sheet_name, self._dict_config).analyse()
+        dict_three = ThreeMultiRateAnayze(self._df, multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
+                                          sheet_name, self._dict_config).analyse()
         result.update(dict_three)
-        sheet_name='对母校创业教育的帮助度评价'
+        sheet_name = '对母校创业教育的帮助度评价'
         # H3-E~H3-F
         multi_cols = ['H3-' + chr(i) for i in range(69, 71)]
 
         dict_three = ThreeMultiRateAnayze(self._df, multi_cols, CONFIG.ANSWER_TYPE_HELP,
-                                      sheet_name, self._dict_config).analyse()
+                                          sheet_name, self._dict_config).analyse()
         result.update(dict_three)
         return result
+
 
 ####### 学生指导与服务 end
 
@@ -793,6 +800,72 @@ class EvelutionH4_RAnalyzer(FiveRateDataAnalyzer):
 
 
 ####### 附加题 end
+
+
+class FurtherAnalyzer(DataAnalyzer):
+    """国内升学"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, dict_config)
+
+    def analyse(self):
+        result = {}
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        rel_cols = ['E' + str(i) for i in range(1, 5)]
+        rel_cols.append('A2')
+        de = DataExtractor(self._df, rel_cols)
+        df = de.extract_ref_cols()
+        df_a2 = OverallRateCalculator(df, 'A2', self._degree_col, do_t=True).calculate()
+        df_a2 = df_a2.loc[:, [CONFIG.A2_ANSWER[3], CONFIG.RATE_COLUMN[2]]]
+        result['总体国内升学比例'] = df_a2[df_a2[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
+        # 升学原因
+        result.update(OverallAnswerIndexDataAnalyzer(df, ["E2"], self._dict_config).analyse())
+
+        df_e1 = OverallFiveCalculator(df, 'E1', self._degree_col, CONFIG.ANSWER_TYPE_SATISFY, styler=None).calculate()
+        result['升学录取结果满意度'] = df_e1
+        df_e3 = OverallFiveCalculator(df, 'E3', self._degree_col, CONFIG.ANSWER_TYPE_RELATIVE, styler=None).calculate()
+        result['升学专业相关度'] = df_e3
+
+        # 跨专业升学原因
+        result.update(OverallAnswerIndexDataAnalyzer(df, ["E4"], self._dict_config).analyse())
+        return result
+
+
+class StudyAbroadAnalyzer(DataAnalyzer):
+    """出国境留学"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, dict_config)
+
+    def analyse(self):
+        result = {}
+        sheet_name = self._dict_config[self._question_col]
+        # find out necessary data columns
+        rel_cols = ['F' + str(i) for i in range(1, 5)]
+        rel_cols.append('A2')
+        de = DataExtractor(self._df, rel_cols)
+        df = de.extract_ref_cols()
+
+        # 留学比列
+        # f1答题比例
+        df_rate = OverallRateCalculator(df, 'F1', self._degree_col, do_t=True).calculate()
+        # A2答题总人数
+        count = df['A2'].count()
+        df_rate[CONFIG.RATE_COLUMN[2]] = count
+        df_rate[CONFIG.RATE_COLUMN[-1]] = (df_rate[CONFIG.RATE_COLUMN[1]] / df_rate[CONFIG.RATE_COLUMN[2]]).round(
+            decimals=CONFIG.DECIMALS6)
+        result['留学比列'] = df_rate
+
+        df_temp = OverallFiveCalculator(df, 'F2', self._degree_col, CONFIG.ANSWER_TYPE_SATISFY, styler=None).calculate()
+        result['留学录取结果满意度'] = df_temp
+        df_temp = OverallFiveCalculator(df, 'F3', self._degree_col, CONFIG.ANSWER_TYPE_RELATIVE,
+                                        styler=None).calculate()
+        result['留学专业一致性'] = df_temp
+
+        # 跨专业留学深造原因
+        result.update(OverallAnswerIndexDataAnalyzer(df, ["F4"], self._dict_config).analyse())
+        return result
 
 
 def test():
