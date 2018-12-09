@@ -23,7 +23,6 @@ class AnalysisResultWriter(object):
             writer = pd.ExcelWriter(file)
             if isinstance(df.columns, pd.MultiIndex):
                 index = True
-                # df=df.swaplevel(0, 1, axis=1)
             else:
                 index = False
             if not os.path.exists(file):
@@ -54,16 +53,21 @@ class AnalysisResultWriter(object):
             for sheet_name in sheet_names:
                 sheet = wbook[sheet_name]
                 merg_cells = sheet.merged_cells
-
+                merg_cells_range=sheet.merged_cells.ranges
                 max_row = sheet.max_row
                 max_col = sheet.max_column
 
                 for i in range(1, max_col + 1):
                     colTag = xl.utils.get_column_letter(i)
                     sheet.column_dimensions[colTag].width = 10
-                    if sheet.cell(row=1, column=i) in merg_cells:
-                        print(merg_cells)
-                        pass
+                    if merg_cells_range:
+                        cell_v=None
+                        for merg in merg_cells_range:
+                            if i >= merg.min_col and i<=merg.max_col:
+                                cell_v=sheet.cell(row=1, column=merg.min_col).value
+                                break
+                        if cell_v is None:
+                            cell_v = sheet.cell(row=1, column=i).value
                     else:
                         cell_v = sheet.cell(row=1, column=i).value
                     if str(cell_v).find("人数") >= 0:

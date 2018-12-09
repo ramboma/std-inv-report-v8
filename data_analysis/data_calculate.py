@@ -205,7 +205,7 @@ class GrpThreeCalculator():
                                            columns=key,
                                            values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
             df_t.fillna(0, inplace=True)
-            # df_t.reset_index(inplace=True)
+            df_t.reset_index(inplace=True)
             return df_t
 
 
@@ -277,7 +277,6 @@ class GrpFiveCalculator(DataCalculator):
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
             self._styler.prettify(df_ret)
-        print(df_ret)
         return df_ret
 
 
@@ -591,12 +590,20 @@ class EmpFeatureCalculator(DataCalculator):
         for where_col in self._dict_where:
             where = list(self._dict_where[where_col])
             df_where = self._df[self._df[self._tgt_col].isin(where)]
+            if df_where.empty:
+                continue
             df_init = pd.DataFrame()
             for col in self._combine_cols:
                 df_top = TopNCalculator(df_where, col, top=5).calculate()
+                print(df_top.columns)
                 df_init = pd.concat([df_init, df_top], sort=False, axis=1)
-            df_init.insert(0, self._tgt_col, where_col)
+            if self._tgt_col in df_init.columns:
+                df_init.insert(0, self._tgt_col+'条件', where_col)
+            else:
+                df_init.insert(0, self._tgt_col, where_col)
             df_combine.append(df_init)
+            print(df_combine)
+
         df_combines = pd.concat(df_combine, sort=False)
         return df_combines
 

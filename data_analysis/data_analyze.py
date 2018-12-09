@@ -286,8 +286,8 @@ class FiveRateDataAnalyzer(DataAnalyzer):
         self._metric_type = metric_type
 
     def analyse(self):
-        if self._dict_config is None:
-            raise Exception("缺少配置文件，无法解析sheet name")
+        if self._dict_config is None or self._question_col not in self._dict_config:
+            raise Exception("通过配置文件，无法解析sheet name")
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
         de = DataExtractor(self._df, self._question_col)
@@ -1152,7 +1152,7 @@ class SpecialGenderAnalyzer(SpecialDataAnalyzer):
 class SpecialNationalAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = '_16'
-        all_v = list(set(df[where_col]))
+        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != '汉族']
 
         dict_where = {}
@@ -1166,7 +1166,7 @@ class SpecialOriginProvinceAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'A1-A'
         province = get_province(df)
-        all_v = list(set(df[where_col]))
+        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != province]
 
         dict_where = {}
@@ -1180,7 +1180,7 @@ class SpecialProvinceAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B3-A'
         province = get_province(df)
-        all_v = list(set(df[where_col]))
+        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != province]
 
         dict_where = {}
@@ -1193,7 +1193,7 @@ class SpecialProvinceAnalyzer(SpecialDataAnalyzer):
 class SpecialEducationAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B5-B'
-        all_v = list(set(df[where_col]))
+        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != '教育']
 
         dict_where = {}
@@ -1206,20 +1206,22 @@ class SpecialEducationAnalyzer(SpecialDataAnalyzer):
 class SpecialMedicalAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B4-A'
-        all_v = list(set(df[where_col]))
+        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != '医疗卫生']
 
         dict_where = {}
         dict_where['医疗卫生'] = ['医疗卫生']
         dict_where['非医疗卫生'] = others
         dict_where['总体'] = all_v
+        print(others)
+        print(all_v)
         super().__init__(df, where_col, dict_where, '医疗卫生', dict_config)
 
 
 class SpecialSocialHealthAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B5-B'
-        all_v = list(set(df[where_col]))
+        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth not in ['卫生', '社会工作']]
 
         dict_where = {}
@@ -1283,26 +1285,16 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    # analyze 1
 
-    # analyzer_collection['社团活动'] = EvelutionH4_RAnalyzer(df, dic_config)
-    # analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
-    # analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
-    # analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
-    # analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
-    # analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
-    # analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
+    #analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
 
-    # analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
-    # analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
-    # analyzer_collection['对学生生活服务的评价'] = EvelutionH4_QAnalyzer(df, dic_config)
-    # analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
-    # analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
-    # analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
-    analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
-    # analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
-    #analyzer_collection['基础能力素质'] = BasicQualityAnalyzer(df, dic_config)
-    #analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
+    #analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
+
+    analyzer_collection['医疗卫生职业'] = SpecialMedicalAnalyzer(df, dic_config)
+
+    #analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
+
+
 
     runner.run_batch(analyzer_collection)
 

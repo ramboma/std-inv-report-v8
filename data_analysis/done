@@ -81,7 +81,9 @@ df_metrics = pd.pivot_table(df_data,
                                 columns=CONFIG.RATE_COLUMN[0],
                                 values=CONFIG.RATE_COLUMN[-1])
 
-##
+# Assemble all analyzers need to be run
+    analyzer_collection = dict()
+    # analyze 1
     analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
 
     analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df, dic_config)
@@ -104,13 +106,12 @@ df_metrics = pd.pivot_table(df_data,
     analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
     analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
     analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
-    #...
+    # ...
     analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
     analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
-    #... 母校满意度
+    # ... 母校满意度
     analyzer_collection['母校满意度'] = SchoolSatisfyAnalyzer(df, dic_config)
     analyzer_collection['母校推荐度'] = SchoolRecommedAnalyzer(df, dic_config)
-
 
     analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
     analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
@@ -120,23 +121,31 @@ df_metrics = pd.pivot_table(df_data,
     analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
     analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
 
-    # 人才培养
-    further.evelution_practice_report(data, CONFIG.REPORT_FOLDER + '对实践教学的评价.xlsx')
-    further.evelution_lesson_report(data, CONFIG.REPORT_FOLDER + '对课堂教学的评价.xlsx')
-    further.evelution_teach_report(data, CONFIG.REPORT_FOLDER + '对任课教师的评价.xlsx')
+    analyzer_collection['对任课教师的评价'] = EvelutionTeacherAnalyzer(df, dic_config)
+    analyzer_collection['对实践教学的评价'] = EvelutionPracticeAnalyzer(df, dic_config)
+    analyzer_collection['对课堂教学的评价'] = EvelutionLessonAnalyzer(df, dic_config)
 
-    # 特殊人群
-    further.special_gender_report(data, CONFIG.REPORT_FOLDER + '不同性别.xlsx')
-    further.special_education_report(data, CONFIG.REPORT_FOLDER + '教育行业和非教育行业.xlsx')
-    further.special_origin_province_report(data, CONFIG.REPORT_FOLDER + '省内省外生源.xlsx')
-    further.special_indurstry_province_report(data, CONFIG.REPORT_FOLDER + '省内省外就业.xlsx')
-    further.special_national_report(data, CONFIG.REPORT_FOLDER + '汉族少数名族.xlsx')
-    further.special_medical_report(data, CONFIG.REPORT_FOLDER + '医疗卫生职业.xlsx')
-    further.special_social_health_report(data, CONFIG.REPORT_FOLDER + '卫生和社会工作.xlsx')
 
-    # 学习效果
-    further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')
-    further.basic_quality_report(data, CONFIG.REPORT_FOLDER + '基础素质.xlsx')
+    analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
+    analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
+    analyzer_collection['教育行业非教育行业'] = SpecialEducationAnalyzer(df, dic_config)
+
+    analyzer_collection['省内省外生源'] = SpecialOriginProvinceAnalyzer(df, dic_config)
+    analyzer_collection['省内、省外就业'] = SpecialProvinceAnalyzer(df, dic_config)
+    analyzer_collection['医疗卫生职业'] = SpecialMedicalAnalyzer(df, dic_config)
+
+    analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
+
+    analyzer_collection['基础能力素质'] = BasicQualityAnalyzer(df, dic_config)
+    analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
+    ls_metric = list(set(df['_12']))
+    if len(ls_metric) > 1:
+        analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
+    for metric in ls_metric:
+        df_filter = df[df['_12'] == metric]
+        if not df_filter.empty:
+            analyzer_collection[metric + "一览表"] = OverallSummary(df_filter, dic_config)
+
 
     def run(self, analyzer, name):
         try:
