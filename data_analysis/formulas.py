@@ -14,7 +14,7 @@ from data_cleansing.logging import *
 logger = get_logger(__name__)
 
 
-def formula_rate(data, subject):
+def formula_rate(data, subject, top=0):
     """
 
     AnswerRate 计算某题的答案占比
@@ -34,6 +34,9 @@ def formula_rate(data, subject):
     df_rate[CONFIG.RATE_COLUMN[2]] = count
     # 答题总人数为0时，出现NaN值
     df_rate.fillna(0, inplace=True)
+    if top:
+        df_rate.sort_values(CONFIG.RATE_COLUMN[-1], ascending=0, inplace=True)
+        df_rate=df_rate.head(top)
     return df_rate
 
 

@@ -111,19 +111,32 @@ df_metrics = pd.pivot_table(df_data,
     analyzer_collection['母校满意度'] = SchoolSatisfyAnalyzer(df, dic_config)
     analyzer_collection['母校推荐度'] = SchoolRecommedAnalyzer(df, dic_config)
 
-    # 求职过程与就业指导服务
-    further.employee_difficult_report(data, CONFIG.REPORT_FOLDER + '求职过程.xlsx')
 
-    # 母校综合评价
-    further.school_satisfy_report(data, CONFIG.REPORT_FOLDER + '母校满意度.xlsx')
-    further.school_recommed_report(data, CONFIG.REPORT_FOLDER + '母校推荐度.xlsx')
+    analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
+    analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
+    analyzer_collection['对学生生活服务的评价'] = EvelutionH4_QAnalyzer(df, dic_config)
+    analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
 
-    # 学生指导与服务
-    further.evelution_H4_Q_report(data, CONFIG.REPORT_FOLDER + '对学生生活服务的评价.xlsx')
-    further.evelution_H4_P_report(data, CONFIG.REPORT_FOLDER + '对学生管理工作的评价.xlsx')
-    further.evelution_H4_F_K_report(data, CONFIG.REPORT_FOLDER + '对就业教育服务的评价.xlsx')
-    further.evelution_H4_L_O_report(data, CONFIG.REPORT_FOLDER + '对创业教育服务的反馈.xlsx')
+    analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
+    analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
 
+    # 人才培养
+    further.evelution_practice_report(data, CONFIG.REPORT_FOLDER + '对实践教学的评价.xlsx')
+    further.evelution_lesson_report(data, CONFIG.REPORT_FOLDER + '对课堂教学的评价.xlsx')
+    further.evelution_teach_report(data, CONFIG.REPORT_FOLDER + '对任课教师的评价.xlsx')
+
+    # 特殊人群
+    further.special_gender_report(data, CONFIG.REPORT_FOLDER + '不同性别.xlsx')
+    further.special_education_report(data, CONFIG.REPORT_FOLDER + '教育行业和非教育行业.xlsx')
+    further.special_origin_province_report(data, CONFIG.REPORT_FOLDER + '省内省外生源.xlsx')
+    further.special_indurstry_province_report(data, CONFIG.REPORT_FOLDER + '省内省外就业.xlsx')
+    further.special_national_report(data, CONFIG.REPORT_FOLDER + '汉族少数名族.xlsx')
+    further.special_medical_report(data, CONFIG.REPORT_FOLDER + '医疗卫生职业.xlsx')
+    further.special_social_health_report(data, CONFIG.REPORT_FOLDER + '卫生和社会工作.xlsx')
+
+    # 学习效果
+    further.major_quality_report(data, CONFIG.REPORT_FOLDER + '专业素质.xlsx')
+    further.basic_quality_report(data, CONFIG.REPORT_FOLDER + '基础素质.xlsx')
 
     def run(self, analyzer, name):
         try:

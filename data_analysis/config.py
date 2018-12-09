@@ -112,7 +112,7 @@ DICT_SUBJECT = {'H4-A': '专业课教师教学态度', 'H4-B': '专业课教师�
                 'B4-B': '就业职业','D2':'求职困难',
 
                 }
-SPECIAL_SUBJECT = {'B9-1': '专业', 'B7-1': '工作满意度', 'B7-2': '薪酬满意度',
+SPECIAL_SUBJECT = {'B9-1': '专业相关度', 'B7-1': '工作满意度', 'B7-2': '薪酬满意度',
                    'B7-3': '职业发展前景', 'B7-4': '工作内容',
                    'B8': '职业期待'}
 SPECIAL_SUBJECT_TYPE = {'B9-1': ANSWER_TYPE_RELATIVE, 'B7-1': ANSWER_TYPE_SATISFY, 'B7-2': ANSWER_TYPE_SATISFY,

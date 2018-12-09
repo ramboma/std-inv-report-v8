@@ -143,6 +143,142 @@ class SimpleValueRateDataAnalyzer(DataAnalyzer):
         return result
 
 
+class SummaryDataAnalyzer(DataAnalyzer):
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, dict_config)
+
+    def analyse(self):
+        # find out necessary data columns
+        result = dict()
+        result['学院就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
+                                                        [CONFIG.BASE_COLUMN[0]],
+                                                        dict_config=self._dict_config).calculate()
+        result['专业就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
+                                                        [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                                        dict_config=self._dict_config).calculate()
+
+        ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
+        result['学院教育教学'] = GrpThreeCalculator(self._df,
+                                              [CONFIG.BASE_COLUMN[0]],
+                                              CONFIG.ANSWER_TYPE_SATISFY,
+                                              {'教育教学': ls_rels},
+                                              dict_config=self._dict_config).calculate()
+        result['专业教育教学'] = GrpThreeCalculator(self._df,
+                                              [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                              CONFIG.ANSWER_TYPE_SATISFY,
+                                              {'教育教学': ls_rels},
+                                              dict_config=self._dict_config).calculate()
+        return result
+
+
+class SpecialDataAnalyzer(DataAnalyzer):
+    def __init__(self, df, where_col, dict_where, sheet_name, dict_config=None):
+        super().__init__(df, dict_config)
+        self._where_col = where_col
+        self._dict_where = dict_where
+        self._sheet_name = sheet_name
+
+    def analyse(self):
+        # find out necessary data columns
+        de = DataExtractor(self._df, CONFIG.SPECIAL_REL)
+        df = de.extract_ref_cols()
+        result = dict()
+        ls_metric = list(set(df[self._degree_col]))
+        # 行业就业特色
+        feature_cols = ['B5-B', 'B1', 'B3-A', 'B4-B']
+        if len(ls_metric) > 1:
+            result["总体毕业生" + self._sheet_name + "行业就业特色"] = EmpFeatureCalculator(df,
+                                                                                 self._where_col,
+                                                                                 feature_cols,
+                                                                                 self._dict_where,
+                                                                                 dict_config=self._dict_config).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + self._sheet_name + "行业就业特色"] = EmpFeatureCalculator(df_filter,
+                                                                                self._where_col,
+                                                                                feature_cols,
+                                                                                self._dict_where,
+                                                                                dict_config=self._dict_config).calculate()
+        # 就业竞争力分析
+        if len(ls_metric) > 1:
+            result["总体毕业生" + self._sheet_name + "就业竞争力"] = EmpCompetitiveCalculator(df,
+                                                                                    self._where_col,
+                                                                                    self._dict_where,
+                                                                                    dict_config=self._dict_config).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + self._sheet_name + "就业竞争力"] = EmpCompetitiveCalculator(df_filter,
+                                                                                   self._where_col,
+                                                                                   self._dict_where,
+                                                                                   dict_config=self._dict_config).calculate()
+        # 课堂教学评价
+        rel_cols = ['H2-' + chr(i) for i in range(65, 70)]
+        if len(ls_metric) > 1:
+            result["总体毕业生" + self._sheet_name + "课堂教学评价"] = FiveConditionCalculator(df,
+                                                                                    self._where_col,
+                                                                                    self._dict_where,
+                                                                                    rel_cols, CONFIG.ANSWER_TYPE_MEET_V,
+                                                                                    '课堂教学评价',
+                                                                                    dict_config=self._dict_config).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + self._sheet_name + "课堂教学评价"] = FiveConditionCalculator(df_filter,
+                                                                                   self._where_col,
+                                                                                   self._dict_where,
+                                                                                   rel_cols, CONFIG.ANSWER_TYPE_MEET_V,
+                                                                                   '课堂教学评价',
+                                                                                   dict_config=self._dict_config).calculate()
+
+        # 实践教学评价
+        rel_cols = ['H3-' + chr(i) for i in range(65, 69)]
+        if len(ls_metric) > 1:
+            result["总体毕业生" + self._sheet_name + "实践教学评价"] = FiveConditionCalculator(df,
+                                                                                    self._where_col,
+                                                                                    self._dict_where,
+                                                                                    rel_cols, CONFIG.ANSWER_TYPE_HELP,
+                                                                                    '实践教学评价',
+                                                                                    dict_config=self._dict_config).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + self._sheet_name + "实践教学评价"] = FiveConditionCalculator(df_filter,
+                                                                                   self._where_col,
+                                                                                   self._dict_where,
+                                                                                   rel_cols, CONFIG.ANSWER_TYPE_HELP,
+                                                                                   '实践教学评价',
+                                                                                   dict_config=self._dict_config).calculate()
+        # 任课教师评价
+        rel_cols = ['H3-' + chr(i) for i in range(65, 69)]
+        if len(ls_metric) > 1:
+            result["总体毕业生" + self._sheet_name + "任课教师评价"] = FiveConditionCalculator(df,
+                                                                                    self._where_col,
+                                                                                    self._dict_where,
+                                                                                    rel_cols,
+                                                                                    CONFIG.ANSWER_TYPE_SATISFY,
+                                                                                    '任课教师评价',
+                                                                                    dict_config=self._dict_config).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + self._sheet_name + "任课教师评价"] = FiveConditionCalculator(df_filter,
+                                                                                   self._where_col,
+                                                                                   self._dict_where,
+                                                                                   rel_cols, CONFIG.ANSWER_TYPE_SATISFY,
+                                                                                   '任课教师评价',
+                                                                                   dict_config=self._dict_config).calculate()
+        # 母校综合评价
+        if len(ls_metric) > 1:
+            result["总体毕业生" + self._sheet_name + "母校综合评价"] = SchoolEvelutionCalcutor(df,
+                                                                                    self._where_col,
+                                                                                    self._dict_where,
+                                                                                    dict_config=self._dict_config).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            result[metric + self._sheet_name + "母校综合评价"] = SchoolEvelutionCalcutor(df_filter,
+                                                                                   self._where_col,
+                                                                                   self._dict_where,
+                                                                                   dict_config=self._dict_config).calculate()
+        return result
+
+
 class FiveRateDataAnalyzer(DataAnalyzer):
     def __init__(self, df, question_col, metric_type, dict_config=None):
         super().__init__(df, dict_config)
@@ -234,7 +370,7 @@ class ThreeMultiRateAnayze(DataAnalyzer):
 
         result["总体毕业生" + self._sheet_name] = OverallThreeCalculator(df,
                                                                     self._degree_col,
-                                                                    CONFIG.ANSWER_TYPE_SATISFY,
+                                                                    self._metric_type,
                                                                     {self._sheet_name: self._multi_cols},
                                                                     dict_config=self._dict_config).calculate()
         # 筛选出学历 如果为多学历需要计算总体
@@ -810,15 +946,14 @@ class FurtherAnalyzer(DataAnalyzer):
 
     def analyse(self):
         result = {}
-        sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
         rel_cols = ['E' + str(i) for i in range(1, 5)]
         rel_cols.append('A2')
         de = DataExtractor(self._df, rel_cols)
         df = de.extract_ref_cols()
         df_a2 = OverallRateCalculator(df, 'A2', self._degree_col, do_t=True).calculate()
-        df_a2 = df_a2.loc[:, [CONFIG.A2_ANSWER[3], CONFIG.RATE_COLUMN[2]]]
-        result['总体国内升学比例'] = df_a2[df_a2[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
+        df_a2 = df_a2.loc[:, [self._degree_col, CONFIG.A2_ANSWER[3], CONFIG.RATE_COLUMN[2]]]
+        result['总体国内升学比例'] = df_a2
         # 升学原因
         result.update(OverallAnswerIndexDataAnalyzer(df, ["E2"], self._dict_config).analyse())
 
@@ -840,7 +975,6 @@ class StudyAbroadAnalyzer(DataAnalyzer):
 
     def analyse(self):
         result = {}
-        sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
         rel_cols = ['F' + str(i) for i in range(1, 5)]
         rel_cols.append('A2')
@@ -868,6 +1002,196 @@ class StudyAbroadAnalyzer(DataAnalyzer):
         return result
 
 
+####### 人才培养 start
+class EvelutionPracticeAnalyzer(FiveRateDataAnalyzer):
+    """对实践教学的评价"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, None, CONFIG.ANSWER_TYPE_HELP, dict_config)
+        # H3-A~H3-D
+        self._multi_cols = ['H3-' + chr(i) for i in range(65, 69)]
+
+    def analyse(self):
+        sheet_name = '实践教学的评价'
+        result = {}
+        result.update(super().degree_multi_five(self._multi_cols, sheet_name))
+
+        df_grp = ThreeMultiRateAnayze(self._df, self._multi_cols, CONFIG.ANSWER_TYPE_HELP,
+                                      sheet_name, self._dict_config).analyse()
+        result.update(df_grp)
+        return result
+
+
+class EvelutionLessonAnalyzer(FiveRateDataAnalyzer):
+    """对课堂教学的评价"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, None, CONFIG.ANSWER_TYPE_MEET_V, dict_config)
+        self._multi_cols = ['H2-' + chr(i) for i in range(65, 70)]
+
+    def analyse(self):
+        sheet_name = '课堂教学各方面的评价'
+        result = {}
+        result.update(super().degree_multi_five(self._multi_cols, sheet_name))
+
+        df_grp = ThreeMultiRateAnayze(self._df, self._multi_cols, CONFIG.ANSWER_TYPE_MEET_V,
+                                      sheet_name, self._dict_config).analyse()
+        result.update(df_grp)
+        return result
+
+
+class EvelutionTeacherAnalyzer(FiveRateDataAnalyzer):
+    """对任课教师的评价"""
+
+    def __init__(self, df, dict_config=None):
+        super().__init__(df, None, CONFIG.ANSWER_TYPE_SATISFY, dict_config)
+        self._multi_cols = ['H4-' + chr(i) for i in range(65, 69)]
+
+    def analyse(self):
+        sheet_name = '任课教师的评价'
+        result = {}
+        result.update(super().degree_multi_five(self._multi_cols, sheet_name))
+
+        df_grp = ThreeMultiRateAnayze(self._df, self._multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
+                                      sheet_name, self._dict_config).analyse()
+        result.update(df_grp)
+        return result
+
+
+####### 人才培养 end
+
+####### 特殊人群 end
+class SpecialGenderAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        dict_where = {}
+        dict_where['男'] = ['男']
+        dict_where['女'] = ['女']
+        dict_where['总体'] = ['男', '女']
+        super().__init__(df, '_3', dict_where, '不同性别', dict_config)
+
+
+class SpecialNationalAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        where_col = '_16'
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != '汉族']
+
+        dict_where = {}
+        dict_where['汉族'] = ['汉族']
+        dict_where['少数民族'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '不同民族', dict_config)
+
+
+class SpecialOriginProvinceAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        where_col = 'A1-A'
+        province = get_province(df)
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != province]
+
+        dict_where = {}
+        dict_where['省内'] = [province]
+        dict_where['省外'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '省内省外生源', dict_config)
+
+
+class SpecialProvinceAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        where_col = 'B3-A'
+        province = get_province(df)
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != province]
+
+        dict_where = {}
+        dict_where['省内'] = [province]
+        dict_where['省外'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '省内省外就业', dict_config)
+
+
+class SpecialEducationAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        where_col = 'B5-B'
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != '教育']
+
+        dict_where = {}
+        dict_where['教育'] = ['教育']
+        dict_where['非教育'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '教育和非教育', dict_config)
+
+
+class SpecialMedicalAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        where_col = 'B4-A'
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != '医疗卫生']
+
+        dict_where = {}
+        dict_where['医疗卫生'] = ['医疗卫生']
+        dict_where['非医疗卫生'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '医疗卫生', dict_config)
+
+
+class SpecialSocialHealthAnalyzer(SpecialDataAnalyzer):
+    def __init__(self, df, dict_config):
+        where_col = 'B5-B'
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth not in ['卫生', '社会工作']]
+
+        dict_where = {}
+        dict_where['卫生和社会工作'] = ['卫生', '社会工作']
+        dict_where['非卫生和社会工作'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '卫生和社会工作', dict_config)
+
+
+class SpecialAdmissionsAnalyzer(SpecialDataAnalyzer):
+    """暂时不支持"""
+
+    def __init__(self, df, dict_config):
+        where_col = 'B4-B'
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != '不同招生途径']
+
+        dict_where = {}
+        dict_where['不同招生途径'] = ['不同招生途径']
+        dict_where['非不同招生途径'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '不同招生途径', dict_config)
+
+
+class SpecialTeacherAnalyzer(SpecialDataAnalyzer):
+    """暂时不支持"""
+
+    def __init__(self, df, dict_config):
+        where_col = 'B5-B'
+        all_v = list(set(df[where_col]))
+        others = [oth for oth in all_v if oth != '师范']
+
+        dict_where = {}
+        dict_where['师范'] = ['师范']
+        dict_where['非师范'] = others
+        dict_where['总体'] = all_v
+        super().__init__(df, where_col, dict_where, '师范和非师范', dict_config)
+
+
+####### 特殊人群 end
+
+####### 一览表 start
+class OverallSummary(SummaryDataAnalyzer):
+    def __init__(self, df, dict_config):
+        super().__init__(df, dict_config)
+
+
+####### 特殊人群 end
+
+
+
 def test():
     # read excel as df
     file_loader = ExcelLoader("../test-data/san-ming/cleaned/cleaned.xlsx")
@@ -891,11 +1215,14 @@ def test():
     # analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
     # analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
 
-    analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
-    analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
-    analyzer_collection['对学生生活服务的评价'] = EvelutionH4_QAnalyzer(df, dic_config)
-    analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
-
+    # analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
+    # analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
+    # analyzer_collection['对学生生活服务的评价'] = EvelutionH4_QAnalyzer(df, dic_config)
+    # analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
+    # analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
+    # analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
+    #analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
+    analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
     runner.run_batch(analyzer_collection)
 
     pass

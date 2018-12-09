@@ -146,7 +146,8 @@ class OverallThreeCalculator():
         self._metric_col = metric_col
         self._metric_type = metric_type
         self._dict_extra = dict_extra
-        self._dict_config=dict_config
+        self._dict_config = dict_config
+
     def calculate(self):
         # 各学历下的三维占比
         measure_name = parse_measure_name(self._metric_type)
@@ -168,7 +169,7 @@ class OverallThreeCalculator():
                                            columns='_12',
                                            values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
             df_t.fillna(0, inplace=True)
-            #df_t.reset_index(inplace=True)
+            # df_t.reset_index(inplace=True)
             return df_t
 
 
@@ -181,7 +182,7 @@ class GrpThreeCalculator():
         self._grp_cols = grp_cols
         self._metric_type = metric_type
         self._dict_extra = dict_extra
-        self._dict_config=dict_config
+        self._dict_config = dict_config
 
     def calculate(self):
         measure_name = parse_measure_name(self._metric_type)
@@ -204,7 +205,7 @@ class GrpThreeCalculator():
                                            columns=key,
                                            values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
             df_t.fillna(0, inplace=True)
-            #df_t.reset_index(inplace=True)
+            # df_t.reset_index(inplace=True)
             return df_t
 
 
@@ -481,7 +482,26 @@ class ProvinceRate(DataCalculator):
         return df_rate
 
 
+class TopNCalculator(DataCalculator):
+    """合并取top n"""
+
+    def __init__(self, df, target_col, top=5, styler=None):
+        super().__init__(df, target_col, styler)
+        self._top = top
+
+    def calculate(self):
+        df_rate = formula_rate(self._df, self._tgt_col, self._top)
+        df_combine = formate_row_combine(df_rate, combin_name=self._tgt_col)
+        combine_name = CONFIG.DICT_SUBJECT[self._tgt_col]
+        df_combine.rename(columns={self._tgt_col: combine_name,
+                                   CONFIG.RATE_COLUMN[2]: combine_name + CONFIG.RATE_COLUMN[2]})
+        print(df_combine)
+        return df_combine
+
+
 class GrpTopNCalculator(DataCalculator):
+    """分组合并取top n"""
+
     def __init__(self, df, target_col, grp_cols, top=5, styler=None):
         super().__init__(df, target_col, styler)
         self._grp_cols = grp_cols
@@ -548,4 +568,206 @@ class MultiRateCalculator(DataCalculator):
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
             df_combines = self._styler.prettify(df_combines)
+        return df_combines
+
+
+class EmpFeatureCalculator(DataCalculator):
+    """
+    多纬度，多条件查询，结果列拼接展示，其中多条件目前只支持in；
+    eg [[教育],[此列非教育的集合],[此列全部]]，则_col:[教育]
+
+    """
+
+    def __init__(self, df, target_col, combine_cols, dict_where, styler=None, dict_config=None):
+        super().__init__(df, target_col, styler)
+        self._dict_config = dict_config
+        self._combine_cols = combine_cols
+        self._dict_where = dict_where
+
+    def calculate(self):
+        if not isinstance(self._dict_where, dict):
+            raise Exception("EmpFeatureCalculator.calculate 不支持的查询条件，where={}".format(self._dict_where))
+        df_combine = []
+        for where_col in self._dict_where:
+            where = list(self._dict_where[where_col])
+            df_where = self._df[self._df[self._tgt_col].isin(where)]
+            df_init = pd.DataFrame()
+            for col in self._combine_cols:
+                df_top = TopNCalculator(df_where, col, top=5).calculate()
+                df_init = pd.concat([df_init, df_top], sort=False, axis=1)
+            df_init.insert(0, self._tgt_col, where_col)
+            df_combine.append(df_init)
+        df_combines = pd.concat(df_combine, sort=False)
+        return df_combines
+
+
+class EmpCompetitiveCalculator(DataCalculator):
+    """就业竞争力合并"""
+
+    def __init__(self, df, target_col, dict_where, styler=None, dict_config=None):
+        super().__init__(df, target_col, styler)
+        self._dict_config = dict_config
+        self._dict_where = dict_where
+
+    def calculate(self):
+        if not isinstance(self._dict_where, dict):
+            raise Exception("EmpFeatureCalculator.calculate 不支持的查询条件，where={}".format(self._dict_where))
+        df_combine = []
+        for where_col in self._dict_where:
+            where = list(self._dict_where[where_col])
+            df_where = self._df[self._df[self._tgt_col].isin(where)]
+            df_init = pd.DataFrame()
+            # 就业率
+            df_emp_rate = formula_employe_rate(df_where)
+            df_emp_rate.rename(columns={CONFIG.RATE_COLUMN[2]: '就业率' + CONFIG.RATE_COLUMN[2]}, inplace=True)
+            df_init = pd.concat([df_init, df_emp_rate], sort=False, axis=1)
+            # 薪酬
+            df_mean = formula_mean(df_where, 'B6')
+            df_mean.rename(columns={CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1],
+                                    CONFIG.MEAN_COLUMN[2]: '薪酬' + CONFIG.MEAN_COLUMN[2]}, inplace=True)
+            df_init = pd.concat([df_init, df_mean], sort=False, axis=1)
+            df_join=pd.DataFrame()
+            combine_cols = ['B9-1', 'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8']
+            for col in combine_cols:
+                metric_type = CONFIG.SPECIAL_SUBJECT_TYPE[col]
+                metric_name = parse_measure_name(metric_type)
+                df_t = formula_five_rate(df_where, col, metric_type)
+                df_t = df_t.loc[:, [metric_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]]
+                df_t.drop_duplicates(inplace=True)
+                df_t.rename(columns={
+                    metric_name: CONFIG.SPECIAL_SUBJECT[col],
+                    CONFIG.MEAN_COLUMN[-1]: CONFIG.SPECIAL_SUBJECT[col] + CONFIG.MEAN_COLUMN[-1],
+                    CONFIG.MEAN_COLUMN[2]: CONFIG.SPECIAL_SUBJECT[col] + CONFIG.MEAN_COLUMN[2]
+                }, inplace=True)
+
+                df_join = pd.concat([df_join, df_t],  sort=False, axis=1)
+            # 离职率
+            df_demission = formate_rate_t(formula_rate(df_where, 'B10-1'))
+            df_demission["离职率"] = 0
+            for col in CONFIG.DIMISSION_COLUMNS:
+                if col in df_demission.columns:
+                    df_demission.loc[:, "离职率"] = df_demission.loc[:, "离职率"] + df_demission.loc[:, col]
+            df_demission = df_demission.loc[:, ["离职率", CONFIG.RATE_COLUMN[2]]]
+            df_demission.rename(columns={CONFIG.RATE_COLUMN[2]: "离职率" + CONFIG.RATE_COLUMN[2]}, inplace=True)
+            df_join = pd.concat([df_join, df_demission], axis=1, sort=False)
+            df_init.insert(0, self._tgt_col, where_col)
+            df_join.insert(0, self._tgt_col, where_col)
+            df_init=pd.merge(df_init, df_join,on=self._tgt_col,how='left')
+            df_combine.append(df_init)
+        df_combines = pd.concat(df_combine, sort=False)
+        return df_combines
+
+
+class EmpCompetitiveGrpCalculator(DataCalculator):
+    """就业竞争力合并"""
+
+    def __init__(self, df, grp_cols, styler=None, dict_config=None):
+        super().__init__(df, None, styler)
+        self._dict_config = dict_config
+        self._grp_cols = grp_cols
+
+    def calculate(self):
+        # 就业率
+        df_emp_rate = formula_employe_rate_grp(self._df, self._grp_cols)
+        df_emp_rate.rename(columns={CONFIG.RATE_COLUMN[2]: '就业率' + CONFIG.RATE_COLUMN[2]}, inplace=True)
+        # 薪酬
+        df_mean = formula_mean_grp(self._df, 'B6', self._grp_cols)
+        df_mean.rename(columns={CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1],
+                                CONFIG.MEAN_COLUMN[2]: '薪酬' + CONFIG.MEAN_COLUMN[2]}, inplace=True)
+        df_combine=pd.merge(df_emp_rate, df_mean, how='left', on=self._grp_cols)
+
+        combine_cols = ['B9-1', 'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8']
+        for col in combine_cols:
+            metric_type = CONFIG.SPECIAL_SUBJECT_TYPE[col]
+            metric_name = parse_measure_name(metric_type)
+            df_t = formula_five_rate_grp(self._df, col,self._grp_cols, metric_type)
+            sub_cols=[metric_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
+            sub_cols.extend(self._grp_cols)
+            df_t = df_t.loc[:,sub_cols]
+            df_t.drop_duplicates(inplace=True)
+            df_t.rename(columns={
+                metric_name: CONFIG.SPECIAL_SUBJECT[col],
+                CONFIG.MEAN_COLUMN[-1]: CONFIG.SPECIAL_SUBJECT[col] + CONFIG.MEAN_COLUMN[-1],
+                CONFIG.MEAN_COLUMN[2]: CONFIG.SPECIAL_SUBJECT[col] + CONFIG.MEAN_COLUMN[2]
+            }, inplace=True)
+
+            df_combine = pd.merge(df_combine, df_t, how='left', on=self._grp_cols)
+        # 离职率
+        df_demission = formula_rate_grp(self._df, 'B10-1', self._grp_cols)
+        df_demission["离职率"] = 0
+        for col in CONFIG.DIMISSION_COLUMNS:
+            if col in df_demission.columns:
+                df_demission.loc[:, "离职率"] = df_demission.loc[:, "离职率"] + df_demission.loc[:, col]
+        sub_cols=["离职率", CONFIG.RATE_COLUMN[2]]
+        sub_cols.extend(self._grp_cols)
+        df_demission = df_demission[sub_cols]
+        df_demission.rename(columns={CONFIG.RATE_COLUMN[2]: "离职率" + CONFIG.RATE_COLUMN[2]}, inplace=True)
+        df_combine = pd.merge(df_combine, df_demission, how='left', on=self._grp_cols)
+
+        return df_combine
+
+
+class FiveConditionCalculator(DataCalculator):
+    """五维条件查询"""
+
+    def __init__(self, df, target_col, dict_where, multi_cols, metric_type, sheet_name, styler=None, dict_config=None):
+        super().__init__(df, target_col, styler)
+        self._dict_config = dict_config
+        self._dict_where = dict_where
+        self._metric_type = metric_type
+        self._multi_cols = multi_cols
+        self._sheet_name = sheet_name
+
+    def calculate(self):
+        if not isinstance(self._dict_where, dict):
+            raise Exception("EmpFeatureCalculator.calculate 不支持的查询条件，where={}".format(self._dict_where))
+        df_combine = []
+        for where_col in self._dict_where:
+            where = list(self._dict_where[where_col])
+            df_where = self._df[self._df[self._tgt_col].isin(where)]
+            df_five = OverallFiveCalculator(df_where, None, None,
+                                            self._metric_type, self._styler).multi_calculate(self._multi_cols,
+                                                                                             self._sheet_name,
+                                                                                             self._dict_config)
+            df_five.insert(0, self._tgt_col, where_col)
+            df_combine.append(df_five)
+        df_combines = pd.concat(df_combine, sort=False)
+        return df_combines
+
+
+class SchoolEvelutionCalcutor(DataCalculator):
+    """学校总体评价"""
+
+    def __init__(self, df, target_col, dict_where, styler=None, dict_config=None):
+        super().__init__(df, target_col, styler)
+        self._dict_config = dict_config
+        self._dict_where = dict_where
+
+    def calculate(self):
+        if not isinstance(self._dict_where, dict):
+            raise Exception("EmpFeatureCalculator.calculate 不支持的查询条件，where={}".format(self._dict_where))
+        df_combine = []
+
+        metric_name = parse_measure_name(CONFIG.ANSWER_TYPE_SATISFY)
+        for where_col in self._dict_where:
+            where = list(self._dict_where[where_col])
+            df_where = self._df[self._df[self._tgt_col].isin(where)]
+            # 母校满意度
+            df_t = formula_five_rate(df_where, 'H7', CONFIG.ANSWER_TYPE_SATISFY)
+            df_t = df_t.loc[:, [metric_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]]
+            df_t.drop_duplicates(inplace=True)
+            df_t.rename(columns={metric_name: "母校" + metric_name,
+                                 CONFIG.MEAN_COLUMN[-1]: "母校满意度" + CONFIG.MEAN_COLUMN[-1],
+                                 CONFIG.RATE_COLUMN[2]: "母校满意度" + CONFIG.RATE_COLUMN[2]}, inplace=True)
+
+            # 母校推荐度
+            df_recommend = formate_rate_t(formula_rate(df_where, 'H8'))
+            df_recommend = df_recommend.loc[:, [CONFIG.ANSWER_RECOMMED[0], CONFIG.RATE_COLUMN[2]]]
+            df_recommend.rename(columns={CONFIG.ANSWER_RECOMMED[0]: "母校推荐度",
+                                         CONFIG.RATE_COLUMN[2]: "母校推荐度" + CONFIG.RATE_COLUMN[2]}, inplace=True)
+            df_init = pd.concat([df_t, df_recommend], axis=1, sort=False)
+
+            df_init.insert(0, self._tgt_col, where_col)
+            df_combine.append(df_init)
+        df_combines = pd.concat(df_combine, sort=False)
         return df_combines
