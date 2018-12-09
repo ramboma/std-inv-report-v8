@@ -1060,6 +1060,85 @@ class EvelutionTeacherAnalyzer(FiveRateDataAnalyzer):
 
 ####### 人才培养 end
 
+####### 学习效果 start
+class MajorQualityAnalyzer(DataAnalyzer):
+    """专业素质报告"""
+
+    def __init__(self, df, dict_config):
+        super().__init__(df, dict_config)
+
+    def analyse(self):
+        result = {}
+        # find out necessary data columns
+        rel_cols = ['I1-1' + '-' + chr(i) for i in range(65, 67)]
+        result.update(FiveRateDataAnalyzer(self._df,
+                                           None,
+                                           CONFIG.ANSWER_TYPE_IMPORTANT,
+                                           self._dict_config).degree_multi_five(rel_cols, "专业素质重要度"))
+        rel_cols = ['I1-2' + '-' + chr(i) for i in range(65, 67)]
+        result.update(FiveRateDataAnalyzer(self._df,
+                                           None,
+                                           CONFIG.ANSWER_TYPE_PLEASED,
+                                           self._dict_config).degree_multi_five(rel_cols, "专业素质满意度"))
+        return result
+
+
+class BasicQualityAnalyzer(DataAnalyzer):
+    """基础素质报告"""
+
+    def __init__(self, df, dict_config):
+        super().__init__(df, dict_config)
+
+    def analyse(self):
+        result = {}
+        subject = 'I2-1'
+        sheet_name = '重要度'
+        ls_metric = list(set(self._df[self._degree_col]))
+        if len(ls_metric) > 1:
+            df_rate = MultiRateCalculator(self._df,
+                                          'I2-1',
+                                          self._degree_col,
+                                          None,
+                                          self._dict_config).calculate()
+            df_rate = df_rate[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1], CONFIG.RATE_COLUMN[1]]]
+            df_rate.rename(columns={CONFIG.RATE_COLUMN[-1]: "重要度"}, inplace=True)
+            result["总体毕业生" + sheet_name] = df_rate
+
+        for metric in ls_metric:
+            df_filter = self._df[self._df[self._degree_col] == metric]
+            if not df_filter.empty:
+                df_rate = MultiRateCalculator(df_filter,
+                                              'I2-1',
+                                              self._degree_col,
+                                              None,
+                                              self._dict_config).calculate()
+                df_rate = df_rate[[CONFIG.RATE_COLUMN[0], CONFIG.RATE_COLUMN[-1], CONFIG.RATE_COLUMN[1]]]
+                df_rate.rename(columns={CONFIG.RATE_COLUMN[-1]: "重要度"}, inplace=True)
+                result[metric + sheet_name] = df_rate
+
+        sheet_name = '基础能力素质的水平'
+        if len(ls_metric) > 1:
+            df_ablility = AbilityDistribution(self._df,
+                                              'I2-2',
+                                              self._dict_config).calculate()
+            df_ablility.fillna(0, inplace=True)
+            result["总体毕业生" + sheet_name] = df_ablility
+
+        for metric in ls_metric:
+            df_filter = self._df[self._df[self._degree_col] == metric]
+            if not df_filter.empty:
+                df_ablility = AbilityDistribution(df_filter,
+                                                  'I2-2',
+                                                  self._dict_config).calculate()
+                df_ablility.fillna(0, inplace=True)
+                result[metric + sheet_name] = df_ablility
+
+        return result
+
+
+####### 学习效果 start
+
+
 ####### 特殊人群 end
 class SpecialGenderAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
@@ -1191,7 +1270,6 @@ class OverallSummary(SummaryDataAnalyzer):
 ####### 特殊人群 end
 
 
-
 def test():
     # read excel as df
     file_loader = ExcelLoader("../test-data/san-ming/cleaned/cleaned.xlsx")
@@ -1221,8 +1299,11 @@ def test():
     # analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
     # analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
     # analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
-    #analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
-    analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
+    # analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
+    # analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
+    #analyzer_collection['基础能力素质'] = BasicQualityAnalyzer(df, dic_config)
+    analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
+
     runner.run_batch(analyzer_collection)
 
     pass

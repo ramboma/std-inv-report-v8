@@ -771,3 +771,15 @@ class SchoolEvelutionCalcutor(DataCalculator):
             df_combine.append(df_init)
         df_combines = pd.concat(df_combine, sort=False)
         return df_combines
+
+class AbilityDistribution(DataCalculator):
+    def __init__(self, df, target_col,dict_config, styler=None):
+        super().__init__(df, target_col, styler)
+        self._dict_config=dict_config
+
+    def calculate(self):
+        df_ability=ability_distribution(self._df, self._tgt_col)
+        df_ability.loc[:, CONFIG.RATE_COLUMN[0]] = df_ability.loc[:, CONFIG.RATE_COLUMN[0]].map(self._dict_config)
+        df_ability.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+        return df_ability
