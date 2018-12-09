@@ -247,7 +247,7 @@ class SpecialDataAnalyzer(DataAnalyzer):
                                                                                    '实践教学评价',
                                                                                    dict_config=self._dict_config).calculate()
         # 任课教师评价
-        rel_cols = ['H3-' + chr(i) for i in range(65, 69)]
+        rel_cols = ['H4-' + chr(i) for i in range(65, 69)]
         if len(ls_metric) > 1:
             result["总体毕业生" + self._sheet_name + "任课教师评价"] = FiveConditionCalculator(df,
                                                                                     self._where_col,
@@ -1299,10 +1299,10 @@ def test():
     # analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
     # analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
     # analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
-    # analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
+    analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
     # analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
     #analyzer_collection['基础能力素质'] = BasicQualityAnalyzer(df, dic_config)
-    analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
+    #analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 
