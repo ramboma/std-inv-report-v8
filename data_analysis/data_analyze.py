@@ -180,7 +180,7 @@ class SpecialDataAnalyzer(DataAnalyzer):
 
     def analyse(self):
         # find out necessary data columns
-        de = DataExtractor(self._df, CONFIG.SPECIAL_REL)
+        de = DataExtractor(self._df, CONFIG.SPECIAL_REL, self._where_col)
         df = de.extract_ref_cols()
         result = dict()
         ls_metric = list(set(df[self._degree_col]))
@@ -586,8 +586,9 @@ class EmpJobAnalyzer(SimpleValueRateDataAnalyzer):
 
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'])
+        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'], self._question_col)
         df = de.extract_ref_cols()
+
         # 职业均值
         dic_grp = {"就业职业": ['B4-B']}
         df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
@@ -622,8 +623,9 @@ class EmpIndurstryAnalyzer(SimpleValueRateDataAnalyzer):
 
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'])
+        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'], self._question_col)
         df = de.extract_ref_cols()
+
         # 收入均值
         dic_grp = {"就业行业": ['B5-B']}
         df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
@@ -658,10 +660,11 @@ class EmpRegionAnalyzer(SimpleValueRateDataAnalyzer):
 
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col, '_6', 'B6', 'B9-1', 'B7-1', 'B3-B', 'A1-A'])
+        de = DataExtractor(self._df, [self._question_col, '_6', 'B6', 'B9-1', 'B7-1', 'B3-B', 'A1-A'], self._question_col)
         df = de.extract_ref_cols()
+
         # 职业均值
-        dic_grp = {"就业地区": ['B3-B']}
+        dic_grp = {"就业地区": ['B3-A']}
         df_grp = common_grp_anaysis(df, 'B6', GrpMeanCalculator,
                                     "月均收入", dic_grp)
         result.update(df_grp)
@@ -673,6 +676,7 @@ class EmpRegionAnalyzer(SimpleValueRateDataAnalyzer):
                                                   self._dict_config, True).analyse()
         result.update(df_province)
         # 省内就业城市月均收入
+        dic_grp = {"就业城市": ['B3-B']}
         df_province_income = common_grp_anaysis(df_city, 'B6', GrpMeanCalculator, "月均收入", dic_grp)
         result.update(df_province_income)
 
@@ -698,7 +702,7 @@ class EmpIndurstryTypeSizeAnalyzer(SimpleValueRateDataAnalyzer):
         result = super().analyse()
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'])
+        de = DataExtractor(self._df, [self._question_col, 'B6', 'B9-1', 'B7-1'], self._question_col)
         df = de.extract_ref_cols()
         # 收入均值
         dic_grp = {"就业单位类型": ['B1']}
@@ -1152,7 +1156,7 @@ class SpecialGenderAnalyzer(SpecialDataAnalyzer):
 class SpecialNationalAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = '_16'
-        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
+        all_v = [x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != '汉族']
 
         dict_where = {}
@@ -1166,7 +1170,7 @@ class SpecialOriginProvinceAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'A1-A'
         province = get_province(df)
-        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
+        all_v = [x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != province]
 
         dict_where = {}
@@ -1180,7 +1184,7 @@ class SpecialProvinceAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B3-A'
         province = get_province(df)
-        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
+        all_v = [x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != province]
 
         dict_where = {}
@@ -1193,7 +1197,7 @@ class SpecialProvinceAnalyzer(SpecialDataAnalyzer):
 class SpecialEducationAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B5-B'
-        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
+        all_v = [x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != '教育']
 
         dict_where = {}
@@ -1206,7 +1210,7 @@ class SpecialEducationAnalyzer(SpecialDataAnalyzer):
 class SpecialMedicalAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B4-A'
-        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
+        all_v = [x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth != '医疗卫生']
 
         dict_where = {}
@@ -1221,7 +1225,7 @@ class SpecialMedicalAnalyzer(SpecialDataAnalyzer):
 class SpecialSocialHealthAnalyzer(SpecialDataAnalyzer):
     def __init__(self, df, dict_config):
         where_col = 'B5-B'
-        all_v =[x for x in list(set(df[where_col])) if str(x) != 'nan']
+        all_v = [x for x in list(set(df[where_col])) if str(x) != 'nan']
         others = [oth for oth in all_v if oth not in ['卫生', '社会工作']]
 
         dict_where = {}
@@ -1285,16 +1289,11 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-
-    #analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
-
-    #analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
-
-    analyzer_collection['医疗卫生职业'] = SpecialMedicalAnalyzer(df, dic_config)
-
-    #analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
+    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
 
 
+
+    # analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 

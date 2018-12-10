@@ -2,9 +2,10 @@ import data_analysis.config as CONFIG
 
 
 class DataExtractor(object):
-    def __init__(self, df, answer_cols):
+    def __init__(self, df, answer_cols, del_empty_col=None):
         self._df = df
         self._answer_cols = answer_cols
+        self._del_empty_col=del_empty_col
 
     def extract_ref_cols(self):
         """提取相关列"""
@@ -22,4 +23,9 @@ class DataExtractor(object):
             if col not in self._df.columns:
                 raise ("列{}不存在，无法进行计算".format(col))
         answers = self._df[relative_cols]
+
+        if self._del_empty_col is not None:
+            # 将key为空的过滤
+            answers[self._del_empty_col] = answers[self._del_empty_col].fillna('DEL')
+            answers = answers[answers[self._del_empty_col] != 'DEL']
         return answers
