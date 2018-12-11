@@ -26,6 +26,6 @@ class DataExtractor(object):
 
         if self._del_empty_col is not None:
             # 将key为空的过滤
-            answers[self._del_empty_col] = answers[self._del_empty_col].fillna('DEL')
+            answers.loc[:,self._del_empty_col] = answers[self._del_empty_col].fillna('DEL')
             answers = answers[answers[self._del_empty_col] != 'DEL']
         return answers

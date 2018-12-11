@@ -296,6 +296,8 @@ def formate_rate_t(df_data):
     # 比例转置
     df_t = df_data.pivot_table(CONFIG.RATE_COLUMN[-1], index=None,
                                columns=CONFIG.RATE_COLUMN[0])
+    colums=list(df_t.columns)
+
     df_t[CONFIG.RATE_COLUMN[2]] = count
     return df_t
 

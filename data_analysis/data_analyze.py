@@ -458,18 +458,37 @@ class WorkStabilityAnalyzer(DataAnalyzer):
         self._question_col = 'B10-1'
 
     def analyse(self):
-        de = DataExtractor(self._df, [self._question_col, self._degree_col])
+        de = DataExtractor(self._df, [self._question_col, self._degree_col], self._question_col)
         df = de.extract_ref_cols()
 
         if self._dict_config is None:
-            raise ("缺少配置文件，无法解析sheet name")
+            raise Exception("缺少配置文件，无法解析sheet name")
         sheet_name = self._dict_config[self._question_col]
         result = dict()
+        extra = {"离职率": ["1次", "2次", "3次及以上"]}
         result["总体" + sheet_name] = OverallRateCalculator(df, self._question_col,
                                                           self._degree_col, do_t=True,
-                                                          extra={"离职率": ["1次", "2次", "3次及以上"]}
+                                                          extra=extra
                                                           ).calculate()
-        result.update(common_grp_anaysis(df, self._question_col, GrpRateCalculator, sheet_name))
+        ls_metric = list(set(df[self._degree_col]))
+        if len(ls_metric) > 1:
+            result["总体毕业生各学院" + sheet_name] = GrpRateCalculator(df, self._question_col,
+                                                                [CONFIG.BASE_COLUMN[0]],
+                                                                extra=extra).calculate()
+            result["总体毕业生各专业" + sheet_name] = GrpRateCalculator(df, self._question_col,
+                                                                [CONFIG.BASE_COLUMN[0],
+                                                                 CONFIG.BASE_COLUMN[1]],
+                                                                extra=extra).calculate()
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            if not df_filter.empty:
+                result[metric + "各学院" + sheet_name] = GrpRateCalculator(df_filter, self._question_col,
+                                                                        [CONFIG.BASE_COLUMN[0]],
+                                                                        extra=extra).calculate()
+                result[metric + "各专业" + sheet_name] = GrpRateCalculator(df_filter, self._question_col,
+                                                                        [CONFIG.BASE_COLUMN[0],
+                                                                         CONFIG.BASE_COLUMN[1]],
+                                                                        extra=extra).calculate()
 
         # 更换工作原因
         result.update(OverallAnswerIndexDataAnalyzer(self._df, ["B10-2"], self._dict_config).analyse())
@@ -660,7 +679,8 @@ class EmpRegionAnalyzer(SimpleValueRateDataAnalyzer):
 
         sheet_name = self._dict_config[self._question_col]
         # find out necessary data columns
-        de = DataExtractor(self._df, [self._question_col, '_6', 'B6', 'B9-1', 'B7-1', 'B3-B', 'A1-A'], self._question_col)
+        de = DataExtractor(self._df, [self._question_col, '_6', 'B6', 'B9-1', 'B7-1', 'B3-B', 'A1-A'],
+                           self._question_col)
         df = de.extract_ref_cols()
 
         # 职业均值
@@ -677,6 +697,9 @@ class EmpRegionAnalyzer(SimpleValueRateDataAnalyzer):
         result.update(df_province)
         # 省内就业城市月均收入
         dic_grp = {"就业城市": ['B3-B']}
+        df_city['B3-B'] = df_city['B3-B'].fillna('DEL')
+        df_city = df_city[df_city['B3-B'] != 'DEL']
+
         df_province_income = common_grp_anaysis(df_city, 'B6', GrpMeanCalculator, "月均收入", dic_grp)
         result.update(df_province_income)
 
@@ -888,12 +911,20 @@ class Evelution_H4_L_OAnalyzer(DataAnalyzer):
         # H4-L~H4-O
         sheet_name = '对母校创业教育的满意度评价'
         multi_cols = ['H4-' + chr(i) for i in range(76, 80)]
+        dict_overall_five=FiveRateDataAnalyzer(self._df, None,
+                                               CONFIG.ANSWER_TYPE_SATISFY,
+                                               self._dict_config).degree_multi_five(multi_cols, sheet_name)
+        result.update(dict_overall_five)
         dict_three = ThreeMultiRateAnayze(self._df, multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
                                           sheet_name, self._dict_config).analyse()
         result.update(dict_three)
         sheet_name = '对母校创业教育的帮助度评价'
         # H3-E~H3-F
         multi_cols = ['H3-' + chr(i) for i in range(69, 71)]
+        dict_overall_five = FiveRateDataAnalyzer(self._df, None,
+                                                 CONFIG.ANSWER_TYPE_HELP,
+                                                 self._dict_config).degree_multi_five(multi_cols, sheet_name)
+        result.update(dict_overall_five)
 
         dict_three = ThreeMultiRateAnayze(self._df, multi_cols, CONFIG.ANSWER_TYPE_HELP,
                                           sheet_name, self._dict_config).analyse()
@@ -987,12 +1018,7 @@ class StudyAbroadAnalyzer(DataAnalyzer):
 
         # 留学比列
         # f1答题比例
-        df_rate = OverallRateCalculator(df, 'F1', self._degree_col, do_t=True).calculate()
-        # A2答题总人数
-        count = df['A2'].count()
-        df_rate[CONFIG.RATE_COLUMN[2]] = count
-        df_rate[CONFIG.RATE_COLUMN[-1]] = (df_rate[CONFIG.RATE_COLUMN[1]] / df_rate[CONFIG.RATE_COLUMN[2]]).round(
-            decimals=CONFIG.DECIMALS6)
+        df_rate = StudyCalculator(df, 'F1', self._degree_col).calculate()
         result['留学比列'] = df_rate
 
         df_temp = OverallFiveCalculator(df, 'F2', self._degree_col, CONFIG.ANSWER_TYPE_SATISFY, styler=None).calculate()
@@ -1289,9 +1315,7 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
-
-
+    analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
 
     # analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
 

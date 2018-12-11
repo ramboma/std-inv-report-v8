@@ -120,9 +120,10 @@ class OverallRateCalculator(DataCalculator):
 class GrpRateCalculator(DataCalculator):
     """分组答案占比"""
 
-    def __init__(self, df, target_col, grp_cols, styler=None):
+    def __init__(self, df, target_col, grp_cols, extra={}, styler=None,):
         super().__init__(df, target_col, styler)
         self._grp_cols = list(grp_cols)
+        self._extra=extra
 
     def calculate(self):
         df_grp = formula_rate_grp(self._df, self._tgt_col, self._grp_cols)
@@ -131,6 +132,13 @@ class GrpRateCalculator(DataCalculator):
         # Concatenate everything into a single DataFrame
         df_ret = pd.concat([df_grp, df_overal], sort=False)
         df_ret.iloc[-1, 0:len(self._grp_cols)] = CONFIG.TOTAL_COLUMN
+        # 结果集额外计算
+        if self._extra:
+            for key in self._extra:
+                df_ret[key] = 0
+                for col in self._extra[key]:
+                    if col in df_ret.columns:
+                        df_ret.loc[:, key] = df_ret.loc[:, key] + df_ret.loc[:, col]
         # if styler object be set, apply style
         if isinstance(self._styler, AnalysisResultStyler):
             self._styler.prettify(df_ret)
@@ -226,7 +234,8 @@ class OverallFiveCalculator(DataCalculator):
             df_where = self._df[self._df[self._metric_col] == where]
             df_rate = formula_five_rate(df_where, self._tgt_col, self._metric_type)
             df_rate.insert(0, self._metric_col, where)
-            df_combines.append(df_rate)
+            if not df_rate.empty:
+                df_combines.append(df_rate)
         # Concatenate everything into a single DataFrame
         df_combines = pd.concat(df_combines, sort=False)
         df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
@@ -790,3 +799,46 @@ class AbilityDistribution(DataCalculator):
         df_ability.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
 
         return df_ability
+
+class StudyCalculator(DataCalculator):
+    """求学比列"""
+    def __init__(self, df, target_col,metric_col, styler=None):
+        super().__init__(df, target_col, styler)
+        self._metric_col=metric_col
+
+    def calculate(self):
+        # step1：筛选出指标中的值
+        ls_metric = list(set(self._df[self._metric_col]))
+        df_combines = []
+        # step2：循环值进行计算
+        for where in ls_metric:
+            df_where = self._df[self._df[self._metric_col] == where]
+            df_rate = formula_rate(df_where, self._tgt_col)
+            count = df_where['A2'].count()
+            df_rate[CONFIG.RATE_COLUMN[2]] = count
+            df_rate[CONFIG.RATE_COLUMN[-1]] = (df_rate[CONFIG.RATE_COLUMN[1]] / df_rate[CONFIG.RATE_COLUMN[2]]).round(
+                decimals=CONFIG.DECIMALS6)
+            df_rate = formate_rate_t(df_rate)
+            if not df_rate.empty:
+                df_rate.insert(0, self._metric_col, where)
+                df_combines.append(df_rate)
+        # 拼接后排序
+        df_combines = pd.concat(df_combines, sort=False)
+        df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+        # combine overal
+        df_overal = formula_rate(self._df, self._tgt_col)
+        count = self._df['A2'].count()
+        df_overal[CONFIG.RATE_COLUMN[2]] = count
+        df_overal[CONFIG.RATE_COLUMN[-1]] = (df_overal[CONFIG.RATE_COLUMN[1]] / df_overal[CONFIG.RATE_COLUMN[2]]).round(
+            decimals=CONFIG.DECIMALS6)
+        df_overal = formate_rate_t(df_overal)
+
+        df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
+        df_combines = df_combines.append(df_overal)
+        df_combines.fillna(0, inplace=True)
+
+        # if styler object be set, apply style
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines
