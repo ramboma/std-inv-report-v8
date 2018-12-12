@@ -842,3 +842,44 @@ class StudyCalculator(DataCalculator):
         if isinstance(self._styler, AnalysisResultStyler):
             df_combines = self._styler.prettify(df_combines)
         return df_combines
+
+class SelfEmpCalculator(DataCalculator):
+    """自主创业比列"""
+    def __init__(self, df, target_col,metric_col, styler=None):
+        super().__init__(df, target_col, styler)
+        self._metric_col=metric_col
+
+    def calculate(self):
+        # step1：筛选出指标中的值
+        ls_metric = list(set(self._df[self._metric_col]))
+        df_combines = []
+        # step2：循环值进行计算
+        for where in ls_metric:
+            df_where = self._df[self._df[self._metric_col] == where]
+            df_rate = formula_rate(df_where, self._tgt_col)
+            df_self = df_rate[df_rate[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
+            if df_self.empty:
+                df_self=pd.DataFrame({CONFIG.RATE_COLUMN[0]: [CONFIG.A2_ANSWER[1]],
+                                CONFIG.RATE_COLUMN[1]: [0],
+                                CONFIG.RATE_COLUMN[-1]: [0]
+                                })
+                df_self[CONFIG.RATE_COLUMN[2]] = df_rate[CONFIG.RATE_COLUMN[2]].head(1)
+
+            df_self.insert(0, self._metric_col, where)
+            df_combines.append(df_self)
+        # 拼接后排序
+        df_combines = pd.concat(df_combines, sort=False)
+        df_combines.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
+
+        # combine overal
+        df_overal = formula_rate(self._df, self._tgt_col)
+        df_overal = df_overal[df_overal[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
+        df_overal.insert(0, self._metric_col, CONFIG.TOTAL_COLUMN)
+        df_combines = df_combines.append(df_overal)
+        df_combines.fillna(0, inplace=True)
+
+        # if styler object be set, apply style
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combines = self._styler.prettify(df_combines)
+        return df_combines
+

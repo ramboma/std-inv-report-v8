@@ -25,12 +25,18 @@ def formula_rate(data, subject, top=0):
 
     # 答题总人数
     count = data[subject].count()
-    # 答案占比
-    df_rate = data[subject].value_counts()
-    df_rate = pd.DataFrame({CONFIG.RATE_COLUMN[0]: df_rate.index,
-                            CONFIG.RATE_COLUMN[1]: df_rate.values,
-                            CONFIG.RATE_COLUMN[-1]: df_rate.values / count
-                            })
+    if count:
+        # 答案占比
+        df_rate = data[subject].value_counts()
+        df_rate = pd.DataFrame({CONFIG.RATE_COLUMN[0]: df_rate.index,
+                                CONFIG.RATE_COLUMN[1]: df_rate.values,
+                                CONFIG.RATE_COLUMN[-1]: df_rate.values / count
+                                })
+    else:
+        df_rate = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [''],
+                                CONFIG.RATE_COLUMN[1]: [0],
+                                CONFIG.RATE_COLUMN[-1]: [0]
+                                })
     df_rate[CONFIG.RATE_COLUMN[2]] = count
     # 答题总人数为0时，出现NaN值
     df_rate.fillna(0, inplace=True)

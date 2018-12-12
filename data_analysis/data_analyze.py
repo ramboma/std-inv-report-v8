@@ -810,8 +810,8 @@ class SelfEmpAnalyzer(DataAnalyzer):
 
     def analyse(self):
         result = {}
-        df_a2 = OverallRateCalculator(self._df, 'A2', self._degree_col).calculate()
-        result['自主创业比例'] = df_a2[df_a2[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
+        df_a2 = SelfEmpCalculator(self._df, 'A2', self._degree_col).calculate()
+        result['自主创业比例'] = df_a2
 
         style = AnswerIndexStyler()
         result['创业原因'] = MultiRateCalculator(self._df, 'G3', self._degree_col, style, self._dict_config).degree_cal()
@@ -1315,9 +1315,10 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
+    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
+    analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
 
-    # analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
+
 
     runner.run_batch(analyzer_collection)
 
