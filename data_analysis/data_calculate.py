@@ -120,10 +120,10 @@ class OverallRateCalculator(DataCalculator):
 class GrpRateCalculator(DataCalculator):
     """分组答案占比"""
 
-    def __init__(self, df, target_col, grp_cols, extra={}, styler=None,):
+    def __init__(self, df, target_col, grp_cols, extra={}, styler=None, ):
         super().__init__(df, target_col, styler)
         self._grp_cols = list(grp_cols)
-        self._extra=extra
+        self._extra = extra
 
     def calculate(self):
         df_grp = formula_rate_grp(self._df, self._tgt_col, self._grp_cols)
@@ -510,16 +510,22 @@ class TopNCalculator(DataCalculator):
 class GrpTopNCalculator(DataCalculator):
     """分组合并取top n"""
 
-    def __init__(self, df, target_col, grp_cols, top=5, styler=None):
+    def __init__(self, df, target_col, grp_cols, top=5, styler=None, has_overal=False):
         super().__init__(df, target_col, styler)
         self._grp_cols = grp_cols
         self._top = top
+        self._has_overal = has_overal
 
     def calculate(self):
         df_grp_rate = formula_rate_grp_top(self._df, self._tgt_col, self._grp_cols, self._top)
         combine_name = CONFIG.DICT_SUBJECT[self._tgt_col]
         df_combine = formate_grp_row_combine(df_grp_rate, array_grps=self._grp_cols,
                                              combin_name=combine_name)
+        if self._has_overal:
+            df_overal = formula_rate(self._df, self._tgt_col, self._top)
+            df_overal = formate_row_combine(df_overal, combin_name=combine_name)
+            df_combine = pd.concat([df_combine, df_overal], sort=False)
+            df_combine.iloc[-1, 0:len(self._grp_cols)] = CONFIG.TOTAL_COLUMN
         return df_combine
 
 
@@ -607,7 +613,7 @@ class EmpFeatureCalculator(DataCalculator):
                 print(df_top.columns)
                 df_init = pd.concat([df_init, df_top], sort=False, axis=1)
             if self._tgt_col in df_init.columns:
-                df_init.insert(0, self._tgt_col+'条件', where_col)
+                df_init.insert(0, self._tgt_col + '条件', where_col)
             else:
                 df_init.insert(0, self._tgt_col, where_col)
             df_combine.append(df_init)
@@ -642,7 +648,7 @@ class EmpCompetitiveCalculator(DataCalculator):
             df_mean.rename(columns={CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1],
                                     CONFIG.MEAN_COLUMN[2]: '薪酬' + CONFIG.MEAN_COLUMN[2]}, inplace=True)
             df_init = pd.concat([df_init, df_mean], sort=False, axis=1)
-            df_join=pd.DataFrame()
+            df_join = pd.DataFrame()
             combine_cols = ['B9-1', 'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8']
             for col in combine_cols:
                 metric_type = CONFIG.SPECIAL_SUBJECT_TYPE[col]
@@ -656,7 +662,7 @@ class EmpCompetitiveCalculator(DataCalculator):
                     CONFIG.MEAN_COLUMN[2]: CONFIG.SPECIAL_SUBJECT[col] + CONFIG.MEAN_COLUMN[2]
                 }, inplace=True)
 
-                df_join = pd.concat([df_join, df_t],  sort=False, axis=1)
+                df_join = pd.concat([df_join, df_t], sort=False, axis=1)
             # 离职率
             df_demission = formate_rate_t(formula_rate(df_where, 'B10-1'))
             df_demission["离职率"] = 0
@@ -668,7 +674,7 @@ class EmpCompetitiveCalculator(DataCalculator):
             df_join = pd.concat([df_join, df_demission], axis=1, sort=False)
             df_init.insert(0, self._tgt_col, where_col)
             df_join.insert(0, self._tgt_col, where_col)
-            df_init=pd.merge(df_init, df_join,on=self._tgt_col,how='left')
+            df_init = pd.merge(df_init, df_join, on=self._tgt_col, how='left')
             df_combine.append(df_init)
         df_combines = pd.concat(df_combine, sort=False)
         return df_combines
@@ -690,16 +696,16 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
         df_mean = formula_mean_grp(self._df, 'B6', self._grp_cols)
         df_mean.rename(columns={CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1],
                                 CONFIG.MEAN_COLUMN[2]: '薪酬' + CONFIG.MEAN_COLUMN[2]}, inplace=True)
-        df_combine=pd.merge(df_emp_rate, df_mean, how='left', on=self._grp_cols)
+        df_combine = pd.merge(df_emp_rate, df_mean, how='left', on=self._grp_cols)
 
         combine_cols = ['B9-1', 'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8']
         for col in combine_cols:
             metric_type = CONFIG.SPECIAL_SUBJECT_TYPE[col]
             metric_name = parse_measure_name(metric_type)
-            df_t = formula_five_rate_grp(self._df, col,self._grp_cols, metric_type)
-            sub_cols=[metric_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
+            df_t = formula_five_rate_grp(self._df, col, self._grp_cols, metric_type)
+            sub_cols = [metric_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
             sub_cols.extend(self._grp_cols)
-            df_t = df_t.loc[:,sub_cols]
+            df_t = df_t.loc[:, sub_cols]
             df_t.drop_duplicates(inplace=True)
             df_t.rename(columns={
                 metric_name: CONFIG.SPECIAL_SUBJECT[col],
@@ -714,7 +720,7 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
         for col in CONFIG.DIMISSION_COLUMNS:
             if col in df_demission.columns:
                 df_demission.loc[:, "离职率"] = df_demission.loc[:, "离职率"] + df_demission.loc[:, col]
-        sub_cols=["离职率", CONFIG.RATE_COLUMN[2]]
+        sub_cols = ["离职率", CONFIG.RATE_COLUMN[2]]
         sub_cols.extend(self._grp_cols)
         df_demission = df_demission[sub_cols]
         df_demission.rename(columns={CONFIG.RATE_COLUMN[2]: "离职率" + CONFIG.RATE_COLUMN[2]}, inplace=True)
@@ -788,23 +794,26 @@ class SchoolEvelutionCalcutor(DataCalculator):
         df_combines = pd.concat(df_combine, sort=False)
         return df_combines
 
+
 class AbilityDistribution(DataCalculator):
-    def __init__(self, df, target_col,dict_config, styler=None):
+    def __init__(self, df, target_col, dict_config, styler=None):
         super().__init__(df, target_col, styler)
-        self._dict_config=dict_config
+        self._dict_config = dict_config
 
     def calculate(self):
-        df_ability=ability_distribution(self._df, self._tgt_col)
+        df_ability = ability_distribution(self._df, self._tgt_col)
         df_ability.loc[:, CONFIG.RATE_COLUMN[0]] = df_ability.loc[:, CONFIG.RATE_COLUMN[0]].map(self._dict_config)
         df_ability.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
 
         return df_ability
 
+
 class StudyCalculator(DataCalculator):
     """求学比列"""
-    def __init__(self, df, target_col,metric_col, styler=None):
+
+    def __init__(self, df, target_col, metric_col, styler=None):
         super().__init__(df, target_col, styler)
-        self._metric_col=metric_col
+        self._metric_col = metric_col
 
     def calculate(self):
         # step1：筛选出指标中的值
@@ -843,11 +852,13 @@ class StudyCalculator(DataCalculator):
             df_combines = self._styler.prettify(df_combines)
         return df_combines
 
+
 class SelfEmpCalculator(DataCalculator):
     """自主创业比列"""
-    def __init__(self, df, target_col,metric_col, styler=None):
+
+    def __init__(self, df, target_col, metric_col, styler=None):
         super().__init__(df, target_col, styler)
-        self._metric_col=metric_col
+        self._metric_col = metric_col
 
     def calculate(self):
         # step1：筛选出指标中的值
@@ -859,10 +870,10 @@ class SelfEmpCalculator(DataCalculator):
             df_rate = formula_rate(df_where, self._tgt_col)
             df_self = df_rate[df_rate[CONFIG.RATE_COLUMN[0]] == CONFIG.A2_ANSWER[1]]
             if df_self.empty:
-                df_self=pd.DataFrame({CONFIG.RATE_COLUMN[0]: [CONFIG.A2_ANSWER[1]],
-                                CONFIG.RATE_COLUMN[1]: [0],
-                                CONFIG.RATE_COLUMN[-1]: [0]
-                                })
+                df_self = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [CONFIG.A2_ANSWER[1]],
+                                        CONFIG.RATE_COLUMN[1]: [0],
+                                        CONFIG.RATE_COLUMN[-1]: [0]
+                                        })
                 df_self[CONFIG.RATE_COLUMN[2]] = df_rate[CONFIG.RATE_COLUMN[2]].head(1)
 
             df_self.insert(0, self._metric_col, where)
@@ -882,4 +893,3 @@ class SelfEmpCalculator(DataCalculator):
         if isinstance(self._styler, AnalysisResultStyler):
             df_combines = self._styler.prettify(df_combines)
         return df_combines
-

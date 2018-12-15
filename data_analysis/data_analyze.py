@@ -785,14 +785,16 @@ class EmpDifficultAnalyzer(DataAnalyzer):
         if len(ls_metric) > 1:
             result["总体毕业生各专业" + sheet_name] = GrpTopNCalculator(self._df, self._question_col,
                                                                 [CONFIG.BASE_COLUMN[0],
-                                                                 CONFIG.BASE_COLUMN[1]]).calculate()
+                                                                 CONFIG.BASE_COLUMN[1]],
+                                                                top=3, has_overal=True).calculate()
 
         for metric in ls_metric:
             df_filter = self._df[self._df[self._degree_col] == metric]
             if not df_filter.empty:
                 result[metric + "各专业" + sheet_name] = GrpTopNCalculator(df_filter, self._question_col,
                                                                         [CONFIG.BASE_COLUMN[0],
-                                                                         CONFIG.BASE_COLUMN[1]]).calculate()
+                                                                         CONFIG.BASE_COLUMN[1]],
+                                                                        top=3, has_overal=True).calculate()
         sheet_name1 = self._dict_config['D1']
         result.update(OverallAnswerIndexDataAnalyzer(self._df, ['D1'], self._dict_config).analyse())
         return result
@@ -1315,10 +1317,7 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
-    analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
-
-
+    analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 
