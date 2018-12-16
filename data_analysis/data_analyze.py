@@ -150,24 +150,55 @@ class SummaryDataAnalyzer(DataAnalyzer):
     def analyse(self):
         # find out necessary data columns
         result = dict()
+        style = AppendOverall()
         result['学院就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
                                                         [CONFIG.BASE_COLUMN[0]],
-                                                        dict_config=self._dict_config).calculate()
+                                                        dict_config=self._dict_config,
+                                                        styler=style).calculate()
         result['专业就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
                                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                        dict_config=self._dict_config).calculate()
+                                                        dict_config=self._dict_config,
+                                                        styler=style).calculate()
 
         ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
-        result['学院教育教学'] = GrpThreeCalculator(self._df,
-                                              [CONFIG.BASE_COLUMN[0]],
-                                              CONFIG.ANSWER_TYPE_SATISFY,
-                                              {'教育教学': ls_rels},
-                                              dict_config=self._dict_config).calculate()
-        result['专业教育教学'] = GrpThreeCalculator(self._df,
-                                              [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                              CONFIG.ANSWER_TYPE_SATISFY,
-                                              {'教育教学': ls_rels},
-                                              dict_config=self._dict_config).calculate()
+        df_teacher = GrpThreeCalculator(self._df,
+                                        [CONFIG.BASE_COLUMN[0]],
+                                        CONFIG.ANSWER_TYPE_SATISFY,
+                                        {'教育教学': ls_rels},
+                                        dict_config=self._dict_config).calculate()
+        ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
+        df_lesson = GrpThreeCalculator(self._df,
+                                       [CONFIG.BASE_COLUMN[0]],
+                                       CONFIG.ANSWER_TYPE_MEET_V,
+                                       {'课堂教学': ls_rels},
+                                       dict_config=self._dict_config).calculate()
+        ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
+        df_practice = GrpThreeCalculator(self._df,
+                                         [CONFIG.BASE_COLUMN[0]],
+                                         CONFIG.ANSWER_TYPE_HELP,
+                                         {'教育教学': ls_rels},
+                                         dict_config=self._dict_config).calculate()
+        result['学院教育教学'] = pd.concat([df_teacher, df_lesson, df_practice], axis=1, sort=False)
+
+        df_teacher = GrpThreeCalculator(self._df,
+                                        [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                        CONFIG.ANSWER_TYPE_SATISFY,
+                                        {'实践教学': ls_rels},
+                                        dict_config=self._dict_config).calculate()
+
+        ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
+        df_lesson = GrpThreeCalculator(self._df,
+                                       [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                       CONFIG.ANSWER_TYPE_MEET_V,
+                                       {'课堂教学': ls_rels},
+                                       dict_config=self._dict_config).calculate()
+        ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
+        df_practice = GrpThreeCalculator(self._df,
+                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                         CONFIG.ANSWER_TYPE_HELP,
+                                         {'实践教学': ls_rels},
+                                         dict_config=self._dict_config).calculate()
+        result['专业教育教学'] = pd.concat([df_teacher, df_lesson, df_practice], axis=1, join='inner', sort=False)
         return result
 
 
@@ -913,9 +944,9 @@ class Evelution_H4_L_OAnalyzer(DataAnalyzer):
         # H4-L~H4-O
         sheet_name = '对母校创业教育的满意度评价'
         multi_cols = ['H4-' + chr(i) for i in range(76, 80)]
-        dict_overall_five=FiveRateDataAnalyzer(self._df, None,
-                                               CONFIG.ANSWER_TYPE_SATISFY,
-                                               self._dict_config).degree_multi_five(multi_cols, sheet_name)
+        dict_overall_five = FiveRateDataAnalyzer(self._df, None,
+                                                 CONFIG.ANSWER_TYPE_SATISFY,
+                                                 self._dict_config).degree_multi_five(multi_cols, sheet_name)
         result.update(dict_overall_five)
         dict_three = ThreeMultiRateAnayze(self._df, multi_cols, CONFIG.ANSWER_TYPE_SATISFY,
                                           sheet_name, self._dict_config).analyse()
@@ -1317,7 +1348,7 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
+    analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 

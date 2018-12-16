@@ -184,7 +184,8 @@ class OverallThreeCalculator():
 class GrpThreeCalculator():
     """三维分组答案占比"""
 
-    def __init__(self, df, grp_cols, metric_type, dict_extra={}, styler=None, dict_config={}):
+    def __init__(self, df, grp_cols, metric_type, dict_extra={},
+                 styler=None, dict_config={}):
         self._df = df
         self._styler = styler
         self._grp_cols = grp_cols
@@ -209,6 +210,7 @@ class GrpThreeCalculator():
             if self._dict_config:
                 df_combines.loc[:, key] = df_combines.loc[:, key].map(
                     self._dict_config)
+
             df_t = df_combines.pivot_table(index=self._grp_cols,
                                            columns=key,
                                            values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
@@ -725,6 +727,10 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
         df_demission = df_demission[sub_cols]
         df_demission.rename(columns={CONFIG.RATE_COLUMN[2]: "离职率" + CONFIG.RATE_COLUMN[2]}, inplace=True)
         df_combine = pd.merge(df_combine, df_demission, how='left', on=self._grp_cols)
+
+        # if styler object be set, apply style
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combine = self._styler.prettify(df_combine, self._grp_cols)
 
         return df_combine
 
