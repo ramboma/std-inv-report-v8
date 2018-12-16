@@ -27,7 +27,7 @@ class OverallAnswerIndexDataAnalyzer(DataAnalyzer):
     def analyse(self):
         # find out necessary data columns
         if self._dict_config is None:
-            raise ("缺少配置文件，无法解析sheet name")
+            raise Exception("缺少配置文件，无法解析sheet name")
         de = DataExtractor(self._df, self._question_cols)
         df = de.extract_ref_cols()
         result = dict()

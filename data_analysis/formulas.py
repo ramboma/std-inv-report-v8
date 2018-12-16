@@ -556,3 +556,31 @@ def build_period_name(start, step, period_n, max=100000):
     val = '{}元及以上'.format(start + period_n * step + 1)
     name[key] = val
     return name
+
+def formula_total(data):
+    """总体毕业生人数
+    默认使用学号统计，如果学号不存在，则取第一列计数
+    """
+    if "学号" in data.columns:
+        return data['学号'].count()
+    else:
+        return data.iloc[:,0].count()
+
+def formula_grp_rate(data,tgt_col, grp):
+    """
+
+    分组计算占比
+    :param data:
+    :param grp:
+    :return:
+    """
+    # 分组统计人数
+    df_count = data.groupby(grp)[tgt_col].count()
+    df_count=df_count.to_frame()
+    # 计算比例
+    df_count[CONFIG.RATE_COLUMN[-1]] = df_count/formula_total(data)
+    df_count.rename(columns={tgt_col:CONFIG.RATE_COLUMN[1]}, inplace=True)
+    df_count.reset_index(inplace=True)
+    df_count.sort_values(CONFIG.RATE_COLUMN[-1], ascending=0, inplace=True)
+
+    return df_count

@@ -932,3 +932,36 @@ class SelfEmpCalculator(DataCalculator):
         if isinstance(self._styler, AnalysisResultStyler):
             df_combines = self._styler.prettify(df_combines)
         return df_combines
+
+
+class ObjectiveSizeCalculator(DataCalculator):
+    """客观数据规模占比"""
+
+    def __init__(self, df, target_col, styler=None):
+        super().__init__(df, target_col, styler)
+
+    def calculate(self):
+        df_overal = formula_rate(self._df, self._tgt_col)
+        print(df_overal)
+        df_s = pd.DataFrame({
+            CONFIG.RATE_COLUMN[0]:[CONFIG.TOTAL_COLUMN],
+            CONFIG.RATE_COLUMN[1]:[df_overal[CONFIG.RATE_COLUMN[1]].sum()],
+            CONFIG.RATE_COLUMN[-1]:[df_overal[CONFIG.RATE_COLUMN[-1]].sum()],
+        })
+        df_combines = pd.concat([df_overal, df_s], sort=False)
+
+        if isinstance(self._styler, AnalysisResultStyler):
+            df_combines = self._styler.prettify(df_combines, CONFIG.RATE_COLUMN[0])
+        return df_combines
+
+class ObjectiveGrpSizeCalculator(DataCalculator):
+    """客观数据规模占比"""
+
+    def __init__(self, df,target_col, grp_cols, styler=None):
+        super().__init__(df, target_col, styler)
+        self._grp_cols=grp_cols
+
+    def calculate(self):
+        df_overal = formula_grp_rate(self._df,self._tgt_col, self._grp_cols)
+
+        return df_overal

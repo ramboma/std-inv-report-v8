@@ -9,9 +9,8 @@ BASE_COLUMN = ('_10', '_14', 'A2', '_12')
 
 A2_ANSWER = ['在国内工作', '自主创业', '自由职业', '在国内求学', '出国/出境', '未就业']
 EXCEPTED_ANSWER = '无法评价'
-EXCEL_EXT='.xlsx'
-LOGGER_EXT='.txt'
-
+EXCEL_EXT = '.xlsx'
+LOGGER_EXT = '.txt'
 
 MEASURE_NAME_RELATIVE = '相关度'
 MEASURE_NAME_SATISFY = '满意度'
@@ -32,7 +31,6 @@ ANSWER_TYPE_PLEASED = 'PLEASED'
 ANSWER_TYPE_HELP = 'HELP'
 ANSWER_TYPE_FEEL = 'FEEL'
 ANSWER_TYPE_NUM = 'NUM'
-
 
 ANSWER_NORMAL_MEET_V = ['非常符合', '比较符合', '一般', '比较不符合', '非常不符合', '无法评价']
 ANSWER_SCORE_DICT_MEET_V = {'非常符合': 5, '比较符合': 4, '一般': 3, '比较不符合': 2, '非常不符合': 1, '无法评价': 0}
@@ -61,8 +59,8 @@ ANSWER_SCORE_DICT_NUM = {'非常多': 5, '比较多': 4, '一般': 3, '比较少
 ABILITY_SCORE = {'非常符合': 5, '有点符合': 4, '不一定': 3, '有点不符合': 2, '非常不符合': 1}
 ABILITY_SCORE_REVERSE = {'非常符合': 1, '有点符合': 2, '不一定': 3, '有点不符合': 4, '非常不符合': 5}
 
-INDUSTRY_SIZE=('50人及以下','51-100人','101-200人','201-300人',
-               '301-1000人','1001-2000人','2001人及以上')
+INDUSTRY_SIZE = ('50人及以下', '51-100人', '101-200人', '201-300人',
+                 '301-1000人', '1001-2000人', '2001人及以上')
 
 ANSWER_RECOMMED = ['愿意', '不确定', '不愿意']
 
@@ -78,17 +76,17 @@ RATE_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例')
 MEAN_COLUMN = ('答案', '回答此答案人数', '答题总人数', '比例', '度量', '均值')
 EMPLOYEE_RATE_COLUMN = '就业率'
 EMP_FREE = '灵活就业率'
-EMP_FREE_COLUMNS = ['自主创业','自由职业']
+EMP_FREE_COLUMNS = ['自主创业', '自由职业']
 
-ABILITY_COLUMN='能力水平'
-DIMISSION='离职率'
-DIMISSION_COLUMNS=['1次','2次','3次及以上']
+ABILITY_COLUMN = '能力水平'
+DIMISSION = '离职率'
+DIMISSION_COLUMNS = ['1次', '2次', '3次及以上']
 
 COMBINE_RATE = '行业比率'
 GROUP_COLUMN = ('学院', '专业', '分组')
 COLLEGE_MAJOR = ('_10', '_14')
 TOTAL_COLUMN = '总体'
-AVG_SALARY='本校平均薪酬'
+AVG_SALARY = '本校平均薪酬'
 SPECIAL_WHERE = '条件'
 B10_1_ANSWER = ['0次']
 OPER_NOT = '非'
@@ -109,20 +107,20 @@ DICT_SUBJECT = {'H4-A': '专业课教师教学态度', 'H4-B': '专业课教师�
                 'H2-A': '课堂目标', 'H2-B': '课堂纪律',
                 'H2-C': '师生互动', 'H2-D': '反馈效果', 'H2-E': '教学效果',
                 'B5-B': '行业', 'B1': '单位类型', 'B3-A': '就业地区', 'B3-B': '就业城市',
-                'B4-B': '就业职业','D2':'求职困难',
+                'B4-B': '就业职业', 'D2': '求职困难',
 
                 }
 SPECIAL_SUBJECT = {'B9-1': '专业相关度', 'B7-1': '工作满意度', 'B7-2': '薪酬满意度',
                    'B7-3': '职业发展前景', 'B7-4': '工作内容',
                    'B8': '职业期待'}
 SPECIAL_SUBJECT_TYPE = {'B9-1': ANSWER_TYPE_RELATIVE, 'B7-1': ANSWER_TYPE_SATISFY, 'B7-2': ANSWER_TYPE_SATISFY,
-                        'B7-3': ANSWER_TYPE_SATISFY, 'B7-4': ANSWER_TYPE_SATISFY,'B8': ANSWER_TYPE_MEET}
+                        'B7-3': ANSWER_TYPE_SATISFY, 'B7-4': ANSWER_TYPE_SATISFY, 'B8': ANSWER_TYPE_MEET}
 DICT_TITLE = {'B5-B': '就业行业分布', 'B1': '就业单位类型分布', 'B3-A': '就业地区', 'B3-B': '省内就业地区分布',
               'B4-B': '就业职业分布', 'B2': '就业单位规模分布',
               'C1': '一直未就业分布', 'C2': '未就业毕业生目前去向分布',
-              'D2':'求职困难','D1':'求职成功途径',
-              'A2':'毕业去向','B9-2':'从事低专业相关工作的原因分布','E2':'升学原因','E4':'跨专业升学原因',
-              'F1':'留学比列','F4':'跨专业升学原因'}
+              'D2': '求职困难', 'D1': '求职成功途径',
+              'A2': '毕业去向', 'B9-2': '从事低专业相关工作的原因分布', 'E2': '升学原因', 'E4': '跨专业升学原因',
+              'F1': '留学比列', 'F4': '跨专业升学原因'}
 
 JOB_SATISFY_SUBJECT = {'B7-1': '对工作总体的满意情况', 'B7-2': '对工作薪酬的满意情况',
                        'B7-3': '对职业发展前景的满意情况', 'B7-4': '对工作内容意的满意情况'}
@@ -133,7 +131,7 @@ DICT_REP = {'非男': '女', '非汉族': '少数民族', '非福建省': '省�
 SPECIAL_COLUMN = ('性别', '民族', '类别')
 # 条件过滤的key值
 DICT_KEY = ('column', 'cond', 'oper')
-OPER = ('eq', 'noteq','in')
+OPER = ('eq', 'noteq', 'in')
 
 GENDER = ('男', '女')
 NATIONAL_COLUMN = ('汉族', '少数民族')
@@ -144,17 +142,21 @@ MEDICAL_COLUMN = ('医疗卫生', '非医疗卫生')
 HEALTH_COLUMN = ('卫生', '非卫生')
 TEACHER_COLUMN = ('师范', '非师范')
 
-SPECIAL_REL=['_3','_10', '_14','_16','A1-A','A2','B1', 'B3-A','B4-A', 'B4-B',
-             'B5-A','B5-B','B6','B9-1',
-             'B7-1','B7-2','B7-3','B7-4','B8','B10-1','H7','H8',
-             'H2-A', 'H2-B', 'H2-C', 'H2-D', 'H2-E',
-             'H3-A', 'H3-B', 'H3-C', 'H3-D',
-             'H4-A', 'H4-B', 'H4-C', 'H4-D', 'H4-E',]
+SPECIAL_REL = ['_3', '_10', '_14', '_16', 'A1-A', 'A2', 'B1', 'B3-A', 'B4-A', 'B4-B',
+               'B5-A', 'B5-B', 'B6', 'B9-1',
+               'B7-1', 'B7-2', 'B7-3', 'B7-4', 'B8', 'B10-1', 'H7', 'H8',
+               'H2-A', 'H2-B', 'H2-C', 'H2-D', 'H2-E',
+               'H3-A', 'H3-B', 'H3-C', 'H3-D',
+               'H4-A', 'H4-B', 'H4-C', 'H4-D', 'H4-E', ]
 
 REPORT_FOLDER = "../test-data/san-ming/report/"
 SOURCE_FOLDER = "../test-data/san-ming/cleaned/"
-CONFIG_FILE='subject_content.xlsx'
+CONFIG_FILE = 'subject_content.xlsx'
 ERROR_PARAMS = "参数错误"
 
 DECIMALS6 = 6
 DECIMALS2 = 2
+
+DEGREE_ORDER = {'本科毕业生': 1, '专科毕业生': 0, '总体': 10}
+
+OBJECTIVE_REPORT_FOLDER = "../../test-data/san-ming/report/"

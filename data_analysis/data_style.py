@@ -115,3 +115,16 @@ class OrderColStyler(AnalysisResultStyler):
         else:
             pass
         return df
+
+
+class ObjectiveOrderStyler(AnalysisResultStyler):
+
+    @staticmethod
+    def prettify(df, ord_col):
+        if df.empty:
+            return df
+        cols=df.columns
+        df['order_col'] = df[ord_col].map(CONFIG.DEGREE_ORDER)
+        df.sort_values("order_col", ascending=1, inplace=True)
+        df=df[cols]
+        return df
