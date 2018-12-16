@@ -1348,7 +1348,7 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
+    analyzer_collection['对课堂教学的评价'] = EvelutionLessonAnalyzer(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 

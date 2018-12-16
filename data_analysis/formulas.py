@@ -425,6 +425,26 @@ def ability_item_distribution(data, subject):
                               CONFIG.RATE_COLUMN[2]: [answer_count]})
     return df_result
 
+def formulas_overall(df, except_cols, method):
+    nums = []
+    others = []
+    cols = df.columns
+    for col in cols:
+        if col in except_cols:
+            continue
+        if col.find(CONFIG.RATE_COLUMN[2]) >= 0:
+            nums.append(col)
+        else:
+            others.append(col)
+
+    df_num = df.loc[:, nums].agg([method])
+    df_mean = df.loc[:, others].agg(['mean'])
+    df_num.reset_index(inplace=True)
+    df_mean.reset_index(inplace=True)
+    df_sum = pd.concat([df_num, df_mean], axis=1)
+    nums.extend(others)
+    df_sum = df_sum[nums]
+    return df_sum
 
 def parse_ability_score(column_name):
     '''解析能力分值'''

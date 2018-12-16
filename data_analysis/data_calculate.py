@@ -211,9 +211,15 @@ class GrpThreeCalculator():
                 df_combines.loc[:, key] = df_combines.loc[:, key].map(
                     self._dict_config)
 
+            df_s = df_combines[forcus_cols].groupby(self._grp_cols).mean()
+            df_s[key] = CONFIG.TOTAL_COLUMN + key
+            df_s.reset_index(inplace=True)
+            df_combines = pd.concat([df_combines, df_s], sort=False)
+
             df_t = df_combines.pivot_table(index=self._grp_cols,
                                            columns=key,
                                            values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+
             df_t.fillna(0, inplace=True)
             df_t.reset_index(inplace=True)
             return df_t
@@ -267,6 +273,32 @@ class OverallFiveCalculator(DataCalculator):
         df_combines = pd.concat(df_combines, sort=False)
         df_combines[sheet_name] = df_combines[sheet_name].map(dict_config)
         df_combines.fillna(0, inplace=True)
+
+        multi_style = MultiOverallStyle()
+        if "任课教师评价" == sheet_name:
+            print(df_combines)
+            df_private = df_combines[df_combines[sheet_name].isin(['专业课教师教学态度', '专业课教师教学水平'])]
+            print(df_private)
+            df_publid = df_combines[df_combines[sheet_name].isin(['公共课教师教学态度', '公共课教师教学水平'])]
+            print(df_publid)
+
+            df_private_s = formulas_overall(df_private, [sheet_name], 'max')
+            df_private_s[sheet_name] = '专业总体'
+            print(df_private)
+
+            df_publid_s = formulas_overall(df_publid, [sheet_name], 'max')
+            df_publid_s[sheet_name] = '公共总体'
+            print(df_publid)
+
+            df_combine_s = formulas_overall(df_combines, sheet_name, 'max')
+            df_combine_s[sheet_name] = '总体任课教师评价'
+            print(df_combine_s)
+            df_combines = pd.concat([df_private, df_private_s, df_publid, df_publid_s, df_combine_s],
+                                    ignore_index=True, sort=False)
+            print(df_combines)
+        else:
+            df_combines = multi_style.prettify(df_combines, sheet_name)
+
         return df_combines
 
 
@@ -760,6 +792,7 @@ class FiveConditionCalculator(DataCalculator):
             df_five.insert(0, self._tgt_col, where_col)
             df_combine.append(df_five)
         df_combines = pd.concat(df_combine, sort=False)
+
         return df_combines
 
 
