@@ -131,6 +131,10 @@ def formula_five_rate(data, subject, measure_type):
     else:
         df_t[CONFIG.MEAN_COLUMN[2]] = df_rate.loc[0, CONFIG.RATE_COLUMN[2]]
 
+    # 列重排
+    order_cols = [col for col in ls_measure if col in df_t.columns]
+    order_cols.extend([measure_name,CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+    df_t = df_t[order_cols]
     return df_t
 
 
@@ -150,9 +154,7 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     ls_measure = parse_measure(measure_type)
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
-    # 列重排
-    order_cols = [col for col in ls_measure if col in df_rate.columns]
-    df_rate = df_rate[order_cols]
+
     # step3: 度量值
     measure_cols = [col for col in ls_measure[0:3] if col in df_rate.columns]
     measure_rate = 0
@@ -169,8 +171,15 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
 
     # df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
     df_rate.fillna(0, inplace=True)
+
     df_rate.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
     df_rate.reset_index(inplace=True)
+    # 列重排
+    order_cols = list(grp)
+    order_cols.extend([col for col in ls_measure if col in df_rate.columns])
+    order_cols.extend([measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+    print(order_cols)
+    df_rate = df_rate[order_cols]
     return df_rate
 
 
