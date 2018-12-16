@@ -72,7 +72,7 @@ class AnalysisResultWriter(object):
                         cell_v = sheet.cell(row=1, column=i).value
                     if str(cell_v).find("人数") >= 0:
                         pass
-                    elif str(cell_v).find("均值") >= 0:
+                    elif str(cell_v).find("均值") >= 0 or str(cell_v).find("能力水平") >= 0:
                         sheet.column_dimensions[colTag].number_format = numStyle.FORMAT_NUMBER_00
                         for j in range(1 + 1, max_row + 1):
                             sheet.cell(row=j, column=i).number_format = numStyle.FORMAT_NUMBER_00

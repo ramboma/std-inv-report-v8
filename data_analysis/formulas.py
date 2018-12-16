@@ -6,9 +6,7 @@
 __author__ = 'kuoren'
 
 import pandas as pd
-import numpy as np
 import data_analysis.config as CONFIG
-import data_analysis.utils as Util
 from data_cleansing.logging import *
 
 logger = get_logger(__name__)
@@ -116,12 +114,13 @@ def formula_five_rate(data, subject, measure_type):
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
     # 列重排
-    # df_t = df_t[ls_measure[0:5]]
+    order_cols=[col for col in ls_measure if col in df_t.columns]
+    df_t = df_t[order_cols]
     # step3: 度量值
+    measure_cols=[col for col in ls_measure[0:3] if col in df_t.columns]
     measure_rate = 0
-    for measure in ls_measure[0:3]:
-        if measure in df_t.columns:
-            measure_rate = measure_rate + df_t[measure]
+    for measure in measure_cols:
+        measure_rate = measure_rate + df_t[measure]
     df_t[measure_name] = measure_rate
 
     # step4: 均值
@@ -152,12 +151,13 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
     # 列重排
-    # df_sub = df_rate[ls_measure[0:5]]
+    order_cols = [col for col in ls_measure if col in df_rate.columns]
+    df_rate = df_rate[order_cols]
     # step3: 度量值
+    measure_cols = [col for col in ls_measure[0:3] if col in df_rate.columns]
     measure_rate = 0
-    for measure in ls_measure[0:3]:
-        if measure in df_rate.columns:
-            measure_rate = measure_rate + df_rate[measure]
+    for measure in measure_cols:
+        measure_rate = measure_rate + df_rate[measure]
     df_rate[measure_name] = measure_rate
 
     data.loc[:, "measure_score"] = data[subject]

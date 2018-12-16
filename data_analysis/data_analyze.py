@@ -218,14 +218,14 @@ class SpecialDataAnalyzer(DataAnalyzer):
         # 行业就业特色
         feature_cols = ['B5-B', 'B1', 'B3-A', 'B4-B']
         if len(ls_metric) > 1:
-            result["总体毕业生" + self._sheet_name + "行业就业特色"] = EmpFeatureCalculator(df,
+            result["总体毕业生" + self._sheet_name + "就业特色"] = EmpFeatureCalculator(df,
                                                                                  self._where_col,
                                                                                  feature_cols,
                                                                                  self._dict_where,
                                                                                  dict_config=self._dict_config).calculate()
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
-            result[metric + self._sheet_name + "行业就业特色"] = EmpFeatureCalculator(df_filter,
+            result[metric + self._sheet_name + "就业特色"] = EmpFeatureCalculator(df_filter,
                                                                                 self._where_col,
                                                                                 feature_cols,
                                                                                 self._dict_where,
@@ -727,7 +727,7 @@ class EmpRegionAnalyzer(SimpleValueRateDataAnalyzer):
                                                   self._dict_config, True).analyse()
         result.update(df_province)
         # 省内就业城市月均收入
-        dic_grp = {"就业城市": ['B3-B']}
+        dic_grp = {"省内就业城市": ['B3-B']}
         df_city['B3-B'] = df_city['B3-B'].fillna('DEL')
         df_city = df_city[df_city['B3-B'] != 'DEL']
 
@@ -1263,7 +1263,7 @@ class SpecialEducationAnalyzer(SpecialDataAnalyzer):
         dict_where['教育'] = ['教育']
         dict_where['非教育'] = others
         dict_where['总体'] = all_v
-        super().__init__(df, where_col, dict_where, '教育和非教育', dict_config)
+        super().__init__(df, where_col, dict_where, '教育和非教育行业', dict_config)
 
 
 class SpecialMedicalAnalyzer(SpecialDataAnalyzer):
@@ -1278,7 +1278,7 @@ class SpecialMedicalAnalyzer(SpecialDataAnalyzer):
         dict_where['总体'] = all_v
         print(others)
         print(all_v)
-        super().__init__(df, where_col, dict_where, '医疗卫生', dict_config)
+        super().__init__(df, where_col, dict_where, '医疗卫生职业', dict_config)
 
 
 class SpecialSocialHealthAnalyzer(SpecialDataAnalyzer):

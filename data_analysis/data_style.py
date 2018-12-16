@@ -103,8 +103,15 @@ class MultiOverallStyle(AnalysisResultStyler):
         return df_combine
 
 
-class LookingBStyler(AnalysisResultStyler):
+class OrderColStyler(AnalysisResultStyler):
 
     @staticmethod
     def prettify(df):
-        pass
+        if df.empty:
+            return df
+        cols=df.columns
+        if isinstance(cols,pd.MultiIndex):
+            pass
+        else:
+            pass
+        return df
