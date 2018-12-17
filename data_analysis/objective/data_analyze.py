@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'data_analyze.py'
+"""data_analyze.py"""
+"""客观数据报表生成类"""
 
 __author__ = 'kuoren'
 
@@ -24,6 +25,7 @@ class DataAnalyzer(object):
 
 
 def common_grp_anaysis(df, question_col, class_name, sheet_name, dic_grp={}):
+    """学院、专业通用部分"""
     degree_col = "学历合并"
     result = dict()
 
@@ -64,7 +66,7 @@ class SizeAndStructureAnalyzer(DataAnalyzer):
         self._question_cols = '学历合并'
 
     def analyse(self):
-        rel_cols = ['学历合并', '学院', '专业','学号', '性别', '民族合并', '师范生合并', '困难生合并', '政治面貌合并']
+        rel_cols = CONFIG.OBJECTIVE_BASE
         de = DataExtractor(self._df, self._question_cols)
         df = de.extract_objective_cols(rel_cols)
 

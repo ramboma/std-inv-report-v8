@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'config.py'
+"""config.py"""
+"""配置信息"""
 
 __author__ = 'kuoren'
 
@@ -160,3 +161,5 @@ DECIMALS2 = 2
 DEGREE_ORDER = {'本科毕业生': 1, '专科毕业生': 0, '总体': 10}
 
 OBJECTIVE_REPORT_FOLDER = "../../test-data/san-ming/report/"
+OBJECTIVE_BASE=['学历合并', '学院', '专业','学号', '性别', '民族合并',
+                '师范生合并', '困难生合并', '政治面貌合并']

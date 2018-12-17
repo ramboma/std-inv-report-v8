@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""data_analyze.py"""
+"""报表生成类"""
+
 from data_analysis.data_extract import *
 from data_analysis.data_calculate import *
 from data_analysis.data_style import *

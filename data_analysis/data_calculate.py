@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""data_calculate.py"""
+"""单个sheet计算类"""
+
 import pandas as pd
 import data_analysis.config as CONFIG
 from data_analysis.formulas import *
