@@ -217,6 +217,20 @@ class GrpThreeCalculator():
                 df_combines.loc[:, key] = df_combines.loc[:, key].map(
                     self._dict_config)
 
+            if "任课教师评价" == key:
+                df_private = df_combines[df_combines[key].isin(['专业课教师教学态度', '专业课教师教学水平'])]
+                df_publid = df_combines[df_combines[key].isin(['公共课教师教学态度', '公共课教师教学水平'])]
+
+                df_private_s = formulas_overall(df_private, [key], 'sum')
+                df_private_s[key] = '专业总体'
+
+                df_publid_s = formulas_overall(df_publid, [key], 'sum')
+                df_publid_s[key] = '公共总体'
+
+                df_combine_s = formulas_overall(df_combines, key, 'sum')
+                df_combine_s[key] = '总体任课教师评价'
+                df_combines = pd.concat([df_private, df_private_s, df_publid, df_publid_s, df_combine_s],
+                                        ignore_index=True, sort=False)
             df_s = df_combines[forcus_cols].groupby(self._grp_cols).mean()
             df_s[key] = CONFIG.TOTAL_COLUMN + key
             df_s.reset_index(inplace=True)
@@ -282,26 +296,19 @@ class OverallFiveCalculator(DataCalculator):
 
         multi_style = MultiOverallStyle()
         if "任课教师评价" == sheet_name:
-            print(df_combines)
             df_private = df_combines[df_combines[sheet_name].isin(['专业课教师教学态度', '专业课教师教学水平'])]
-            print(df_private)
             df_publid = df_combines[df_combines[sheet_name].isin(['公共课教师教学态度', '公共课教师教学水平'])]
-            print(df_publid)
 
             df_private_s = formulas_overall(df_private, [sheet_name], 'max')
             df_private_s[sheet_name] = '专业总体'
-            print(df_private)
 
             df_publid_s = formulas_overall(df_publid, [sheet_name], 'max')
             df_publid_s[sheet_name] = '公共总体'
-            print(df_publid)
 
             df_combine_s = formulas_overall(df_combines, sheet_name, 'max')
             df_combine_s[sheet_name] = '总体任课教师评价'
-            print(df_combine_s)
             df_combines = pd.concat([df_private, df_private_s, df_publid, df_publid_s, df_combine_s],
                                     ignore_index=True, sort=False)
-            print(df_combines)
         else:
             df_combines = multi_style.prettify(df_combines, sheet_name)
 

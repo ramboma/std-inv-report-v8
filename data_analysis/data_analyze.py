@@ -170,7 +170,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
         df_teacher = GrpThreeCalculator(self._df,
                                         [CONFIG.BASE_COLUMN[0]],
                                         CONFIG.ANSWER_TYPE_SATISFY,
-                                        {'教育教学': ls_rels},
+                                        {'任课教师': ls_rels},
                                         dict_config=self._dict_config).calculate()
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
         df_lesson = GrpThreeCalculator(self._df,
@@ -190,7 +190,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
         df_teacher = GrpThreeCalculator(self._df,
                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                         CONFIG.ANSWER_TYPE_SATISFY,
-                                        {'教育教学': ls_rels},
+                                        {'任课教师评价': ls_rels},
                                         dict_config=self._dict_config).calculate()
 
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
