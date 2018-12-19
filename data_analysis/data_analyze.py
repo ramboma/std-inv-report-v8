@@ -182,14 +182,15 @@ class SummaryDataAnalyzer(DataAnalyzer):
         df_practice = GrpThreeCalculator(self._df,
                                          [CONFIG.BASE_COLUMN[0]],
                                          CONFIG.ANSWER_TYPE_HELP,
-                                         {'教育教学': ls_rels},
+                                         {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
         result['学院教育教学'] = pd.concat([df_teacher, df_lesson, df_practice], axis=1, sort=False)
 
+        ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
         df_teacher = GrpThreeCalculator(self._df,
                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                         CONFIG.ANSWER_TYPE_SATISFY,
-                                        {'实践教学': ls_rels},
+                                        {'教育教学': ls_rels},
                                         dict_config=self._dict_config).calculate()
 
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
@@ -1117,7 +1118,7 @@ class EvelutionTeacherAnalyzer(FiveRateDataAnalyzer):
         self._multi_cols = ['H4-' + chr(i) for i in range(65, 69)]
 
     def analyse(self):
-        sheet_name = '任课教师的评价'
+        sheet_name = '任课教师评价'
         result = {}
         result.update(super().degree_multi_five(self._multi_cols, sheet_name))
 
@@ -1354,67 +1355,9 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
-    # analyze 1
-    analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
-
-    analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df, dic_config)
-    # analyze 2
-    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
-    # analyze 2
-    analyzer_collection['专业相关度'] = MajorRelativeAnalyzer(df, dic_config)
-    analyzer_collection['就业满意度'] = JobSatisfyAnalyzer(df, dic_config)
-    analyzer_collection['职业期待吻合度'] = JobMeetAnalyzer(df, dic_config)
-    analyzer_collection['工作稳定性'] = WorkStabilityAnalyzer(df, dic_config)
-    analyzer_collection['月均收入'] = IncomeAnalyzer(df, dic_config)
-
-    analyzer_collection['就业职业分布'] = EmpJobAnalyzer(df, dic_config)
-    analyzer_collection['就业行业分布'] = EmpIndurstryAnalyzer(df, dic_config)
-    analyzer_collection['就业地区分布'] = EmpRegionAnalyzer(df, dic_config)
-    analyzer_collection['就业单位分布'] = EmpIndurstryTypeSizeAnalyzer(df, dic_config)
     # ... analyze N
-    analyzer_collection['任课教师'] = EvelutionH4_PAnalyzer(df, dic_config)
-    analyzer_collection['社团活动'] = EvelutionH4_RAnalyzer(df, dic_config)
-    analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
-    analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
-    analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
-    # ...
-    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
-    analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
-    # ... 母校满意度
-    analyzer_collection['母校满意度'] = SchoolSatisfyAnalyzer(df, dic_config)
-    analyzer_collection['母校推荐度'] = SchoolRecommedAnalyzer(df, dic_config)
-
-    analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
-    analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
-    analyzer_collection['对学生生活服务的评价'] = EvelutionH4_QAnalyzer(df, dic_config)
-    analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
-
-    analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
-    analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
-
     analyzer_collection['对任课教师的评价'] = EvelutionTeacherAnalyzer(df, dic_config)
-    analyzer_collection['对实践教学的评价'] = EvelutionPracticeAnalyzer(df, dic_config)
-    analyzer_collection['对课堂教学的评价'] = EvelutionLessonAnalyzer(df, dic_config)
 
-    analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
-    analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
-    analyzer_collection['教育行业非教育行业'] = SpecialEducationAnalyzer(df, dic_config)
-
-    analyzer_collection['省内省外生源'] = SpecialOriginProvinceAnalyzer(df, dic_config)
-    analyzer_collection['省内、省外就业'] = SpecialProvinceAnalyzer(df, dic_config)
-    analyzer_collection['医疗卫生职业'] = SpecialMedicalAnalyzer(df, dic_config)
-
-    analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
-
-    analyzer_collection['基础能力素质'] = BasicQualityAnalyzer(df, dic_config)
-    analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
-    ls_metric = list(set(df['_12']))
-    if len(ls_metric) > 1:
-        analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
-    for metric in ls_metric:
-        df_filter = df[df['_12'] == metric]
-        if not df_filter.empty:
-            analyzer_collection[metric + "一览表"] = OverallSummary(df_filter, dic_config)
 
     runner.run_batch(analyzer_collection)
 
