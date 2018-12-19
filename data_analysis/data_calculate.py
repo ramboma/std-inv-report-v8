@@ -221,20 +221,23 @@ class GrpThreeCalculator():
                 df_private = df_combines[df_combines[key].isin(['专业课教师教学态度', '专业课教师教学水平'])]
                 df_publid = df_combines[df_combines[key].isin(['公共课教师教学态度', '公共课教师教学水平'])]
 
-                df_private_s = formulas_overall(df_private, [key], 'sum')
+                df_private_s = formulas_overall(df_private, [key], 'sum',self._grp_cols)
                 df_private_s[key] = '专业总体'
+                print(df_private_s)
 
-                df_publid_s = formulas_overall(df_publid, [key], 'sum')
+                df_publid_s = formulas_overall(df_publid, [key], 'sum',self._grp_cols)
                 df_publid_s[key] = '公共总体'
+                print(df_publid_s)
 
-                df_combine_s = formulas_overall(df_combines, key, 'sum')
+                df_combine_s = formulas_overall(df_combines, key, 'sum',self._grp_cols)
                 df_combine_s[key] = '总体任课教师评价'
                 df_combines = pd.concat([df_private, df_private_s, df_publid, df_publid_s, df_combine_s],
                                         ignore_index=True, sort=False)
-            df_s = df_combines[forcus_cols].groupby(self._grp_cols).mean()
-            df_s[key] = CONFIG.TOTAL_COLUMN + key
-            df_s.reset_index(inplace=True)
-            df_combines = pd.concat([df_combines, df_s], sort=False)
+            else:
+                df_s = df_combines[forcus_cols].groupby(self._grp_cols).mean()
+                df_s[key] = CONFIG.TOTAL_COLUMN + key
+                df_s.reset_index(inplace=True)
+                df_combines = pd.concat([df_combines, df_s], sort=False)
 
             df_t = df_combines.pivot_table(index=self._grp_cols,
                                            columns=key,
