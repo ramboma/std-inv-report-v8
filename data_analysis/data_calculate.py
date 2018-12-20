@@ -240,12 +240,15 @@ class GrpThreeCalculator():
                 df_s.reset_index(inplace=True)
                 df_combines = pd.concat([df_combines, df_s], sort=False)
 
+            print(df_combines)
             df_t = df_combines.pivot_table(index=self._grp_cols,
                                            columns=key,
                                            values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
 
             df_t.fillna(0, inplace=True)
             df_t.reset_index(inplace=True)
+            print(df_combines)
+
             return df_t
 
 

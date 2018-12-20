@@ -170,7 +170,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
         df_teacher = GrpThreeCalculator(self._df,
                                         [CONFIG.BASE_COLUMN[0]],
                                         CONFIG.ANSWER_TYPE_SATISFY,
-                                        {'任课教师': ls_rels},
+                                        {'任课教师评价': ls_rels},
                                         dict_config=self._dict_config).calculate()
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
         df_lesson = GrpThreeCalculator(self._df,
@@ -1356,8 +1356,7 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # ... analyze N
-    analyzer_collection['对任课教师的评价'] = EvelutionTeacherAnalyzer(df, dic_config)
-
+    analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
 
     runner.run_batch(analyzer_collection)
 
