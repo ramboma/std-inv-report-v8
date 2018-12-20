@@ -450,18 +450,21 @@ def formulas_overall(df, except_cols, method, grp_cols=[]):
         grp_num.extend(nums)
         grp_other=list(grp_cols)
         grp_other.extend(others)
-        print(grp_num)
-        print(grp_other)
+
         df_num = df.loc[:, grp_num].groupby(grp_cols).agg(['sum'])
+        #df_num.columns = df_num.columns.map('_'.join)
         df_mean = df.loc[:, grp_other].groupby(grp_cols).agg(['mean'])
         df_num.reset_index(inplace=True)
         df_mean.reset_index(inplace=True)
         df_sum = pd.merge(df_mean,df_num, on=grp_cols)
         df_sum.reset_index(inplace=True)
-        print('grp')
+        df_sum.columns=[a for a, b in df_sum.columns]
         print(df_sum)
 
-
+        nums.extend(others)
+        nums.extend(grp_cols)
+        df_sum = df_sum[nums]
+        print(df_sum)
     else:
         df_num = df.loc[:, nums].agg(['max'])
         df_mean = df.loc[:, others].agg(['mean'])

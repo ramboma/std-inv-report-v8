@@ -223,6 +223,7 @@ class GrpThreeCalculator():
 
                 df_private_s = formulas_overall(df_private, [key], 'sum',self._grp_cols)
                 df_private_s[key] = '专业总体'
+                print("专业总体")
                 print(df_private_s)
 
                 df_publid_s = formulas_overall(df_publid, [key], 'sum',self._grp_cols)
