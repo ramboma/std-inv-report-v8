@@ -163,7 +163,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
         result['专业就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
                                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                         dict_config=self._dict_config).calculate()
-        grp_cols=[CONFIG.BASE_COLUMN[0]]
+        grp_cols = [CONFIG.BASE_COLUMN[0]]
         ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
         df_teacher = GrpThreeCalculator(self._df,
                                         grp_cols,
@@ -176,7 +176,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                        CONFIG.ANSWER_TYPE_MEET_V,
                                        {'课堂教学': ls_rels},
                                        dict_config=self._dict_config).calculate()
-        df_concat=pd.merge(df_teacher,df_lesson, on=grp_cols)
+        df_concat = pd.merge(df_teacher, df_lesson, on=grp_cols)
 
         ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
         df_practice = GrpThreeCalculator(self._df,
@@ -184,12 +184,12 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                          CONFIG.ANSWER_TYPE_HELP,
                                          {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
-        df_concat=pd.merge(df_concat,df_practice, on=grp_cols)
+        df_concat = pd.merge(df_concat, df_practice, on=grp_cols)
         df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
 
         result['学院教育教学'] = df_concat
 
-        grp_cols=[CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]
+        grp_cols = [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]
         ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
         df_teacher = GrpThreeCalculator(self._df,
                                         grp_cols,
@@ -203,14 +203,14 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                        CONFIG.ANSWER_TYPE_MEET_V,
                                        {'课堂教学': ls_rels},
                                        dict_config=self._dict_config).calculate()
-        df_concat=pd.merge(df_teacher,df_lesson, on=grp_cols)
+        df_concat = pd.merge(df_teacher, df_lesson, on=grp_cols)
         ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
         df_practice = GrpThreeCalculator(self._df,
                                          grp_cols,
                                          CONFIG.ANSWER_TYPE_HELP,
                                          {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
-        df_concat=pd.merge(df_concat,df_practice, on=grp_cols)
+        df_concat = pd.merge(df_concat, df_practice, on=grp_cols)
         df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
 
         result['专业教育教学'] = df_concat
@@ -235,17 +235,17 @@ class SpecialDataAnalyzer(DataAnalyzer):
         feature_cols = ['B5-B', 'B1', 'B3-A', 'B4-B']
         if len(ls_metric) > 1:
             result["总体毕业生" + self._sheet_name + "就业特色"] = EmpFeatureCalculator(df,
-                                                                                 self._where_col,
-                                                                                 feature_cols,
-                                                                                 self._dict_where,
-                                                                                 dict_config=self._dict_config).calculate()
+                                                                               self._where_col,
+                                                                               feature_cols,
+                                                                               self._dict_where,
+                                                                               dict_config=self._dict_config).calculate()
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
             result[metric + self._sheet_name + "就业特色"] = EmpFeatureCalculator(df_filter,
-                                                                                self._where_col,
-                                                                                feature_cols,
-                                                                                self._dict_where,
-                                                                                dict_config=self._dict_config).calculate()
+                                                                              self._where_col,
+                                                                              feature_cols,
+                                                                              self._dict_where,
+                                                                              dict_config=self._dict_config).calculate()
         # 就业竞争力分析
         if len(ls_metric) > 1:
             result["总体毕业生" + self._sheet_name + "就业竞争力"] = EmpCompetitiveCalculator(df,
@@ -414,12 +414,12 @@ class ThreeMultiRateAnayze(DataAnalyzer):
         de = DataExtractor(self._df, self._multi_cols)
         df = de.extract_ref_cols()
         result = {}
-
-        result["总体毕业生" + self._sheet_name] = OverallThreeCalculator(df,
-                                                                    self._degree_col,
-                                                                    self._metric_type,
-                                                                    {self._sheet_name: self._multi_cols},
-                                                                    dict_config=self._dict_config).calculate()
+        if self._sheet_name not in ['对母校创业教育的满意度评价', '对母校创业教育的帮助度评价', '对母校就业教育的评价']:
+            result["总体毕业生" + self._sheet_name] = OverallThreeCalculator(df,
+                                                                        self._degree_col,
+                                                                        self._metric_type,
+                                                                        {self._sheet_name: self._multi_cols},
+                                                                        dict_config=self._dict_config).calculate()
         # 筛选出学历 如果为多学历需要计算总体
         ls_metric = list(set(df[self._degree_col]))
         if len(ls_metric) > 1:
@@ -564,7 +564,7 @@ class JobSatisfyAnalyzer(FiveRateDataAnalyzer):
 
         de = DataExtractor(self._df, array_subj)
         df = de.extract_ref_cols()
-
+        print(array_subj)
         result["总体毕业生" + sheet_name] = OverallThreeCalculator(df,
                                                               self._degree_col,
                                                               CONFIG.ANSWER_TYPE_SATISFY,
@@ -574,21 +574,27 @@ class JobSatisfyAnalyzer(FiveRateDataAnalyzer):
         if len(ls_metric) > 1:
             result["总体毕业生各学院" + sheet_name] = GrpThreeCalculator(df, [CONFIG.BASE_COLUMN[0]],
                                                                  self._metric_type,
-                                                                 {sheet_name: array_subj}).calculate()
+                                                                 {sheet_name: array_subj}
+                                                                 , dict_config=self._dict_config).calculate()
             result["总体毕业生各专业" + sheet_name] = GrpThreeCalculator(df,
                                                                  [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                                  self._metric_type,
-                                                                 {sheet_name: array_subj}).calculate()
+                                                                 {sheet_name: array_subj}
+                                                                 , dict_config=self._dict_config).calculate()
 
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
             result[metric + "各学院" + sheet_name] = GrpThreeCalculator(df_filter, [CONFIG.BASE_COLUMN[0]],
                                                                      self._metric_type,
-                                                                     {sheet_name: array_subj}).calculate()
+                                                                     {sheet_name: array_subj},
+                                                                     dict_config=self._dict_config
+                                                                     ).calculate()
             result[metric + "各专业" + sheet_name] = GrpThreeCalculator(df_filter,
                                                                      [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                                      self._metric_type,
-                                                                     {sheet_name: array_subj}).calculate()
+                                                                     {sheet_name: array_subj},
+                                                                     dict_config=self._dict_config
+                                                                     ).calculate()
         return result
 
 
@@ -624,8 +630,11 @@ class IncomeAnalyzer(DataAnalyzer):
         steps = [500, 1000, 1500, 2000]
         for step in steps:
             sheet_name = '毕业生月均收入及薪酬分布_' + str(step)
-            result[sheet_name] = AnswerPeriodCalculator(df, self._question_col, self._degree_col,
-                                                        start, period_n, step).calculate()
+            df_period = AnswerPeriodCalculator(df, self._question_col, self._degree_col,
+                                               start, period_n, step).calculate()
+
+            result[sheet_name] = df_period
+
         if self._dict_config is None:
             raise ("缺少配置文件，无法解析sheet name")
         sheet_name = self._dict_config[self._question_col]
@@ -1364,9 +1373,67 @@ def test():
 
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
+    # analyze 1
+    analyzer_collection['就业率及就业状态'] = EmpRateAndEmpStatus(df)
+
+    analyzer_collection['就业机会'] = WorkOptionDataAnalyzer(df, dic_config)
+    # analyze 2
+    analyzer_collection['未就业分析'] = NonEmployeeDataAnalyzer(df, dic_config)
+    # analyze 2
+    analyzer_collection['专业相关度'] = MajorRelativeAnalyzer(df, dic_config)
+    analyzer_collection['就业满意度'] = JobSatisfyAnalyzer(df, dic_config)
+    analyzer_collection['职业期待吻合度'] = JobMeetAnalyzer(df, dic_config)
+    analyzer_collection['工作稳定性'] = WorkStabilityAnalyzer(df, dic_config)
+    analyzer_collection['月均收入'] = IncomeAnalyzer(df, dic_config)
+
+    analyzer_collection['就业职业分布'] = EmpJobAnalyzer(df, dic_config)
+    analyzer_collection['就业行业分布'] = EmpIndurstryAnalyzer(df, dic_config)
+    analyzer_collection['就业地区分布'] = EmpRegionAnalyzer(df, dic_config)
+    analyzer_collection['就业单位分布'] = EmpIndurstryTypeSizeAnalyzer(df, dic_config)
     # ... analyze N
+    analyzer_collection['任课教师'] = EvelutionH4_PAnalyzer(df, dic_config)
+    analyzer_collection['社团活动'] = EvelutionH4_RAnalyzer(df, dic_config)
+    analyzer_collection['母校学风认可度'] = EvelutionAcademicAnalyzer(df, dic_config)
+    analyzer_collection['教育教学总体评价'] = EvelutionH4_TAnalyzer(df, dic_config)
+    analyzer_collection['实践教学的评价'] = EvelutionH4_SAnalyzer(df, dic_config)
+    # ...
+    analyzer_collection['自主创业'] = SelfEmpAnalyzer(df, dic_config)
+    analyzer_collection['求职过程'] = EmpDifficultAnalyzer(df, dic_config)
+    # ... 母校满意度
+    analyzer_collection['母校满意度'] = SchoolSatisfyAnalyzer(df, dic_config)
+    analyzer_collection['母校推荐度'] = SchoolRecommedAnalyzer(df, dic_config)
+
+    analyzer_collection['对就业教育服务的反馈'] = EvelutionH4_F_KAnalyzer(df, dic_config)
+    analyzer_collection['对学生管理工作的评价'] = EvelutionH4_PAnalyzer(df, dic_config)
+    analyzer_collection['对学生生活服务的评价'] = EvelutionH4_QAnalyzer(df, dic_config)
+    analyzer_collection['对创业教育服务的反馈'] = Evelution_H4_L_OAnalyzer(df, dic_config)
+
+    analyzer_collection['国内升学'] = FurtherAnalyzer(df, dic_config)
+    analyzer_collection['出国境留学'] = StudyAbroadAnalyzer(df, dic_config)
+
+    analyzer_collection['对任课教师的评价'] = EvelutionTeacherAnalyzer(df, dic_config)
+    analyzer_collection['对实践教学的评价'] = EvelutionPracticeAnalyzer(df, dic_config)
+    analyzer_collection['对课堂教学的评价'] = EvelutionLessonAnalyzer(df, dic_config)
+
+    analyzer_collection['不同性别'] = SpecialGenderAnalyzer(df, dic_config)
+    analyzer_collection['汉族少数民族'] = SpecialNationalAnalyzer(df, dic_config)
+    analyzer_collection['教育行业非教育行业'] = SpecialEducationAnalyzer(df, dic_config)
+
+    analyzer_collection['省内省外生源'] = SpecialOriginProvinceAnalyzer(df, dic_config)
+    analyzer_collection['省内、省外就业'] = SpecialProvinceAnalyzer(df, dic_config)
+    analyzer_collection['医疗卫生职业'] = SpecialMedicalAnalyzer(df, dic_config)
+
+    analyzer_collection['卫生和社会工作'] = SpecialSocialHealthAnalyzer(df, dic_config)
+
+    analyzer_collection['基础能力素质'] = BasicQualityAnalyzer(df, dic_config)
+    analyzer_collection['专业素质'] = MajorQualityAnalyzer(df, dic_config)
     ls_metric = list(set(df['_12']))
-    analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
+    if len(ls_metric) > 1:
+        analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
+    for metric in ls_metric:
+        df_filter = df[df['_12'] == metric]
+        if not df_filter.empty:
+            analyzer_collection[metric + "一览表"] = OverallSummary(df_filter, dic_config)
 
     runner.run_batch(analyzer_collection)
 

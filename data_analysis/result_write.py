@@ -21,6 +21,8 @@ class AnalysisResultWriter(object):
         try:
             file = os.path.join(self.folder, book_name)
             writer = pd.ExcelWriter(file)
+            df.rename(columns=CONFIG.TITLE_COLS, inplace=True)
+
             if isinstance(df.columns, pd.MultiIndex):
                 index = True
             else:

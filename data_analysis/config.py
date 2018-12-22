@@ -92,6 +92,8 @@ SPECIAL_WHERE = '条件'
 B10_1_ANSWER = ['0次']
 OPER_NOT = '非'
 
+TITLE_COLS={'_10':'学院', '_14':'专业', '_12':'学历'}
+
 # 条件过滤的key值
 DICT_KEY = ('column', 'cond', 'oper')
 
