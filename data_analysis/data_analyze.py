@@ -163,47 +163,58 @@ class SummaryDataAnalyzer(DataAnalyzer):
         result['专业就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
                                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                         dict_config=self._dict_config).calculate()
-
+        grp_cols=[CONFIG.BASE_COLUMN[0]]
         ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
         df_teacher = GrpThreeCalculator(self._df,
-                                        [CONFIG.BASE_COLUMN[0]],
+                                        grp_cols,
                                         CONFIG.ANSWER_TYPE_SATISFY,
                                         {'任课教师评价': ls_rels},
                                         dict_config=self._dict_config).calculate()
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
         df_lesson = GrpThreeCalculator(self._df,
-                                       [CONFIG.BASE_COLUMN[0]],
+                                       grp_cols,
                                        CONFIG.ANSWER_TYPE_MEET_V,
                                        {'课堂教学': ls_rels},
                                        dict_config=self._dict_config).calculate()
+        df_concat=pd.merge(df_teacher,df_lesson, on=grp_cols)
+
         ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
         df_practice = GrpThreeCalculator(self._df,
-                                         [CONFIG.BASE_COLUMN[0]],
+                                         grp_cols,
                                          CONFIG.ANSWER_TYPE_HELP,
                                          {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
-        result['学院教育教学'] = pd.concat([df_teacher, df_lesson, df_practice], axis=1, sort=False)
+        df_concat=pd.merge(df_concat,df_practice, on=grp_cols)
+        df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
 
+        result['学院教育教学'] = df_concat
+
+        grp_cols=[CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]
         ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
         df_teacher = GrpThreeCalculator(self._df,
-                                        [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                        grp_cols,
                                         CONFIG.ANSWER_TYPE_SATISFY,
                                         {'任课教师评价': ls_rels},
                                         dict_config=self._dict_config).calculate()
 
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
         df_lesson = GrpThreeCalculator(self._df,
-                                       [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                       grp_cols,
                                        CONFIG.ANSWER_TYPE_MEET_V,
                                        {'课堂教学': ls_rels},
                                        dict_config=self._dict_config).calculate()
+        df_concat=pd.merge(df_teacher,df_lesson, on=grp_cols)
         ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
         df_practice = GrpThreeCalculator(self._df,
-                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
+                                         grp_cols,
                                          CONFIG.ANSWER_TYPE_HELP,
                                          {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
-        result['专业教育教学'] = pd.concat([df_teacher, df_lesson, df_practice], axis=1, join='inner', sort=False)
+        df_concat=pd.merge(df_concat,df_practice, on=grp_cols)
+        df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
+
+        result['专业教育教学'] = df_concat
+
         return result
 
 

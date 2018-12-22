@@ -204,52 +204,65 @@ class GrpThreeCalculator():
         forcus_cols = [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
         forcus_cols.extend(self._grp_cols)
         for key in self._dict_extra.keys():
-            df_combines = []
+            df_combines = None
             for col in self._dict_extra[key]:
                 df_grp = GrpFiveCalculator(self._df, col, self._grp_cols,
                                            self._metric_type, self._styler).calculate()
                 df_three = df_grp[forcus_cols]
-                df_three.insert(0, key, col)
-                df_combines.append(df_three)
+                col_name = self._dict_config[col]
+                df_three.rename(columns={
+                    measure_name: measure_name + '_' + col_name,
+                    CONFIG.MEAN_COLUMN[-1]: CONFIG.MEAN_COLUMN[-1] + '_' + col_name,
+                    CONFIG.MEAN_COLUMN[2]: CONFIG.MEAN_COLUMN[2] + '_' + col_name
+                }, inplace=True)
+                if df_combines is None:
+                    df_combines = df_three
+                else:
+                    df_combines = pd.merge(df_combines, df_three,how='inner', on=self._grp_cols)
 
-            df_combines = pd.concat(df_combines, sort=False)
-            if self._dict_config:
-                df_combines.loc[:, key] = df_combines.loc[:, key].map(
-                    self._dict_config)
+            print(df_combines)
+
+            df_combines[measure_name + '_总体' + key] = df_combines[[col for col in df_combines.columns
+                                                                   if str(col).find(measure_name) >= 0]].apply(
+                lambda x: x.mean(), axis=1)
+            df_combines[CONFIG.MEAN_COLUMN[-1] + '_总体' + key] = df_combines[[col for col in df_combines.columns
+                                                                             if str(col).find(
+                    CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
+                lambda x: x.mean(), axis=1)
+            df_combines[CONFIG.MEAN_COLUMN[2] + '_总体' + key] = df_combines[[col for col in df_combines.columns
+                                                                            if str(col).find(
+                    CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
+                lambda x: x.max(), axis=1)
 
             if "任课教师评价" == key:
-                df_private = df_combines[df_combines[key].isin(['专业课教师教学态度', '专业课教师教学水平'])]
-                df_publid = df_combines[df_combines[key].isin(['公共课教师教学态度', '公共课教师教学水平'])]
+                df_private = df_combines[[col for col in df_combines.columns if str(col).find('专业') >= 0]]
+                df_public = df_combines[[col for col in df_combines.columns if str(col).find('公共') >= 0]]
 
-                df_private_s = formulas_overall(df_private, [key], 'sum',self._grp_cols)
-                df_private_s[key] = '专业总体'
-                print("专业总体")
-                print(df_private_s)
+                df_combines[measure_name + '_专业总评价'] = df_private[[col for col in df_private.columns
+                                                                   if str(col).find(measure_name) >= 0]].apply(
+                    lambda x: x.mean(), axis=1)
+                df_combines[CONFIG.MEAN_COLUMN[-1] + '_专业总评价'] = df_private[[col for col in df_private.columns
+                                                                             if str(col).find(
+                        CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
+                    lambda x: x.mean(), axis=1)
+                df_combines[CONFIG.MEAN_COLUMN[2] + '_专业总评价'] = df_private[[col for col in df_private.columns
+                                                                            if str(col).find(
+                        CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
+                    lambda x: x.max(), axis=1)
+                df_combines[measure_name + '_公共总评价'] = df_public[[col for col in df_public.columns
+                                                                  if str(col).find(measure_name) >= 0]].apply(
+                    lambda x: x.mean(), axis=1)
+                df_combines[CONFIG.MEAN_COLUMN[-1] + '_公共总评价'] = df_public[[col for col in df_public.columns
+                                                                            if str(col).find(
+                        CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
+                    lambda x: x.mean(), axis=1)
+                df_combines[CONFIG.MEAN_COLUMN[2] + '_公共总评价'] = df_public[[col for col in df_public.columns
+                                                                           if str(col).find(
+                        CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
+                    lambda x: x.max(), axis=1)
 
-                df_publid_s = formulas_overall(df_publid, [key], 'sum',self._grp_cols)
-                df_publid_s[key] = '公共总体'
-                print(df_publid_s)
-
-                df_combine_s = formulas_overall(df_combines, key, 'sum',self._grp_cols)
-                df_combine_s[key] = '总体任课教师评价'
-                df_combines = pd.concat([df_private, df_private_s, df_publid, df_publid_s, df_combine_s],
-                                        ignore_index=True, sort=False)
-            else:
-                df_s = df_combines[forcus_cols].groupby(self._grp_cols).mean()
-                df_s[key] = CONFIG.TOTAL_COLUMN + key
-                df_s.reset_index(inplace=True)
-                df_combines = pd.concat([df_combines, df_s], sort=False)
-
-            print(df_combines)
-            df_t = df_combines.pivot_table(index=self._grp_cols,
-                                           columns=key,
-                                           values=[measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
-
-            df_t.fillna(0, inplace=True)
-            df_t.reset_index(inplace=True)
-            print(df_combines)
-
-            return df_t
+            df_combines.fillna(0, inplace=True)
+            return df_combines
 
 
 class OverallFiveCalculator(DataCalculator):
@@ -744,7 +757,7 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
 
     def calculate(self):
         # 就业率
-        df_emp_rate = GrpEmpRate(self._df,None, self._grp_cols).calculate()
+        df_emp_rate = GrpEmpRate(self._df, None, self._grp_cols).calculate()
         df_emp_rate.rename(columns={CONFIG.RATE_COLUMN[2]: '就业率' + CONFIG.RATE_COLUMN[2]}, inplace=True)
         # 薪酬
         df_mean = GrpMeanCalculator(self._df, 'B6', self._grp_cols).calculate()
@@ -961,9 +974,9 @@ class ObjectiveSizeCalculator(DataCalculator):
         df_overal = formula_rate(self._df, self._tgt_col)
         print(df_overal)
         df_s = pd.DataFrame({
-            CONFIG.RATE_COLUMN[0]:[CONFIG.TOTAL_COLUMN],
-            CONFIG.RATE_COLUMN[1]:[df_overal[CONFIG.RATE_COLUMN[1]].sum()],
-            CONFIG.RATE_COLUMN[-1]:[df_overal[CONFIG.RATE_COLUMN[-1]].sum()],
+            CONFIG.RATE_COLUMN[0]: [CONFIG.TOTAL_COLUMN],
+            CONFIG.RATE_COLUMN[1]: [df_overal[CONFIG.RATE_COLUMN[1]].sum()],
+            CONFIG.RATE_COLUMN[-1]: [df_overal[CONFIG.RATE_COLUMN[-1]].sum()],
         })
         df_combines = pd.concat([df_overal, df_s], sort=False)
 
@@ -971,14 +984,15 @@ class ObjectiveSizeCalculator(DataCalculator):
             df_combines = self._styler.prettify(df_combines, CONFIG.RATE_COLUMN[0])
         return df_combines
 
+
 class ObjectiveGrpSizeCalculator(DataCalculator):
     """客观数据规模占比"""
 
-    def __init__(self, df,target_col, grp_cols, styler=None):
+    def __init__(self, df, target_col, grp_cols, styler=None):
         super().__init__(df, target_col, styler)
-        self._grp_cols=grp_cols
+        self._grp_cols = grp_cols
 
     def calculate(self):
-        df_overal = formula_grp_rate(self._df,self._tgt_col, self._grp_cols)
+        df_overal = formula_grp_rate(self._df, self._tgt_col, self._grp_cols)
 
         return df_overal
