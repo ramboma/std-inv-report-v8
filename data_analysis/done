@@ -178,3 +178,7 @@ df_metrics = pd.pivot_table(df_data,
             result[metric + "各专业" + sheet_name] = GrpFiveCalculator(df_filter, self._question_col,
                                                                     [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                                     self._metric_type).calculate()
+                                                                   df_demission["离职率"] = 0
+        for col in CONFIG.DIMISSION_COLUMNS:
+            if col in df_demission.columns:
+                df_demission.loc[:, "离职率"] = df_demission.loc[:, "离职率"] + df_demission.loc[:, col]

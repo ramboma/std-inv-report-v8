@@ -744,10 +744,10 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
 
     def calculate(self):
         # 就业率
-        df_emp_rate = formula_employe_rate_grp(self._df, self._grp_cols)
+        df_emp_rate = GrpEmpRate(self._df,None, self._grp_cols).calculate()
         df_emp_rate.rename(columns={CONFIG.RATE_COLUMN[2]: '就业率' + CONFIG.RATE_COLUMN[2]}, inplace=True)
         # 薪酬
-        df_mean = formula_mean_grp(self._df, 'B6', self._grp_cols)
+        df_mean = GrpMeanCalculator(self._df, 'B6', self._grp_cols).calculate()
         df_mean.rename(columns={CONFIG.MEAN_COLUMN[-1]: '薪酬' + CONFIG.MEAN_COLUMN[-1],
                                 CONFIG.MEAN_COLUMN[2]: '薪酬' + CONFIG.MEAN_COLUMN[2]}, inplace=True)
         df_combine = pd.merge(df_emp_rate, df_mean, how='left', on=self._grp_cols)
@@ -756,7 +756,7 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
         for col in combine_cols:
             metric_type = CONFIG.SPECIAL_SUBJECT_TYPE[col]
             metric_name = parse_measure_name(metric_type)
-            df_t = formula_five_rate_grp(self._df, col, self._grp_cols, metric_type)
+            df_t = GrpFiveCalculator(self._df, col, self._grp_cols, metric_type).calculate()
             sub_cols = [metric_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
             sub_cols.extend(self._grp_cols)
             df_t = df_t.loc[:, sub_cols]
@@ -769,11 +769,8 @@ class EmpCompetitiveGrpCalculator(DataCalculator):
 
             df_combine = pd.merge(df_combine, df_t, how='left', on=self._grp_cols)
         # 离职率
-        df_demission = formula_rate_grp(self._df, 'B10-1', self._grp_cols)
-        df_demission["离职率"] = 0
-        for col in CONFIG.DIMISSION_COLUMNS:
-            if col in df_demission.columns:
-                df_demission.loc[:, "离职率"] = df_demission.loc[:, "离职率"] + df_demission.loc[:, col]
+        df_demission = GrpRateCalculator(self._df, 'B10-1', self._grp_cols,
+                                         {"离职率": ["1次", "2次", "3次及以上"]}).calculate()
         sub_cols = ["离职率", CONFIG.RATE_COLUMN[2]]
         sub_cols.extend(self._grp_cols)
         df_demission = df_demission[sub_cols]

@@ -159,12 +159,10 @@ class SummaryDataAnalyzer(DataAnalyzer):
         style = AppendOverall()
         result['学院就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
                                                         [CONFIG.BASE_COLUMN[0]],
-                                                        dict_config=self._dict_config,
-                                                        styler=style).calculate()
+                                                        dict_config=self._dict_config).calculate()
         result['专业就业竞争力'] = EmpCompetitiveGrpCalculator(self._df,
                                                         [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
-                                                        dict_config=self._dict_config,
-                                                        styler=style).calculate()
+                                                        dict_config=self._dict_config).calculate()
 
         ls_rels = ['H4-' + chr(i) for i in range(65, 69)]
         df_teacher = GrpThreeCalculator(self._df,
@@ -1356,6 +1354,7 @@ def test():
     # Assemble all analyzers need to be run
     analyzer_collection = dict()
     # ... analyze N
+    ls_metric = list(set(df['_12']))
     analyzer_collection['总体毕业生一览表'] = OverallSummary(df, dic_config)
 
     runner.run_batch(analyzer_collection)
