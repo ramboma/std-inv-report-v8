@@ -16,6 +16,15 @@ class AnalyzeRunner(object):
             self.run(analyzer_collection[name], name)
 
     def run(self, analyzer, name):
-        result = analyzer.analyse()
-        self._write.write_new_book('{}.xlsx'.format(name), result)
-
+        try:
+            result = analyzer.analyse()
+            self._write.write_new_book('{}.xlsx'.format(name), result)
+        except Exception as e:
+            # log error message to log file
+            # write user friendly error file
+            # normal exit for next analyzer running
+            tip_file = os.path.join(self._write.folder, name + '.txt')
+            with open(tip_file, 'w') as f:
+                f.write('{} 报表生成是发生错误，产生错误原因:{}'.format(name, str(e)))
+        finally:
+            pass

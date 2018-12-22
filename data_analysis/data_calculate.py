@@ -201,8 +201,8 @@ class GrpThreeCalculator():
 
     def calculate(self):
         measure_name = parse_measure_name(self._metric_type)
-        forcus_cols = [measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]]
-        forcus_cols.extend(self._grp_cols)
+        forcus_cols =list(self._grp_cols)
+        forcus_cols.extend([measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
         for key in self._dict_extra.keys():
             df_combines = None
             for col in self._dict_extra[key]:
@@ -219,8 +219,6 @@ class GrpThreeCalculator():
                     df_combines = df_three
                 else:
                     df_combines = pd.merge(df_combines, df_three,how='inner', on=self._grp_cols)
-
-            print(df_combines)
 
             df_combines[measure_name + '_总体' + key] = df_combines[[col for col in df_combines.columns
                                                                    if str(col).find(measure_name) >= 0]].apply(
@@ -262,6 +260,9 @@ class GrpThreeCalculator():
                     lambda x: x.max(), axis=1)
 
             df_combines.fillna(0, inplace=True)
+            df_combines=df_combines.set_index(self._grp_cols)
+            df_combines.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_combines.columns])
+            df_combines.reset_index(inplace=True)
             return df_combines
 
 

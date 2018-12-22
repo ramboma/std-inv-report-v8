@@ -12,7 +12,7 @@ import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from data_analysis.reports_generator import *
+from data_analysis.data_analyze import *
 
 logger = get_logger(__name__)
 
@@ -98,8 +98,7 @@ def run_generate_reports(input_file, output_folder, config):
         os.mkdir(output_path)
 
         # call report generator class here
-        rg = ReportGenerator(input_file, output_path, config)
-        rg.generate()
+        do_reports(input_file, output_path, config)
 
     except Exception as e:
         logger.error(e, exc_info=True)

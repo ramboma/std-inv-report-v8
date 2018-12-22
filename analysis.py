@@ -10,7 +10,7 @@ import click
 import time
 
 from data_cleansing.logging import *
-from data_analysis.reports_generator import *
+from data_analysis.data_analyze import *
 
 logger = get_logger(__name__)
 
@@ -49,10 +49,7 @@ def main(input_file, output_folder, config):
         config = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'data_analysis/config.xlsx')
 
     # call report generator class here
-    rg = ReportGenerator(input_file, output_path, config)
-    rg.generate()
-    # or call generation function here
-    #generate_reports(input_file, output_folder, config)
+    do_reports(input_file, output_path, config)
 
 
 if __name__ == '__main__':

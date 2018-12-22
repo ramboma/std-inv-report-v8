@@ -170,12 +170,14 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                         CONFIG.ANSWER_TYPE_SATISFY,
                                         {'任课教师评价': ls_rels},
                                         dict_config=self._dict_config).calculate()
+        df_teacher = self.reformate(df_teacher, grp_cols)
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
         df_lesson = GrpThreeCalculator(self._df,
                                        grp_cols,
                                        CONFIG.ANSWER_TYPE_MEET_V,
                                        {'课堂教学': ls_rels},
                                        dict_config=self._dict_config).calculate()
+        df_lesson = self.reformate(df_lesson, grp_cols)
         df_concat = pd.merge(df_teacher, df_lesson, on=grp_cols)
 
         ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
@@ -184,9 +186,11 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                          CONFIG.ANSWER_TYPE_HELP,
                                          {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
+        df_practice = self.reformate(df_practice, grp_cols)
         df_concat = pd.merge(df_concat, df_practice, on=grp_cols)
+        df_concat = df_concat.set_index(grp_cols)
         df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
-
+        df_concat.reset_index(inplace=True)
         result['学院教育教学'] = df_concat
 
         grp_cols = [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]]
@@ -196,6 +200,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                         CONFIG.ANSWER_TYPE_SATISFY,
                                         {'任课教师评价': ls_rels},
                                         dict_config=self._dict_config).calculate()
+        df_teacher = self.reformate(df_teacher, grp_cols)
 
         ls_rels = ['H2-' + chr(i) for i in range(65, 70)]
         df_lesson = GrpThreeCalculator(self._df,
@@ -203,6 +208,7 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                        CONFIG.ANSWER_TYPE_MEET_V,
                                        {'课堂教学': ls_rels},
                                        dict_config=self._dict_config).calculate()
+        df_lesson = self.reformate(df_lesson, grp_cols)
         df_concat = pd.merge(df_teacher, df_lesson, on=grp_cols)
         ls_rels = ['H3-' + chr(i) for i in range(65, 69)]
         df_practice = GrpThreeCalculator(self._df,
@@ -210,12 +216,21 @@ class SummaryDataAnalyzer(DataAnalyzer):
                                          CONFIG.ANSWER_TYPE_HELP,
                                          {'实践教学': ls_rels},
                                          dict_config=self._dict_config).calculate()
-        df_concat = pd.merge(df_concat, df_practice, on=grp_cols)
-        df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
+        df_practice = self.reformate(df_practice, grp_cols)
 
+        df_concat = pd.merge(df_concat, df_practice, on=grp_cols)
+        df_concat = df_concat.set_index(grp_cols)
+        df_concat.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_concat.columns])
+        df_concat.reset_index(inplace=True)
         result['专业教育教学'] = df_concat
 
         return result
+
+    def reformate(self, df, grps):
+        df = df.set_index(grps)
+        df.columns = df.columns.map('_'.join)
+        df.reset_index(inplace=True)
+        return df
 
 
 class SpecialDataAnalyzer(DataAnalyzer):
@@ -1360,15 +1375,15 @@ class OverallSummary(SummaryDataAnalyzer):
 ####### 特殊人群 end
 
 
-def test():
+def do_reports(input_file, output_fold, config_file):
     # read excel as df
-    file_loader = ExcelLoader("../test-data/san-ming/cleaned/cleaned.xlsx")
+    file_loader = ExcelLoader(input_file)
     df = file_loader.load_data
-    config_loader = ExcelLoader("config.xlsx")
+    config_loader = ExcelLoader(config_file)
     dic_config = config_loader.dict_data
 
     # init a result writer
-    writer = AnalysisResultWriter(CONFIG.REPORT_FOLDER)
+    writer = AnalysisResultWriter(output_fold)
     runner = AnalyzeRunner(writer)
 
     # Assemble all analyzers need to be run
@@ -1434,11 +1449,13 @@ def test():
         df_filter = df[df['_12'] == metric]
         if not df_filter.empty:
             analyzer_collection[metric + "一览表"] = OverallSummary(df_filter, dic_config)
-
     runner.run_batch(analyzer_collection)
 
     pass
 
 
 if __name__ == '__main__':
-    test()
+    input_file='../test-data/san-ming/cleaned/cleaned.xlsx'
+    config_file='config.xlsx'
+    output_fold=CONFIG.REPORT_FOLDER
+    do_reports(input_file,output_fold,config_file)
