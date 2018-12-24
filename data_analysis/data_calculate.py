@@ -191,13 +191,14 @@ class GrpThreeCalculator():
     """三维分组答案占比"""
 
     def __init__(self, df, grp_cols, metric_type, dict_extra={},
-                 styler=None, dict_config={}):
+                 styler=None, dict_config={}, do_overall=True):
         self._df = df
         self._styler = styler
         self._grp_cols = grp_cols
         self._metric_type = metric_type
         self._dict_extra = dict_extra
         self._dict_config = dict_config
+        self._do_overall=do_overall
 
     def calculate(self):
         measure_name = parse_measure_name(self._metric_type)
@@ -220,49 +221,52 @@ class GrpThreeCalculator():
                 else:
                     df_combines = pd.merge(df_combines, df_three,how='inner', on=self._grp_cols)
 
-            df_combines[measure_name + '_总体' + key] = df_combines[[col for col in df_combines.columns
-                                                                   if str(col).find(measure_name) >= 0]].apply(
-                lambda x: x.mean(), axis=1)
-            df_combines[CONFIG.MEAN_COLUMN[-1] + '_总体' + key] = df_combines[[col for col in df_combines.columns
-                                                                             if str(col).find(
-                    CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
-                lambda x: x.mean(), axis=1)
-            df_combines[CONFIG.MEAN_COLUMN[2] + '_总体' + key] = df_combines[[col for col in df_combines.columns
-                                                                            if str(col).find(
-                    CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
-                lambda x: x.max(), axis=1)
+            if self._do_overall:
 
-            if "任课教师评价" == key:
-                df_private = df_combines[[col for col in df_combines.columns if str(col).find('专业') >= 0]]
-                df_public = df_combines[[col for col in df_combines.columns if str(col).find('公共') >= 0]]
-
-                df_combines[measure_name + '_专业总评价'] = df_private[[col for col in df_private.columns
-                                                                   if str(col).find(measure_name) >= 0]].apply(
+                df_combines[measure_name + '_总体' + key] = df_combines[[col for col in df_combines.columns
+                                                                       if str(col).find(measure_name) >= 0]].apply(
                     lambda x: x.mean(), axis=1)
-                df_combines[CONFIG.MEAN_COLUMN[-1] + '_专业总评价'] = df_private[[col for col in df_private.columns
-                                                                             if str(col).find(
+                df_combines[CONFIG.MEAN_COLUMN[-1] + '_总体' + key] = df_combines[[col for col in df_combines.columns
+                                                                                 if str(col).find(
                         CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
                     lambda x: x.mean(), axis=1)
-                df_combines[CONFIG.MEAN_COLUMN[2] + '_专业总评价'] = df_private[[col for col in df_private.columns
-                                                                            if str(col).find(
+                df_combines[CONFIG.MEAN_COLUMN[2] + '_总体' + key] = df_combines[[col for col in df_combines.columns
+                                                                                if str(col).find(
                         CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
                     lambda x: x.max(), axis=1)
-                df_combines[measure_name + '_公共总评价'] = df_public[[col for col in df_public.columns
-                                                                  if str(col).find(measure_name) >= 0]].apply(
-                    lambda x: x.mean(), axis=1)
-                df_combines[CONFIG.MEAN_COLUMN[-1] + '_公共总评价'] = df_public[[col for col in df_public.columns
-                                                                            if str(col).find(
-                        CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
-                    lambda x: x.mean(), axis=1)
-                df_combines[CONFIG.MEAN_COLUMN[2] + '_公共总评价'] = df_public[[col for col in df_public.columns
-                                                                           if str(col).find(
-                        CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
-                    lambda x: x.max(), axis=1)
+
+                if "任课教师评价" == key:
+                    df_private = df_combines[[col for col in df_combines.columns if str(col).find('专业') >= 0]]
+                    df_public = df_combines[[col for col in df_combines.columns if str(col).find('公共') >= 0]]
+
+                    df_combines[measure_name + '_专业总评价'] = df_private[[col for col in df_private.columns
+                                                                       if str(col).find(measure_name) >= 0]].apply(
+                        lambda x: x.mean(), axis=1)
+                    df_combines[CONFIG.MEAN_COLUMN[-1] + '_专业总评价'] = df_private[[col for col in df_private.columns
+                                                                                 if str(col).find(
+                            CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
+                        lambda x: x.mean(), axis=1)
+                    df_combines[CONFIG.MEAN_COLUMN[2] + '_专业总评价'] = df_private[[col for col in df_private.columns
+                                                                                if str(col).find(
+                            CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
+                        lambda x: x.max(), axis=1)
+                    df_combines[measure_name + '_公共总评价'] = df_public[[col for col in df_public.columns
+                                                                      if str(col).find(measure_name) >= 0]].apply(
+                        lambda x: x.mean(), axis=1)
+                    df_combines[CONFIG.MEAN_COLUMN[-1] + '_公共总评价'] = df_public[[col for col in df_public.columns
+                                                                                if str(col).find(
+                            CONFIG.MEAN_COLUMN[-1]) >= 0]].apply(
+                        lambda x: x.mean(), axis=1)
+                    df_combines[CONFIG.MEAN_COLUMN[2] + '_公共总评价'] = df_public[[col for col in df_public.columns
+                                                                               if str(col).find(
+                            CONFIG.MEAN_COLUMN[2]) >= 0]].apply(
+                        lambda x: x.max(), axis=1)
 
             df_combines.fillna(0, inplace=True)
             df_combines=df_combines.set_index(self._grp_cols)
             df_combines.columns = pd.MultiIndex.from_tuples([tuple(c.split('_')) for c in df_combines.columns])
             df_combines.reset_index(inplace=True)
+
             return df_combines
 
 

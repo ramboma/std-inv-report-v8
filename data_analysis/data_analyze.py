@@ -610,25 +610,29 @@ class JobSatisfyAnalyzer(FiveRateDataAnalyzer):
             result["总体毕业生各学院" + sheet_name] = GrpThreeCalculator(df, [CONFIG.BASE_COLUMN[0]],
                                                                  self._metric_type,
                                                                  {sheet_name: array_subj}
-                                                                 , dict_config=self._dict_config).calculate()
+                                                                 , dict_config=self._dict_config,
+                                                                 do_overall=False).calculate()
             result["总体毕业生各专业" + sheet_name] = GrpThreeCalculator(df,
                                                                  [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                                  self._metric_type,
                                                                  {sheet_name: array_subj}
-                                                                 , dict_config=self._dict_config).calculate()
+                                                                 , dict_config=self._dict_config,
+                                                                 do_overall=False).calculate()
 
         for metric in ls_metric:
             df_filter = df[df[self._degree_col] == metric]
             result[metric + "各学院" + sheet_name] = GrpThreeCalculator(df_filter, [CONFIG.BASE_COLUMN[0]],
                                                                      self._metric_type,
                                                                      {sheet_name: array_subj},
-                                                                     dict_config=self._dict_config
+                                                                     dict_config=self._dict_config,
+                                                                     do_overall=False
                                                                      ).calculate()
             result[metric + "各专业" + sheet_name] = GrpThreeCalculator(df_filter,
                                                                      [CONFIG.BASE_COLUMN[0], CONFIG.BASE_COLUMN[1]],
                                                                      self._metric_type,
                                                                      {sheet_name: array_subj},
-                                                                     dict_config=self._dict_config
+                                                                     dict_config=self._dict_config,
+                                                                     do_overall=False
                                                                      ).calculate()
         return result
 
