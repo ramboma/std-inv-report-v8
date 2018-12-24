@@ -488,9 +488,29 @@ class EmpRateAndEmpStatus(DataAnalyzer):
                                                  ).calculate()
 
         dict_grp_emp_rate = common_grp_anaysis(df, self._question_col, GrpEmpRate, "就业率")
-        dict_grp_emp_go = common_grp_anaysis(df, self._question_col, GrpRateCalculator, "毕业去向")
         result.update(dict_grp_emp_rate)
-        result.update(dict_grp_emp_go)
+
+        # 筛选出学历 如果为多学历需要计算总体
+        ls_metric = list(set(df[self._degree_col]))
+        if len(ls_metric) > 1:
+            result["总体毕业生各学院" + "毕业去向"] = GrpRateCalculator(df, self._question_col,
+                                                    [CONFIG.BASE_COLUMN[0]],
+                                                    extra={"灵活就业": ["自主创业", "自由职业"]}).calculate()
+            result["总体毕业生各专业" + "毕业去向"] = GrpRateCalculator(df, self._question_col,
+                                                    [CONFIG.BASE_COLUMN[0],
+                                                     CONFIG.BASE_COLUMN[1]],
+                                                    extra={"灵活就业": ["自主创业", "自由职业"]}).calculate()
+
+        for metric in ls_metric:
+            df_filter = df[df[self._degree_col] == metric]
+            if not df_filter.empty:
+                result[metric + "各学院" + "毕业去向"] = GrpRateCalculator(df_filter, self._question_col,
+                                                                 [CONFIG.BASE_COLUMN[0]],
+                                                                 extra={"灵活就业": ["自主创业", "自由职业"]}).calculate()
+                result[metric + "各专业" + "毕业去向"] = GrpRateCalculator(df_filter, self._question_col,
+                                                                 [CONFIG.BASE_COLUMN[0],
+                                                                  CONFIG.BASE_COLUMN[1]],
+                                                                 extra={"灵活就业": ["自主创业", "自由职业"]}).calculate()
         return result
 
 
@@ -1455,7 +1475,7 @@ def do_reports(input_file, output_fold, config_file):
 
 
 if __name__ == '__main__':
-    input_file='../test-data/san-ming/cleaned/cleaned.xlsx'
-    config_file='config.xlsx'
-    output_fold=CONFIG.REPORT_FOLDER
-    do_reports(input_file,output_fold,config_file)
+    input_file = '../test-data/san-ming/cleaned/cleaned.xlsx'
+    config_file = 'config.xlsx'
+    output_fold = CONFIG.REPORT_FOLDER
+    do_reports(input_file, output_fold, config_file)
