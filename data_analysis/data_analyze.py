@@ -850,11 +850,11 @@ class EmpIndurstryTypeSizeAnalyzer(SimpleValueRateDataAnalyzer):
 
 def get_province(data):
     subject = '_6'
-    province = data.loc[0, subject]
-    if pd.isnull(province) or len(str(province)) == 0:
+    province = data[subject].head(1)
+    if province.empty:
         raise Exception('未获取到学校所属省份')
     else:
-        return province
+        return province.values[0]
 
 
 ########### 就业分布 end
@@ -1473,6 +1473,8 @@ def do_reports(input_file, output_fold, config_file):
         df_filter = df[df['_12'] == metric]
         if not df_filter.empty:
             analyzer_collection[metric + "一览表"] = OverallSummary(df_filter, dic_config)
+
+
     runner.run_batch(analyzer_collection)
 
     pass
