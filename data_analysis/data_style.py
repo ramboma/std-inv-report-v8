@@ -47,21 +47,84 @@ class AnswerIndexStyler(AnalysisResultStyler):
 
 
 class AppendOverall(AnalysisResultStyler):
+    """总计时，num 求和，其他求均值"""
 
     @staticmethod
-    def prettify(base, append, axis=0):
-        base = pd.concat([base, append], ignore_index=True, sort=True, axis=axis)
+    def prettify(df, grp_cols):
+        nums = []
+        others = []
+        cols = df.columns
+        for col in cols:
+            if col in grp_cols:
+                continue
+            if col.find(CONFIG.RATE_COLUMN[2]) > 0:
+                nums.append(col)
+            else:
+                others.append(col)
+
+        df_num = df.loc[:, nums].agg(['sum'])
+        df_mean = df.loc[:, others].agg(['mean'])
+        df_num.reset_index(inplace=True)
+        df_mean.reset_index(inplace=True)
+        df_sum = pd.concat([df_num, df_mean], axis=1)
+        nums.extend(others)
+        df_sum = df_sum[nums]
+        df_combine = pd.concat([df, df_sum], sort=False)
+        df_combine.iloc[-1, 0:len(grp_cols)] = CONFIG.TOTAL_COLUMN
+        return df_combine
 
 
-class LookingBStyler(AnalysisResultStyler):
+class MultiOverallStyle(AnalysisResultStyler):
+    """总计时，num 求和，其他求均值"""
+
+    @staticmethod
+    def prettify(df, multi_col):
+        nums = []
+        others = []
+        cols = df.columns
+        for col in cols:
+            if col == multi_col:
+                continue
+            if col.find(CONFIG.RATE_COLUMN[2]) >= 0:
+                nums.append(col)
+            else:
+                others.append(col)
+
+        df_num = df.loc[:, nums].agg(['max'])
+        df_mean = df.loc[:, others].agg(['mean'])
+        df_num.reset_index(inplace=True)
+        df_mean.reset_index(inplace=True)
+        df_sum = pd.concat([df_num, df_mean], axis=1)
+        nums.extend(others)
+        df_sum = df_sum[nums]
+        df_sum[multi_col]=CONFIG.TOTAL_COLUMN+multi_col
+        df_combine = pd.concat([df, df_sum], sort=False)
+
+        return df_combine
+
+
+class OrderColStyler(AnalysisResultStyler):
 
     @staticmethod
     def prettify(df):
-        pass
+        if df.empty:
+            return df
+        cols=df.columns
+        if isinstance(cols,pd.MultiIndex):
+            pass
+        else:
+            pass
+        return df
 
 
-class LookingCStyler(AnalysisResultStyler):
+class ObjectiveOrderStyler(AnalysisResultStyler):
 
     @staticmethod
-    def prettify(df):
-        pass
+    def prettify(df, ord_col):
+        if df.empty:
+            return df
+        cols=df.columns
+        df['order_col'] = df[ord_col].map(CONFIG.DEGREE_ORDER)
+        df.sort_values("order_col", ascending=1, inplace=True)
+        df=df[cols]
+        return df

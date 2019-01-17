@@ -6,15 +6,13 @@
 __author__ = 'kuoren'
 
 import pandas as pd
-import numpy as np
 import data_analysis.config as CONFIG
-import data_analysis.utils as Util
 from data_cleansing.logging import *
 
 logger = get_logger(__name__)
 
 
-def formula_rate(data, subject):
+def formula_rate(data, subject, top=0):
     """
 
     AnswerRate 计算某题的答案占比
@@ -25,15 +23,24 @@ def formula_rate(data, subject):
 
     # 答题总人数
     count = data[subject].count()
-    # 答案占比
-    df_rate = data[subject].value_counts()
-    df_rate = pd.DataFrame({CONFIG.RATE_COLUMN[0]: df_rate.index,
-                            CONFIG.RATE_COLUMN[1]: df_rate.values,
-                            CONFIG.RATE_COLUMN[-1]: df_rate.values / count
-                            })
+    if count:
+        # 答案占比
+        df_rate = data[subject].value_counts()
+        df_rate = pd.DataFrame({CONFIG.RATE_COLUMN[0]: df_rate.index,
+                                CONFIG.RATE_COLUMN[1]: df_rate.values,
+                                CONFIG.RATE_COLUMN[-1]: df_rate.values / count
+                                })
+    else:
+        df_rate = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [''],
+                                CONFIG.RATE_COLUMN[1]: [0],
+                                CONFIG.RATE_COLUMN[-1]: [0]
+                                })
     df_rate[CONFIG.RATE_COLUMN[2]] = count
     # 答题总人数为0时，出现NaN值
     df_rate.fillna(0, inplace=True)
+    if top:
+        df_rate.sort_values(CONFIG.RATE_COLUMN[-1], ascending=0, inplace=True)
+        df_rate = df_rate.head(top)
     return df_rate
 
 
@@ -107,22 +114,27 @@ def formula_five_rate(data, subject, measure_type):
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
     # 列重排
-    # df_t = df_t[ls_measure[0:5]]
+    order_cols=[col for col in ls_measure if col in df_t.columns]
+    df_t = df_t[order_cols]
     # step3: 度量值
+    measure_cols=[col for col in ls_measure[0:3] if col in df_t.columns]
     measure_rate = 0
-    for measure in ls_measure[0:3]:
-        if measure in df_t.columns:
-            measure_rate = measure_rate + df_t[measure]
+    for measure in measure_cols:
+        measure_rate = measure_rate + df_t[measure]
     df_t[measure_name] = measure_rate
 
     # step4: 均值
     mean = data[subject].map(dict_measure_score).mean()
     df_t[CONFIG.MEAN_COLUMN[-1]] = mean
     if df_rate.empty:
-        df_t[CONFIG.MEAN_COLUMN[2]]=0
+        df_t[CONFIG.MEAN_COLUMN[2]] = 0
     else:
         df_t[CONFIG.MEAN_COLUMN[2]] = df_rate.loc[0, CONFIG.RATE_COLUMN[2]]
 
+    # 列重排
+    order_cols = [col for col in ls_measure if col in df_t.columns]
+    order_cols.extend([measure_name,CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+    df_t = df_t[order_cols]
     return df_t
 
 
@@ -142,13 +154,12 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
     ls_measure = parse_measure(measure_type)
     dict_measure_score = parse_measure_score(measure_type)
     measure_name = parse_measure_name(measure_type)
-    # 列重排
-    # df_sub = df_rate[ls_measure[0:5]]
+
     # step3: 度量值
+    measure_cols = [col for col in ls_measure[0:3] if col in df_rate.columns]
     measure_rate = 0
-    for measure in ls_measure[0:3]:
-        if measure in df_rate.columns:
-            measure_rate = measure_rate + df_rate[measure]
+    for measure in measure_cols:
+        measure_rate = measure_rate + df_rate[measure]
     df_rate[measure_name] = measure_rate
 
     data.loc[:, "measure_score"] = data[subject]
@@ -160,8 +171,15 @@ def formula_five_rate_grp(data, subject, grp, measure_type):
 
     # df_rate[CONFIG.MEAN_COLUMN[2]] = df_rate[CONFIG.MEAN_COLUMN[2]]
     df_rate.fillna(0, inplace=True)
+
     df_rate.sort_values(CONFIG.RATE_COLUMN[2], ascending=0, inplace=True)
     df_rate.reset_index(inplace=True)
+    # 列重排
+    order_cols = list(grp)
+    order_cols.extend([col for col in ls_measure if col in df_rate.columns])
+    order_cols.extend([measure_name, CONFIG.MEAN_COLUMN[-1], CONFIG.MEAN_COLUMN[2]])
+    print(order_cols)
+    df_rate = df_rate[order_cols]
     return df_rate
 
 
@@ -293,6 +311,8 @@ def formate_rate_t(df_data):
     # 比例转置
     df_t = df_data.pivot_table(CONFIG.RATE_COLUMN[-1], index=None,
                                columns=CONFIG.RATE_COLUMN[0])
+    colums=list(df_t.columns)
+
     df_t[CONFIG.RATE_COLUMN[2]] = count
     return df_t
 
@@ -352,14 +372,16 @@ def formate_grp_row_combine(df_data, array_focus=[CONFIG.MEAN_COLUMN[2]],
 
     return df_result
 
+
 def multi_answer_count(data, subject):
     """多选题 答题人数统计"""
     multi_column = multi_columns(data, subject)
-    df_answer = data.loc[:,multi_column]
+    df_answer = data.loc[:, multi_column]
     df_answer.dropna(how='all', inplace=True)
     df_answer.fillna(0, inplace=True)
-    answer_count = df_answer.loc[:,multi_column[0]].count()
+    answer_count = df_answer.loc[:, multi_column[0]].count()
     return answer_count
+
 
 def multi_columns(data, subject, max_times=0):
     """多选题的选项列"""
@@ -372,6 +394,95 @@ def multi_columns(data, subject, max_times=0):
         multi_column = multi_column[0:max_times]
 
     return multi_column
+
+
+def ability_distribution(data, subject):
+    """能力综合题"""
+    multi_column = multi_columns(data, subject)
+    df_answer = data.loc[:, multi_column]
+    multi_grp_column = [x[0:x.rindex('-') + 1] for x in multi_column]
+    multi_grp_column = list(set(multi_grp_column))
+    df_init = pd.DataFrame()  # 创建一个空的dataframe
+    for item in multi_grp_column:
+        df_ability = ability_item_distribution(df_answer, item)
+        df_init = pd.concat([df_init, df_ability])
+    return df_init
+
+
+def ability_item_distribution(data, subject):
+    '''能力题 答题人数，能力水平分析'''
+    # step1 答题总人数 N2
+    answer_count = multi_answer_count(data, subject)
+
+    multi_column = multi_columns(data, subject)
+    # 单项能力水平题目数量N1
+    item_size = len(multi_column)
+    # 结果集
+    df_answer = data[multi_column].copy()
+    df_answer.dropna(how='all', inplace=True)
+    item_ability = 0
+    for col in multi_column:
+        # 反向分
+        if col in CONFIG.ABILITY_REVERSE:
+            df_answer[col + '_score'] = df_answer.loc[:, col].map(CONFIG.ABILITY_SCORE_REVERSE)
+        else:
+            df_answer[col + '_score'] = df_answer.loc[:, col].map(CONFIG.ABILITY_SCORE)
+        item_ability = item_ability + df_answer.loc[:, col + '_score'].sum() / df_answer.loc[:, col + '_score'].count()
+    ability = (item_ability / item_size).round(CONFIG.DECIMALS2)
+    df_result = pd.DataFrame({CONFIG.RATE_COLUMN[0]: [subject[0:subject.rindex('-')]],
+                              CONFIG.ABILITY_COLUMN: [ability],
+                              CONFIG.RATE_COLUMN[2]: [answer_count]})
+    return df_result
+
+def formulas_overall(df, except_cols, method, grp_cols=[]):
+    nums = []
+    others = []
+    cols = df.columns
+    for col in cols:
+        if col in except_cols or col in grp_cols:
+            continue
+        if col.find(CONFIG.RATE_COLUMN[2]) >= 0:
+            nums.append(col)
+        else:
+            others.append(col)
+    if grp_cols:
+        grp_num=list(grp_cols)
+        grp_num.extend(nums)
+        grp_other=list(grp_cols)
+        grp_other.extend(others)
+
+        df_num = df.loc[:, grp_num].groupby(grp_cols).agg(['sum'])
+        #df_num.columns = df_num.columns.map('_'.join)
+        df_mean = df.loc[:, grp_other].groupby(grp_cols).agg(['mean'])
+        df_num.reset_index(inplace=True)
+        df_mean.reset_index(inplace=True)
+        df_sum = pd.merge(df_mean,df_num, on=grp_cols)
+        df_sum.reset_index(inplace=True)
+        df_sum.columns=[a for a, b in df_sum.columns]
+        print(df_sum)
+
+        nums.extend(others)
+        nums.extend(grp_cols)
+        df_sum = df_sum[nums]
+        print(df_sum)
+    else:
+        df_num = df.loc[:, nums].agg(['max'])
+        df_mean = df.loc[:, others].agg(['mean'])
+        df_num.reset_index(inplace=True)
+        df_mean.reset_index(inplace=True)
+        df_sum = pd.concat([df_num, df_mean], axis=1)
+        print('not grp')
+        print(df_sum)
+        nums.extend(others)
+        df_sum = df_sum[nums]
+    return df_sum
+
+def parse_ability_score(column_name):
+    '''解析能力分值'''
+    if column_name in CONFIG.ABILITY_REVERSE:
+        return CONFIG.ABILITY_SCORE_REVERSE
+    else:
+        return CONFIG.ABILITY_SCORE
 
 
 def percent(df_data):
@@ -467,3 +578,31 @@ def build_period_name(start, step, period_n, max=100000):
     val = '{}元及以上'.format(start + period_n * step + 1)
     name[key] = val
     return name
+
+def formula_total(data):
+    """总体毕业生人数
+    默认使用学号统计，如果学号不存在，则取第一列计数
+    """
+    if "学号" in data.columns:
+        return data['学号'].count()
+    else:
+        return data.iloc[:,0].count()
+
+def formula_grp_rate(data,tgt_col, grp):
+    """
+
+    分组计算占比
+    :param data:
+    :param grp:
+    :return:
+    """
+    # 分组统计人数
+    df_count = data.groupby(grp)[tgt_col].count()
+    df_count=df_count.to_frame()
+    # 计算比例
+    df_count[CONFIG.RATE_COLUMN[-1]] = df_count/formula_total(data)
+    df_count.rename(columns={tgt_col:CONFIG.RATE_COLUMN[1]}, inplace=True)
+    df_count.reset_index(inplace=True)
+    df_count.sort_values(CONFIG.RATE_COLUMN[-1], ascending=0, inplace=True)
+
+    return df_count
